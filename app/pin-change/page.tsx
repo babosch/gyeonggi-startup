@@ -66,13 +66,13 @@ export default function PinChangePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-xl flex flex-col items-center">
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8 text-center w-full max-w-md">
-          <p className="text-amber-800 font-semibold text-lg">PIN을 변경해야 합니다</p>
-          <p className="text-amber-600 text-sm mt-1">기본 PIN(1234)은 사용할 수 없어요</p>
-        </div>
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 text-center w-full max-w-md">
+        <p className="text-amber-800 font-semibold text-lg">PIN을 변경해야 합니다</p>
+        <p className="text-amber-600 text-sm mt-1">기본 PIN(1234)은 사용할 수 없어요</p>
+      </div>
 
-        <p className="text-gray-700 font-semibold text-xl mb-6">
+      <div className="bg-white rounded-3xl shadow-sm p-10 w-full max-w-md flex flex-col items-center">
+        <p className="text-gray-700 font-semibold text-xl mb-8">
           {step === 'new' ? '새 PIN 4자리를 입력하세요' : '한 번 더 입력하세요'}
         </p>
 
@@ -85,7 +85,7 @@ export default function PinChangePage() {
 
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
 
-        <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
+        <div className="grid grid-cols-3 gap-4 w-full">
           {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => {
             if (key === '') return <div key={i} />
             return (
@@ -95,7 +95,7 @@ export default function PinChangePage() {
                 className={`h-20 rounded-2xl font-bold text-2xl shadow-sm transition-all active:scale-95
                   ${key === '⌫'
                     ? 'bg-gray-200 text-gray-600'
-                    : 'bg-white border-2 border-gray-200 text-gray-800 hover:border-blue-400'}
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-800 hover:border-blue-400'}
                   disabled:opacity-40`}>
                 {key}
               </button>

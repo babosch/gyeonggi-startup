@@ -156,47 +156,50 @@ export default function LoginPage() {
 
   // ── PIN 입력 ─────────────────────────────────
   return (
-    <Wrap>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
       <button onClick={() => { setStep('number'); setPin(''); setError('') }}
-        className="text-gray-400 text-sm mb-6 block">
+        className="text-gray-400 text-sm mb-6 w-full max-w-md">
         ← 번호 다시 선택
       </button>
-      <div className="flex items-center gap-3 mb-2">
-        <span className={`px-4 py-2 rounded-full text-white font-bold ${CITY_COLORS[selectedClass!.color]}`}>
-          {selectedClass!.name}
-        </span>
-        <span className="text-gray-500 font-medium">{selectedNumber}번</span>
-      </div>
-      <p className="text-gray-700 font-semibold text-xl mb-8 mt-4">PIN 4자리를 입력하세요</p>
 
-      <div className="flex gap-6 mb-6 justify-center">
-        {[0,1,2,3].map(i => (
-          <div key={i} className={`w-6 h-6 rounded-full transition-colors
-            ${i < pin.length ? 'bg-gray-800' : 'bg-gray-300'}`} />
-        ))}
-      </div>
+      {/* PIN 카드 — 앞 단계와 같은 폭감으로 채움 */}
+      <div className="bg-white rounded-3xl shadow-sm p-10 w-full max-w-md flex flex-col items-center">
+        <div className="flex items-center gap-3 mb-2">
+          <span className={`px-4 py-2 rounded-full text-white font-bold ${CITY_COLORS[selectedClass!.color]}`}>
+            {selectedClass!.name}
+          </span>
+          <span className="text-gray-500 font-medium">{selectedNumber}번</span>
+        </div>
+        <p className="text-gray-700 font-semibold text-xl mb-8 mt-4">PIN 4자리를 입력하세요</p>
 
-      {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
-      {lockout > 0 && <p className="text-orange-500 mb-4 text-center">{lockout}초 후 다시 시도</p>}
+        <div className="flex gap-6 mb-6 justify-center">
+          {[0,1,2,3].map(i => (
+            <div key={i} className={`w-6 h-6 rounded-full transition-colors
+              ${i < pin.length ? 'bg-gray-800' : 'bg-gray-300'}`} />
+          ))}
+        </div>
 
-      {/* PIN 키패드 — 크롬북에서도 터치하기 편한 크기 */}
-      <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
-        {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => {
-          if (key === '') return <div key={i} />
-          return (
-            <button key={i}
-              onClick={() => key === '⌫' ? handlePinDelete() : handlePinDigit(key)}
-              disabled={loading || lockout > 0}
-              className={`h-20 rounded-2xl font-bold text-2xl shadow-sm transition-all active:scale-95
-                ${key === '⌫'
-                  ? 'bg-gray-200 text-gray-600'
-                  : 'bg-white border-2 border-gray-200 text-gray-800 hover:border-blue-400'}
-                disabled:opacity-40`}>
-              {key}
-            </button>
-          )
-        })}
+        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        {lockout > 0 && <p className="text-orange-500 mb-4 text-center">{lockout}초 후 다시 시도</p>}
+
+        <div className="grid grid-cols-3 gap-4 w-full">
+          {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => {
+            if (key === '') return <div key={i} />
+            return (
+              <button key={i}
+                onClick={() => key === '⌫' ? handlePinDelete() : handlePinDigit(key)}
+                disabled={loading || lockout > 0}
+                className={`h-20 rounded-2xl font-bold text-2xl shadow-sm transition-all active:scale-95
+                  ${key === '⌫'
+                    ? 'bg-gray-200 text-gray-600'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-800 hover:border-blue-400'}
+                  disabled:opacity-40`}>
+                {key}
+              </button>
+            )
+          })}
+        </div>
       </div>
-    </Wrap>
+    </div>
   )
 }
