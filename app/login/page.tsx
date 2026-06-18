@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CITY_COLORS, type ClassRow } from '@/lib/types'
+import { pinToPassword } from '@/lib/auth'
 
 type Step = 'class' | 'number' | 'pin'
 
@@ -63,7 +64,7 @@ export default function LoginPage() {
     setError('')
 
     const email = makeEmail(selectedClass.code, selectedNumber)
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: enteredPin })
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pinToPassword(enteredPin) })
 
     if (!signInErr) {
       localStorage.removeItem(PIN_FAIL_KEY)

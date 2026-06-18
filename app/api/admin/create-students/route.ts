@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { pinToPassword, DEFAULT_PIN } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   // 교사 인증 확인
@@ -20,12 +21,11 @@ export async function POST(req: NextRequest) {
 
   for (let number = 1; number <= count; number++) {
     const email = `${cls.code.toLowerCase()}-${number}@classroom.local`
-    const defaultPin = '1234'
 
-    // Supabase Auth 계정 생성
+    // Supabase Auth 계정 생성 (기본 PIN 1234 → pinToPassword 변환)
     const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
       email,
-      password: defaultPin,
+      password: pinToPassword(DEFAULT_PIN),
       email_confirm: true,
     })
 
