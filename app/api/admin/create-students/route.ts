@@ -48,9 +48,21 @@ export async function POST(req: NextRequest) {
       must_change_pin: true,
     }, { onConflict: 'class_id,number' })
 
-    if (userErr) errors.push({ number, reason: userErr.message })
-    else results.push(number)
+    if (userErr) { errors.push({ number, reason: userErr.message }); continue }
+
+    // 개인 계좌 생성 (잔액 0)
+    await admin.from('accounts').upsert(
+      { owner_type: 'user', owner_id: authUser.user.id, balance: 0 },
+      { onConflict: 'owner_type,owner_id' }
+    )
+    results.push(number)
   }
+
+  // 시청(city) 계좌 보장
+  await admin.from('accounts').upsert(
+    { owner_type: 'city', owner_id: classId, balance: 0 },
+    { onConflict: 'owner_type,owner_id' }
+  )
 
   return NextResponse.json({ created: results.length, skipped: errors.length, errors })
 }
