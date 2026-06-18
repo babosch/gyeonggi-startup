@@ -86,6 +86,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
       <TaskCard emoji="🧾" label="품의서" hint="물건 사기" opensAt={1} currentStage={stage} href="/requisition" />
       <TaskCard emoji="💵" label="급여 지급" opensAt={2} currentStage={stage} href="/payroll" />
       <TaskCard emoji="📱" label="수금 QR" hint="판매 받기" opensAt={4} currentStage={stage} href="/sell" />
+      <TaskCard emoji="💳" label="내 카드" hint="물건 살 때" opensAt={4} currentStage={stage} href="/card" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )
@@ -93,7 +94,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
   if (role === 'staff') return (
     <div className={grid}>
       <TaskCard emoji="📒" label="업무일지" hint="오늘 한 일" opensAt={2} currentStage={stage} href="/worklog" />
-      <TaskCard emoji="🛒" label="물건 사기" hint="다른 회사 제품" opensAt={4} currentStage={stage} href="/buy" />
+      <TaskCard emoji="💳" label="내 카드" hint="물건 살 때 보여줘요" opensAt={4} currentStage={stage} href="/card" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )
