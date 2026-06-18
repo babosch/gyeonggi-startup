@@ -4,36 +4,37 @@
 
 -- 반(도시)
 CREATE TABLE classes (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name          text NOT NULL,           -- 예: 이천시
-  code          text UNIQUE NOT NULL,    -- 로그인 코드
-  color         text NOT NULL DEFAULT 'blue', -- 도시 컬러
-  stage         int  NOT NULL DEFAULT 0 CHECK (stage BETWEEN 0 AND 4),
-  fair_mode     boolean NOT NULL DEFAULT false,
-  paused        boolean NOT NULL DEFAULT false,
-  notice        text,
-  session_open  boolean NOT NULL DEFAULT false,
-  hire_deadline timestamptz,
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name              text NOT NULL,
+  code              text UNIQUE NOT NULL,
+  color             text NOT NULL DEFAULT 'blue',
+  stage             int  NOT NULL DEFAULT 0 CHECK (stage BETWEEN 0 AND 4),
+  fair_mode         boolean NOT NULL DEFAULT false,
+  paused            boolean NOT NULL DEFAULT false,
+  notice            text,
+  session_open      boolean NOT NULL DEFAULT false,
+  hire_deadline     timestamptz,
   budget_alert_pct  int NOT NULL DEFAULT 30,
   stall_alert_min   int NOT NULL DEFAULT 20,
   confirmed_research jsonb,
-  created_at    timestamptz NOT NULL DEFAULT now()
+  created_at        timestamptz NOT NULL DEFAULT now()
 );
 
--- 사용자 (교사 + 학생 전체)
+-- 사용자 (교사 + 학생)
+-- auth.uid() = users.id 로 연결 (Supabase Auth 사용)
 CREATE TABLE users (
-  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  class_id       uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  number         int  NOT NULL,          -- 학생 번호
-  nickname       text,
-  pin_hash       text NOT NULL,
-  role           text NOT NULL DEFAULT 'applicant'
-                   CHECK (role IN ('mayor','applicant','ceo','staff','officer')),
-  company_id     uuid,                   -- 기업 소속 (CEO·직원만 있음)
-  intro_seen     boolean NOT NULL DEFAULT false,
-  reveal_pending text CHECK (reveal_pending IN ('ceo','staff','officer')),
-  role_changes   jsonb NOT NULL DEFAULT '[]',
-  created_at     timestamptz NOT NULL DEFAULT now(),
+  id               uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  class_id         uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  number           int  NOT NULL,
+  nickname         text,
+  role             text NOT NULL DEFAULT 'applicant'
+                     CHECK (role IN ('mayor','applicant','ceo','staff','officer')),
+  company_id       uuid,
+  must_change_pin  boolean NOT NULL DEFAULT true,
+  intro_seen       boolean NOT NULL DEFAULT false,
+  reveal_pending   text CHECK (reveal_pending IN ('ceo','staff','officer')),
+  role_changes     jsonb NOT NULL DEFAULT '[]',
+  created_at       timestamptz NOT NULL DEFAULT now(),
   UNIQUE (class_id, number)
 );
 
@@ -49,11 +50,10 @@ CREATE TABLE companies (
   created_at   timestamptz NOT NULL DEFAULT now()
 );
 
--- 외래키: users.company_id → companies
 ALTER TABLE users ADD CONSTRAINT fk_users_company
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
 
--- 계좌 (회사·시청·개인 공용)
+-- 계좌
 CREATE TABLE accounts (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_type   text NOT NULL CHECK (owner_type IN ('company','city','user')),
@@ -83,20 +83,20 @@ CREATE TABLE transactions (
 
 -- 사업계획서
 CREATE TABLE business_plans (
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  class_id        uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  content         jsonb NOT NULL DEFAULT '{}',
-  reserve_amount  bigint NOT NULL DEFAULT 0,
-  status          text NOT NULL DEFAULT 'draft'
-                    CHECK (status IN ('draft','submitted','selected','rejected')),
-  version         int  NOT NULL DEFAULT 0,
-  submitted_at    timestamptz,
-  selected_at     timestamptz,
-  created_at      timestamptz NOT NULL DEFAULT now()
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  class_id       uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  content        jsonb NOT NULL DEFAULT '{}',
+  reserve_amount bigint NOT NULL DEFAULT 0,
+  status         text NOT NULL DEFAULT 'draft'
+                   CHECK (status IN ('draft','submitted','selected','rejected')),
+  version        int  NOT NULL DEFAULT 0,
+  submitted_at   timestamptz,
+  selected_at    timestamptz,
+  created_at     timestamptz NOT NULL DEFAULT now()
 );
 
--- 활동 로그 (과정중심평가)
+-- 활동 로그
 CREATE TABLE activity_logs (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
