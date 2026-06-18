@@ -26,12 +26,28 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">반별 학생 계정 일괄 생성</p>
           </div>
         </Link>
+        <Link href="/admin/plans"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">📝</span>
+          <div>
+            <p className="font-bold text-gray-800">사업계획서 심사</p>
+            <p className="text-sm text-gray-400">제출된 계획서 선정·취소</p>
+          </div>
+        </Link>
+        <Link href="/admin/board"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">📊</span>
+          <div>
+            <p className="font-bold text-gray-800">현황 보드</p>
+            <p className="text-sm text-gray-400">반 전체 진행·시찰·경보</p>
+          </div>
+        </Link>
         <Link href="/home"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">🏫</span>
           <div>
-            <p className="font-bold text-gray-800">수업 현황</p>
-            <p className="text-sm text-gray-400">단계 제어 및 실시간 현황</p>
+            <p className="font-bold text-gray-800">단계 제어</p>
+            <p className="text-sm text-gray-400">수업 단계 실시간 통제</p>
           </div>
         </Link>
       </div>
