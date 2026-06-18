@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la ~/Documents 2>/dev/null | head -50; echo \"---WORKING DIR---\"; ls -la /Users/babostudio/4th_company_dev 2>/dev/null | head -50)",
+      "mcp__visualize__read_me",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}
