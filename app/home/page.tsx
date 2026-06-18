@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import RoleHome from '@/components/RoleHome'
+import RevealWatcher from '@/components/RevealWatcher'
 import type { Role, Stage } from '@/lib/types'
 
 export default async function HomePage() {
@@ -10,12 +11,14 @@ export default async function HomePage() {
 
   const { data: me } = await supabase
     .from('users')
-    .select('number, nickname, role, company_id, must_change_pin, class_id, classes(id, name, color, stage, paused)')
+    .select('number, nickname, role, company_id, must_change_pin, intro_seen, reveal_pending, class_id, classes(id, name, color, stage, paused)')
     .eq('id', user.id)
     .single()
 
   if (!me) redirect('/admin/setup')
   if (me.must_change_pin) redirect('/pin-change')
+  // 교사는 인트로 없음. 학생은 최초 1회 인트로.
+  if (me.role !== 'mayor' && !me.intro_seen) redirect('/intro')
 
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as {
     id: string; name: string; color: string; stage: Stage; paused: boolean
@@ -47,18 +50,23 @@ export default async function HomePage() {
   }
 
   return (
-    <RoleHome
-      classId={cls.id}
-      cityName={cls.name}
-      color={cls.color}
-      initialStage={cls.stage}
-      paused={cls.paused}
-      role={role}
-      number={me.number}
-      nickname={me.nickname}
-      companyName={companyName}
-      balance={balance}
-      balanceLabel={balanceLabel}
-    />
+    <>
+      {role !== 'mayor' && (
+        <RevealWatcher userId={user.id} initialPending={me.reveal_pending as 'ceo' | 'staff' | 'officer' | null} />
+      )}
+      <RoleHome
+        classId={cls.id}
+        cityName={cls.name}
+        color={cls.color}
+        initialStage={cls.stage}
+        paused={cls.paused}
+        role={role}
+        number={me.number}
+        nickname={me.nickname}
+        companyName={companyName}
+        balance={balance}
+        balanceLabel={balanceLabel}
+      />
+    </>
   )
 }
