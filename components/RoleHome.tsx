@@ -85,6 +85,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
       <TaskCard emoji="👥" label="직원 채용" opensAt={1} currentStage={stage} href="/hire" />
       <TaskCard emoji="🧾" label="품의서" hint="물건 사기" opensAt={1} currentStage={stage} href="/requisition" />
       <TaskCard emoji="💵" label="급여 지급" opensAt={2} currentStage={stage} href="/payroll" />
+      <TaskCard emoji="🤝" label="교류" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
       <TaskCard emoji="📱" label="수금 QR" hint="판매 받기" opensAt={4} currentStage={stage} href="/sell" />
       <TaskCard emoji="💳" label="내 카드" hint="물건 살 때" opensAt={4} currentStage={stage} href="/card" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
@@ -104,6 +105,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
       <TaskCard emoji="📋" label="시찰 보고서" hint="기업 둘러보기" opensAt={2} currentStage={stage} href="/inspection" />
       <TaskCard emoji="🏪" label="시설 관리" hint="공용 시설" opensAt={1} currentStage={stage} href="/facilities" />
       <TaskCard emoji="📖" label="거래 장부" opensAt={1} currentStage={stage} href="/ledger" />
+      <TaskCard emoji="🤝" label="교류 중개" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )

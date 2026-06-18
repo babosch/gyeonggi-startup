@@ -30,6 +30,11 @@ export default function MayorControl({ classId, currentStage }: { classId: strin
     await supabase.from('classes').update({ paused }).eq('id', classId)
   }
 
+  async function toggleFair(fair_mode: boolean) {
+    const supabase = createClient()
+    await supabase.from('classes').update({ fair_mode }).eq('id', classId)
+  }
+
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col gap-5">
       <div>
@@ -80,6 +85,18 @@ export default function MayorControl({ classId, currentStage }: { classId: strin
         <button onClick={() => togglePause(false)}
           className="flex-1 bg-green-50 text-green-700 border-2 border-green-200 rounded-xl py-2.5 font-medium">
           ▶️ 다시 시작
+        </button>
+      </div>
+
+      {/* 박람회 모드 */}
+      <div className="flex gap-2">
+        <button onClick={() => toggleFair(true)}
+          className="flex-1 bg-purple-50 text-purple-700 border-2 border-purple-200 rounded-xl py-2.5 font-medium">
+          🎪 박람회 열기
+        </button>
+        <button onClick={() => toggleFair(false)}
+          className="flex-1 bg-gray-50 text-gray-600 border-2 border-gray-200 rounded-xl py-2.5 font-medium">
+          박람회 닫기
         </button>
       </div>
     </div>
