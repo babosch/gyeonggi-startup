@@ -13,7 +13,7 @@ export default async function HomePage() {
     .eq('id', user.id)
     .single()
 
-  if (!me) redirect('/login')
+  if (!me) redirect('/admin/setup')
 
   const cls = me.classes as { name: string; stage: Stage; color: string }
   const role = me.role as Role

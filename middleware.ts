@@ -30,10 +30,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && isPublic) {
-    return NextResponse.redirect(new URL('/home', request.url))
-  }
-
   return supabaseResponse
 }
 
