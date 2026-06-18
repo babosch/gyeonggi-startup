@@ -34,6 +34,22 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">제출된 계획서 선정·취소</p>
           </div>
         </Link>
+        <Link href="/admin/officers"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">📋</span>
+          <div>
+            <p className="font-bold text-gray-800">공무원 임명</p>
+            <p className="text-sm text-gray-400">지원자를 공무원으로</p>
+          </div>
+        </Link>
+        <Link href="/admin/requisitions"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">🧾</span>
+          <div>
+            <p className="font-bold text-gray-800">품의서 결재</p>
+            <p className="text-sm text-gray-400">회사 물품 구입 승인</p>
+          </div>
+        </Link>
         <Link href="/admin/board"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">📊</span>
