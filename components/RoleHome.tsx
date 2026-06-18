@@ -75,6 +75,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
     <div className={grid}>
       <TaskCard emoji="🗺️" label="도시 탐구" hint="우리 도시 알아보기" opensAt={0} currentStage={stage} href="/explore" />
       <TaskCard emoji="📝" label="사업계획서" hint="창업 아이디어 내기" opensAt={1} currentStage={stage} href="/plan" />
+      <TaskCard emoji="✏️" label="쪽지시험" hint="얼마나 알까?" always currentStage={stage} href="/quiz" />
       <TaskCard emoji="💭" label="성찰" hint="오늘 배운 것" always currentStage={stage} href="/reflect" />
     </div>
   )
@@ -88,6 +89,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
       <TaskCard emoji="🤝" label="교류" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
       <TaskCard emoji="📱" label="수금 QR" hint="판매 받기" opensAt={4} currentStage={stage} href="/sell" />
       <TaskCard emoji="💳" label="내 카드" hint="물건 살 때" opensAt={4} currentStage={stage} href="/card" />
+      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )
@@ -96,6 +98,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
     <div className={grid}>
       <TaskCard emoji="📒" label="업무일지" hint="오늘 한 일" opensAt={2} currentStage={stage} href="/worklog" />
       <TaskCard emoji="💳" label="내 카드" hint="물건 살 때 보여줘요" opensAt={4} currentStage={stage} href="/card" />
+      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )
@@ -106,6 +109,7 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
       <TaskCard emoji="🏪" label="시설 관리" hint="공용 시설" opensAt={1} currentStage={stage} href="/facilities" />
       <TaskCard emoji="📖" label="거래 장부" opensAt={1} currentStage={stage} href="/ledger" />
       <TaskCard emoji="🤝" label="교류 중개" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
+      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
       <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
     </div>
   )
