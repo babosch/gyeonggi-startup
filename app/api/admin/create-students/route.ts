@@ -8,10 +8,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { data: mayor } = await supabase
-    .from('users').select('role, class_id').eq('id', user.id).single()
-  if (mayor?.role !== 'mayor') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-
   const { classId, count } = await req.json() // count: 학생 수 (기본 25)
   const admin = createAdminClient()
 
