@@ -74,9 +74,11 @@ export default function LoginPage() {
       localStorage.removeItem(PIN_FAIL_KEY)
       localStorage.removeItem(PIN_LOCKOUT_UNTIL)
       // must_change_pin 확인
+      const { data: { user: authUser } } = await supabase.auth.getUser()
       const { data: userData } = await supabase
         .from('users')
         .select('must_change_pin, role')
+        .eq('id', authUser!.id)
         .single()
       if (userData?.must_change_pin) {
         router.push('/pin-change')
