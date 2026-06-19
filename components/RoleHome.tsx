@@ -8,6 +8,7 @@ import StageBanner from './StageBanner'
 import TaskCard from './TaskCard'
 import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
+import SubmissionsView from './SubmissionsView'
 import { visibleActivities, type Activity } from '@/lib/activities'
 import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
 
@@ -24,6 +25,7 @@ interface Props {
   balance: number
   balanceLabel: string
   openActivities: string[]
+  submissions: { plans: any[]; research: any[]; reflections: any[] } | null
 }
 
 export default function RoleHome(props: Props) {
@@ -57,6 +59,13 @@ export default function RoleHome(props: Props) {
           <>
             <MayorControl classId={props.classId} currentStage={stage} openActivities={openActivities} />
             <ActivityBoard classId={props.classId} open={openActivities} />
+            {props.submissions && (
+              <SubmissionsView
+                plans={props.submissions.plans}
+                research={props.submissions.research}
+                reflections={props.submissions.reflections}
+              />
+            )}
           </>
         ) : (
           <>

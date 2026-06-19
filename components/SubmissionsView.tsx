@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 interface UserRef { number: number; nickname: string | null }
 interface Plan { id: string; content: { companyName?: string; whatToSell?: string; reason?: string }; status: string; feedback: string | null; users: UserRef | UserRef[] }
@@ -19,18 +18,17 @@ function uname(u: UserRef | UserRef[]) {
   return x?.nickname ?? `${x?.number}번`
 }
 
-export default function SubmissionsView({ plans, research, reflections }: {
-  plans: Plan[]; research: Research[]; reflections: Reflection[]
+export default function SubmissionsView({ plans, research, reflections, heading }: {
+  plans: Plan[]; research: Research[]; reflections: Reflection[]; heading?: boolean
 }) {
-  const router = useRouter()
   const [tab, setTab] = useState<'plan' | 'research' | 'reflection'>('plan')
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-3xl mx-auto">
-        <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm mb-4">← 관리자 홈</button>
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">📥 학생 제출물</h1>
+    <div className="bg-white rounded-3xl p-6 shadow-sm">
+      <div className="font-bold text-gray-800 mb-1">📥 학생 결과물</div>
+      <p className="text-xs text-gray-400 mb-4">학생이 제출한 내용을 보고 피드백을 남겨요</p>
 
+      <div>
         <div className="flex gap-2 mb-5">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}

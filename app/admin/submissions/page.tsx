@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import SubmissionsView from './SubmissionsView'
+import { getSubmissions } from '@/lib/submissions'
+import SubmissionsView from '@/components/SubmissionsView'
 
 export default async function SubmissionsPage() {
   const supabase = await createClient()
@@ -10,26 +11,13 @@ export default async function SubmissionsPage() {
   const { data: me } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
   if (me?.role !== 'mayor') redirect('/admin')
 
-  const classId = me.class_id
-
-  const [{ data: plans }, { data: research }, { data: reflections }] = await Promise.all([
-    supabase.from('business_plans')
-      .select('id, content, status, feedback, users(number, nickname)')
-      .eq('class_id', classId).order('submitted_at', { ascending: false }),
-    supabase.from('city_research')
-      .select('id, specialties, strengths, oneliner, feedback, users(number, nickname)')
-      .eq('class_id', classId).order('created_at', { ascending: false }),
-    supabase.from('reflections')
-      .select('id, answer, mood, stage, feedback, users(number, nickname)')
-      .in('user_id', (await supabase.from('users').select('id').eq('class_id', classId)).data?.map(u => u.id) ?? [])
-      .order('created_at', { ascending: false }).limit(40),
-  ])
+  const { plans, research, reflections } = await getSubmissions(supabase, me.class_id)
 
   return (
-    <SubmissionsView
-      plans={(plans ?? []) as any}
-      research={(research ?? []) as any}
-      reflections={(reflections ?? []) as any}
-    />
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="max-w-3xl mx-auto">
+        <SubmissionsView plans={plans as any} research={research as any} reflections={reflections as any} heading />
+      </div>
+    </div>
   )
 }

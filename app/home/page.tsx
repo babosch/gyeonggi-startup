@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getSubmissions } from '@/lib/submissions'
 import RoleHome from '@/components/RoleHome'
 import RevealWatcher from '@/components/RevealWatcher'
 import type { Role, Stage } from '@/lib/types'
@@ -49,6 +50,9 @@ export default async function HomePage() {
     balance = myAcct?.balance ?? 0
   }
 
+  // 교사 홈에 쌓일 학생 결과물
+  const submissions = role === 'mayor' ? await getSubmissions(supabase, cls.id) : null
+
   return (
     <>
       {role !== 'mayor' && (
@@ -67,6 +71,7 @@ export default async function HomePage() {
         balance={balance}
         balanceLabel={balanceLabel}
         openActivities={cls.open_activities ?? []}
+        submissions={submissions}
       />
     </>
   )
