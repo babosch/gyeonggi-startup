@@ -6,9 +6,12 @@
 > **읽는 순서**:
 > 1. 이 파일(제품 규칙·역할·단계·디자인) ←먼저
 > 2. `docs/PROGRESS.md` — 지금 뭐가 됐고 뭐가 남았는지
-> 3. `docs/ARCHITECTURE.md` — 코드 구조·핵심 패턴·개발 워크플로·함정
-> 4. `docs/DECISIONS.md` — 왜 이렇게 만들었는지(되돌리기 전 확인)
-> 5. `docs/base_idea/웹앱_요구사항_사양서_v4.md` — 전체 기능 명세(가장 상세)
+> 3. `CHANGELOG.md` — 무엇이 언제 바뀌었는지 (상세는 `git log`)
+> 4. `docs/ARCHITECTURE.md` — 코드 구조·핵심 패턴·개발 워크플로·함정
+> 5. `docs/DECISIONS.md` — 왜 이렇게 만들었는지(되돌리기 전 확인)
+> 6. `docs/base_idea/웹앱_요구사항_사양서_v4.md` — 전체 기능 명세(가장 상세)
+>
+> **작업 후: `CHANGELOG.md` 맨 위에 한 줄 추가하고, 큰 변화면 `docs/PROGRESS.md`도 갱신할 것.**
 >
 > 코드 수정 전 ARCHITECTURE의 "핵심 패턴"과 "흔한 함정"을 반드시 확인할 것.
 > 불명확한 점이 있으면 코드 작성 전에 먼저 질문할 것.
