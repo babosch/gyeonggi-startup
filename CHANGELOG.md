@@ -8,6 +8,10 @@
 
 ## 2026-06-19
 
+### 보안·완결성
+- **전 활동 페이지 보드 게이트** — `lib/guard.ts` + `ActivityLocked`로 12개 활동 페이지 모두 보드 미열림 시 URL 직접접근 차단.
+- **학생 피드백 표시** — `FeedbackBanner`로 사업계획서·도시탐구·성찰 화면에 교사 피드백 노출.
+
 ### 교사 제출물·피드백
 - **학생 제출물 구역** (`/admin/submissions`) — 사업계획서·도시탐구·성찰을 탭으로 모아 보고, 각 제출물에 피드백 작성·저장.
 - 011 마이그레이션: business_plans·city_research·reflections에 feedback 컬럼 + 교사 update 정책.
