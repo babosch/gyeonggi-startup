@@ -52,7 +52,6 @@ export default function SellBooth({ stage, products, companyName, notSeller }: {
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">회사 소속(CEO·직원)만 판매할 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 4) return <PageShell title="수금 (판매)" emoji="📱" locked={{ opensAt: '판매' }}>{null}</PageShell>
 
   function reset() {
     setStep('scan'); setBuyerId(''); setProduct(null); setReason(''); setPin(''); setError('')

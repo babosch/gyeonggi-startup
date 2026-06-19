@@ -31,7 +31,6 @@ export default function CompanyManager({ stage, company, products: initial, notC
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">CEO만 사용할 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 1) return <PageShell title="회사 관리" emoji="🏭" locked={{ opensAt: '창업' }}>{null}</PageShell>
 
   async function saveCompany() {
     setSaving(true)

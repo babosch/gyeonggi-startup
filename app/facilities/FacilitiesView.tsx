@@ -27,7 +27,6 @@ export default function FacilitiesView({ stage, role, facilities: initial, compa
   const [bal, setBal] = useState(companyBalance)
   const [busy, setBusy] = useState(false)
 
-  if (stage < 1) return <PageShell title="공용 시설" emoji="🏪" locked={{ opensAt: '창업' }}>{null}</PageShell>
 
   // ── 공무원 화면 ──
   if (role === 'officer') {

@@ -19,7 +19,6 @@ export default function PayrollList({ stage, members, balance, paidToday, notCeo
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">CEO만 급여를 줄 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 2) return <PageShell title="급여 지급" emoji="💵" locked={{ opensAt: '생산' }}>{null}</PageShell>
 
   async function pay(m: Member) {
     setBusy(m.id)

@@ -20,7 +20,6 @@ export default function HireList({ stage, applicants, staff: initialStaff, maxSt
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">CEO만 직원을 채용할 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 1) return <PageShell title="직원 채용" emoji="👥" locked={{ opensAt: '창업' }}>{null}</PageShell>
 
   const full = staff.length >= maxStaff
 

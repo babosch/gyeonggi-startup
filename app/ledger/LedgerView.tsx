@@ -13,7 +13,6 @@ export default function LedgerView({ stage, rows, notAllowed }: {
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">공무원·시장만 볼 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 1) return <PageShell title="거래 장부" emoji="📖" locked={{ opensAt: '창업' }}>{null}</PageShell>
 
   return (
     <PageShell title="거래 장부" emoji="📖">

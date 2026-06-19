@@ -26,7 +26,6 @@ export default function InspectionForm({ stage, companies, reports, alertPct, gr
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">공무원만 작성할 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 2) return <PageShell title="시찰 보고서" emoji="📋" locked={{ opensAt: '생산' }}>{null}</PageShell>
 
   async function submit() {
     if (!target) return

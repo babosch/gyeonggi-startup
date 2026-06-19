@@ -27,7 +27,6 @@ export default function ExchangeView({ stage, fairMode, role, hasCompany, others
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">CEO와 공무원이 교류를 기록해요.</div>
     </PageShell>
   }
-  if (stage < 3) return <PageShell title="교류" emoji="🤝" locked={{ opensAt: '교류' }}>{null}</PageShell>
 
   async function submit() {
     setBusy(true)

@@ -21,7 +21,6 @@ export default function WorklogForm({ stage, role, past }: {
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">직원·CEO·공무원만 사용해요.</div>
     </PageShell>
   }
-  if (stage < 2) return <PageShell title="업무일지" emoji="📒" locked={{ opensAt: '생산' }}>{null}</PageShell>
 
   async function submit() {
     setSaving(true)

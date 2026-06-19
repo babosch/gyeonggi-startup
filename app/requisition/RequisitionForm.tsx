@@ -23,7 +23,6 @@ export default function RequisitionForm({ stage, balance, past, notCeo }: {
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">CEO만 사용할 수 있어요.</div>
     </PageShell>
   )
-  if (stage < 1) return <PageShell title="품의서" emoji="🧾" locked={{ opensAt: '창업' }}>{null}</PageShell>
 
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const over = total > balance
