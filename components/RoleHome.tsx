@@ -7,7 +7,7 @@ import HomeHeader from './HomeHeader'
 import StageBanner from './StageBanner'
 import TaskCard from './TaskCard'
 import MayorControl from './MayorControl'
-import type { Role, Stage } from '@/lib/types'
+import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
 
 interface Props {
   classId: string
@@ -55,7 +55,7 @@ export default function RoleHome(props: Props) {
         ) : (
           <>
             <StageBanner stage={stage} paused={props.paused} />
-            <RoleTasks role={props.role} stage={stage} />
+            <RoleTasks role={props.role} stage={stage} color={props.color} />
           </>
         )}
 
@@ -100,23 +100,48 @@ const ROLE_TASKS: Record<Role, CardDef[]> = {
   mayor: [],
 }
 
-function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
+function RoleTasks({ role, stage, color }: { role: Role; stage: Stage; color: string }) {
   const grid = 'grid grid-cols-2 sm:grid-cols-3 gap-3'
-  const tasks = [...(ROLE_TASKS[role] ?? [])].sort((a, b) => a.opensAt - b.opensAt)
-  if (tasks.length === 0) return null
+  const all = [...(ROLE_TASKS[role] ?? [])].sort((a, b) => a.opensAt - b.opensAt)
+
+  const current = all.filter(t => t.opensAt === stage)   // 지금 단계에 새로 열린 일 (부각)
+  const past = all.filter(t => t.opensAt < stage)        // 이전에 열려 계속 할 수 있는 일 (작게)
+  // 미래(opensAt > stage)는 숨김
+
+  const theme = cityTheme(color)
 
   return (
     <div className="flex flex-col gap-5">
-      {/* 단계 기능 — 흐름 순서대로 */}
-      <div>
-        <div className="text-sm font-bold text-gray-500 mb-2 px-1">📌 오늘 할 일</div>
-        <div className={grid}>
-          {tasks.map(t => (
-            <TaskCard key={t.href} emoji={t.emoji} label={t.label} hint={t.hint}
-              opensAt={t.opensAt} currentStage={stage} href={t.href} />
-          ))}
+      {/* 지금 할 일 — 크게 부각, 순서대로 */}
+      {current.length > 0 && (
+        <div>
+          <div className="text-sm font-bold text-gray-500 mb-2 px-1">📌 지금 할 일</div>
+          <div className="flex flex-col gap-3">
+            {current.map(t => <BigTask key={t.href} task={t} theme={theme} />)}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 지금 단계에 학생이 할 새 일이 없을 때 */}
+      {current.length === 0 && past.length === 0 && (
+        <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
+          <div className="text-4xl mb-2">🌱</div>
+          <p className="text-gray-600 font-medium">선생님이 다음 활동을 열어줄 때까지 기다려요</p>
+        </div>
+      )}
+
+      {/* 이어서 할 수 있는 일 — 작게 */}
+      {past.length > 0 && (
+        <div>
+          <div className="text-sm font-bold text-gray-500 mb-2 px-1">📂 이어서 할 수 있어요</div>
+          <div className={grid}>
+            {past.map(t => (
+              <TaskCard key={t.href} emoji={t.emoji} label={t.label} hint={t.hint}
+                opensAt={t.opensAt} currentStage={stage} href={t.href} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 항상 열린 활동 */}
       <div>
@@ -127,5 +152,22 @@ function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// 지금 할 일 — 큼직한 가로 카드 (도시 컬러로 부각)
+function BigTask({ task, theme }: { task: CardDef; theme: CityTheme }) {
+  const router = useRouter()
+  return (
+    <button onClick={() => router.push(task.href)}
+      className={`${theme.soft} ${theme.border} border-2 rounded-3xl p-5 flex items-center gap-4
+        w-full text-left active:scale-[0.98] transition-transform hover:shadow-sm`}>
+      <span className="text-4xl">{task.emoji}</span>
+      <div className="flex-1">
+        <div className={`text-xl font-bold ${theme.accent}`}>{task.label}</div>
+        {task.hint && <div className={`text-sm ${theme.accent} opacity-70`}>{task.hint}</div>}
+      </div>
+      <span className={`text-2xl ${theme.accent}`}>→</span>
+    </button>
   )
 }
