@@ -1,0 +1,34 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { isSuperAdmin } from '@/lib/superadmin'
+
+// 슈퍼어드민 전용 정리 작업.
+// action: 'remove_mayor'(반 시장 해제) | 'delete_account'(떠도는 교사 계정 삭제)
+export async function POST(req: NextRequest) {
+  const { ok } = await isSuperAdmin()
+  if (!ok) return NextResponse.json({ error: 'forbidden', message: '슈퍼어드민만 사용할 수 있어요.' }, { status: 403 })
+
+  const { action, classId, userId } = await req.json()
+  const admin = createAdminClient()
+
+  if (action === 'remove_mayor') {
+    // 그 반의 시장(number=0, role=mayor) 행 삭제 → 시장 자리 비움
+    const { error } = await admin.from('users')
+      .delete().eq('class_id', classId).eq('role', 'mayor').eq('number', 0)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'delete_account') {
+    // 교사 auth 계정 + users 행 삭제 (학생 계정은 보호 — classroom.local 제외)
+    const { data: au } = await admin.auth.admin.getUserById(userId)
+    if (au?.user?.email?.includes('classroom.local')) {
+      return NextResponse.json({ error: 'student_protected', message: '학생 계정은 여기서 지울 수 없어요.' }, { status: 400 })
+    }
+    await admin.from('users').delete().eq('id', userId)
+    await admin.auth.admin.deleteUser(userId)
+    return NextResponse.json({ ok: true })
+  }
+
+  return NextResponse.json({ error: 'bad_action' }, { status: 400 })
+}

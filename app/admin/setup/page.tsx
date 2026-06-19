@@ -37,7 +37,7 @@ export default function AdminSetupPage() {
     if (res.ok) {
       setMayorDone(true)
     } else {
-      setError(`시장 등록 실패: ${data.error}`)
+      setError(data.message ?? '시장 등록에 실패했어요. 다시 시도해 주세요.')
     }
     setMayorLoading(false)
   }
