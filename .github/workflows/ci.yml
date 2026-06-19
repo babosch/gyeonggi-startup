@@ -1,0 +1,36 @@
+name: CI (타입체크·빌드 검사)
+
+# PR을 올리거나 main에 푸시할 때 자동으로 검사한다.
+# 삭제된 함수 호출, 바뀐 함수 시그니처 등 "의미 충돌"을 타입체크로 잡는다.
+# 검사가 실패하면 PR 화면에 ✗ 표시 → 합치기 전에 알 수 있다.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 타입 검사 (삭제된 함수·바뀐 시그니처 잡기)
+        run: npx tsc --noEmit
+
+      - name: 빌드 검사
+        run: npm run build
+        env:
+          # 빌드는 정적 분석이라 더미 값으로 통과 (실제 연결은 런타임)
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: dummy-service-key
