@@ -1,10 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { ACTIVITY_BY_KEY } from '@/lib/activities'
 
 // 교사가 아직 이 활동을 수업 보드에 열지 않았을 때 보여주는 잠금 화면.
-export default function ActivityLocked({ title, emoji }: { title: string; emoji: string }) {
+export default function ActivityLocked({ activityKey }: { activityKey: string }) {
   const router = useRouter()
+  const a = ACTIVITY_BY_KEY[activityKey]
+  const title = a?.label ?? '활동'
+  const emoji = a?.emoji ?? '🔒'
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-3xl mx-auto">

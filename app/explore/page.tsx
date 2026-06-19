@@ -22,7 +22,7 @@ export default async function ExplorePage() {
 
   // 교사가 수업 보드에서 이 활동을 열지 않았으면 잠금 (교사는 항상 접근)
   if (me.role !== 'mayor' && !(cls.open_activities ?? []).includes('explore')) {
-    return <ActivityLocked title="도시 탐구" emoji="🗺️" />
+    return <ActivityLocked activityKey="explore" />
   }
 
   const { data: existing } = await supabase

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageShell from '@/components/PageShell'
 import ConceptPopup from '@/components/ConceptPopup'
+import FeedbackBanner from '@/components/FeedbackBanner'
 import { GRANT_AMOUNT } from '@/lib/constants'
 import type { Stage } from '@/lib/types'
 
@@ -24,6 +25,7 @@ interface ExistingPlan {
   reserve_amount: number
   status: string
   version: number
+  feedback?: string | null
 }
 
 export default function PlanForm({ role, cityName, stage, existing }: {
@@ -88,6 +90,7 @@ export default function PlanForm({ role, cityName, stage, existing }: {
             🎉 선정된 계획서예요! 이제 CEO로 회사를 운영해요.
           </div>
         )}
+        <FeedbackBanner feedback={existing?.feedback} />
 
         <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col gap-4">
           <Field label="🏢 회사 이름" value={companyName} onChange={setCompanyName} disabled={!canEdit} max={20} />

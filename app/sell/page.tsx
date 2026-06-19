@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { activityLocked } from '@/lib/guard'
+import ActivityLocked from '@/components/ActivityLocked'
 import SellBooth from './SellBooth'
 import type { Stage } from '@/lib/types'
 
@@ -7,6 +9,7 @@ export default async function SellPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  if (await activityLocked('sell')) return <ActivityLocked activityKey="sell" />
 
   const { data: me } = await supabase
     .from('users').select('role, company_id, classes(stage)').eq('id', user.id).single()

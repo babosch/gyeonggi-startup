@@ -9,7 +9,7 @@ import type { Stage } from '@/lib/types'
 const MOODS = ['😄', '🙂', '😐', '😟', '😢']
 
 export default function ReflectForm({ stage, past }: {
-  stage: Stage; past: { answer: string; mood: string | null; created_at: string }[]
+  stage: Stage; past: { answer: string; mood: string | null; feedback?: string | null; created_at: string }[]
 }) {
   const router = useRouter()
   const [answer, setAnswer] = useState('')
@@ -63,9 +63,16 @@ export default function ReflectForm({ stage, past }: {
           <div className="font-bold text-gray-800 mb-3">지난 성찰</div>
           <div className="flex flex-col gap-2">
             {past.map((p, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm border-b border-gray-100 pb-2 last:border-0">
-                <span className="text-lg">{p.mood ?? '🙂'}</span>
-                <span className="text-gray-600 flex-1">{p.answer}</span>
+              <div key={i} className="border-b border-gray-100 pb-2 last:border-0">
+                <div className="flex items-start gap-2 text-sm">
+                  <span className="text-lg">{p.mood ?? '🙂'}</span>
+                  <span className="text-gray-600 flex-1">{p.answer}</span>
+                </div>
+                {p.feedback && (
+                  <div className="ml-7 mt-1 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1">
+                    ✍️ 선생님: {p.feedback}
+                  </div>
+                )}
               </div>
             ))}
           </div>

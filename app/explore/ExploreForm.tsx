@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import PageShell from '@/components/PageShell'
 import ConceptPopup from '@/components/ConceptPopup'
+import FeedbackBanner from '@/components/FeedbackBanner'
 import { CITIES } from '@/lib/cities'
 import type { Stage } from '@/lib/types'
 
@@ -13,6 +14,7 @@ interface Research {
   specialties: string | null
   strengths: string | null
   oneliner: string | null
+  feedback?: string | null
 }
 
 export default function ExploreForm({
@@ -62,6 +64,8 @@ export default function ExploreForm({
   return (
     <PageShell title="도시 탐구" emoji="🗺️">
       <div className="flex flex-col gap-4">
+
+        <FeedbackBanner feedback={existing?.feedback} />
 
         {/* 1. 우리 도시 찾기 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">

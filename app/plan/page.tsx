@@ -16,7 +16,7 @@ export default async function PlanPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; stage: Stage; open_activities: string[] }
 
   if (me.role !== 'mayor' && !(cls.open_activities ?? []).includes('plan')) {
-    return <ActivityLocked title="사업계획서" emoji="📝" />
+    return <ActivityLocked activityKey="plan" />
   }
 
   const { data: existing } = await supabase

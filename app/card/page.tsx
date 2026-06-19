@@ -1,11 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { activityLocked } from '@/lib/guard'
+import ActivityLocked from '@/components/ActivityLocked'
 import QrCard from './QrCard'
 
 export default async function CardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  if (await activityLocked('card')) return <ActivityLocked activityKey="card" />
 
   const { data: me } = await supabase
     .from('users').select('number, nickname, classes(name, color)').eq('id', user.id).single()

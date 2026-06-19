@@ -13,7 +13,7 @@ export default async function ReflectPage() {
   const cls = (Array.isArray(me?.classes) ? me?.classes[0] : me?.classes) as { stage: Stage } | undefined
 
   const { data: past } = await supabase
-    .from('reflections').select('answer, mood, created_at')
+    .from('reflections').select('answer, mood, feedback, created_at')
     .eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)
 
   return <ReflectForm stage={cls?.stage ?? 0} past={past ?? []} />

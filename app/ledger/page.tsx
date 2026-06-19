@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { activityLocked } from '@/lib/guard'
+import ActivityLocked from '@/components/ActivityLocked'
 import LedgerView from './LedgerView'
 import type { Stage } from '@/lib/types'
 
@@ -12,6 +14,7 @@ export default async function LedgerPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  if (await activityLocked('ledger')) return <ActivityLocked activityKey="ledger" />
 
   const { data: me } = await supabase
     .from('users').select('role, class_id, classes(stage)').eq('id', user.id).single()
