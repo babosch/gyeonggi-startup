@@ -31,8 +31,8 @@ export default function PlanForm({ role, cityName, stage, existing }: {
 }) {
   const router = useRouter()
   const selected = existing?.status === 'selected'
-  // 작성 가능: 창업 단계 이상이고, 아직 선정 안 됨. 생산(2)단계엔 수정 1회.
-  const canEdit = (stage >= 1) && !selected && (existing?.version ?? 0) === 0
+  // 보드로 열려 있는 동안 작성 가능 (선정되면 읽기전용, 수정본 1회 후 잠금)
+  const canEdit = !selected && (existing?.version ?? 0) === 0
 
   const c = existing?.content
   const [companyName, setCompanyName] = useState(c?.companyName ?? '')
@@ -79,9 +79,6 @@ export default function PlanForm({ role, cityName, stage, existing }: {
     )
   }
 
-  if (stage < 1) {
-    return <PageShell title="사업계획서" emoji="📝" locked={{ opensAt: '창업' }}>{null}</PageShell>
-  }
 
   return (
     <PageShell title="사업계획서" emoji="📝">

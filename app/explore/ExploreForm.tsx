@@ -23,7 +23,8 @@ export default function ExploreForm({
   const router = useRouter()
   const supabase = createClient()
 
-  const readOnly = stage > 0
+  // 보드로 열려 있는 동안은 항상 편집 가능 (미완 학생이 이어서 마무리)
+  const readOnly = false
   const [mapDone, setMapDone] = useState(existing?.map_selected ?? false)
   const [wrongAt, setWrongAt] = useState<string | null>(null)
   const [specialties, setSpecialties] = useState(existing?.specialties ?? '')
