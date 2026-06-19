@@ -52,6 +52,14 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">회사 물품 구입 승인</p>
           </div>
         </Link>
+        <Link href="/admin/submissions"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">📥</span>
+          <div>
+            <p className="font-bold text-gray-800">학생 제출물</p>
+            <p className="text-sm text-gray-400">제출물 보기·피드백</p>
+          </div>
+        </Link>
         <Link href="/admin/board"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">📊</span>
