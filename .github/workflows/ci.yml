@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: 의존성 설치
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: 타입 검사 (삭제된 함수·바뀐 시그니처 잡기)
         run: npx tsc --noEmit
