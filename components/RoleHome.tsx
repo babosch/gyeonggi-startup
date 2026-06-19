@@ -68,51 +68,64 @@ export default function RoleHome(props: Props) {
   )
 }
 
+interface CardDef {
+  emoji: string; label: string; hint?: string; href: string; opensAt: Stage
+}
+
+// 역할별 "단계 기능" 카드 — opensAt 순서대로 (학습 흐름)
+const ROLE_TASKS: Record<Role, CardDef[]> = {
+  applicant: [
+    { emoji: '🗺️', label: '도시 탐구', hint: '우리 도시 알아보기', href: '/explore', opensAt: 0 },
+    { emoji: '📝', label: '사업계획서', hint: '창업 아이디어 내기', href: '/plan', opensAt: 1 },
+  ],
+  ceo: [
+    { emoji: '🏭', label: '회사 관리', hint: '회사·상품 등록', href: '/company', opensAt: 1 },
+    { emoji: '👥', label: '직원 채용', href: '/hire', opensAt: 1 },
+    { emoji: '🧾', label: '품의서', hint: '물건 사기', href: '/requisition', opensAt: 1 },
+    { emoji: '💵', label: '급여 지급', href: '/payroll', opensAt: 2 },
+    { emoji: '🤝', label: '교류', hint: '협력 기록', href: '/exchange', opensAt: 3 },
+    { emoji: '📱', label: '수금 QR', hint: '판매 받기', href: '/sell', opensAt: 4 },
+    { emoji: '💳', label: '내 카드', hint: '물건 살 때', href: '/card', opensAt: 4 },
+  ],
+  staff: [
+    { emoji: '📒', label: '업무일지', hint: '오늘 한 일', href: '/worklog', opensAt: 2 },
+    { emoji: '💳', label: '내 카드', hint: '물건 살 때 보여줘요', href: '/card', opensAt: 4 },
+  ],
+  officer: [
+    { emoji: '🏪', label: '시설 관리', hint: '공용 시설', href: '/facilities', opensAt: 1 },
+    { emoji: '📖', label: '거래 장부', href: '/ledger', opensAt: 1 },
+    { emoji: '📋', label: '시찰 보고서', hint: '기업 둘러보기', href: '/inspection', opensAt: 2 },
+    { emoji: '🤝', label: '교류 중개', hint: '협력 기록', href: '/exchange', opensAt: 3 },
+  ],
+  mayor: [],
+}
+
 function RoleTasks({ role, stage }: { role: Role; stage: Stage }) {
   const grid = 'grid grid-cols-2 sm:grid-cols-3 gap-3'
+  const tasks = [...(ROLE_TASKS[role] ?? [])].sort((a, b) => a.opensAt - b.opensAt)
+  if (tasks.length === 0) return null
 
-  if (role === 'applicant') return (
-    <div className={grid}>
-      <TaskCard emoji="🗺️" label="도시 탐구" hint="우리 도시 알아보기" opensAt={0} currentStage={stage} href="/explore" />
-      <TaskCard emoji="📝" label="사업계획서" hint="창업 아이디어 내기" opensAt={1} currentStage={stage} href="/plan" />
-      <TaskCard emoji="✏️" label="쪽지시험" hint="얼마나 알까?" always currentStage={stage} href="/quiz" />
-      <TaskCard emoji="💭" label="성찰" hint="오늘 배운 것" always currentStage={stage} href="/reflect" />
+  return (
+    <div className="flex flex-col gap-5">
+      {/* 단계 기능 — 흐름 순서대로 */}
+      <div>
+        <div className="text-sm font-bold text-gray-500 mb-2 px-1">📌 오늘 할 일</div>
+        <div className={grid}>
+          {tasks.map(t => (
+            <TaskCard key={t.href} emoji={t.emoji} label={t.label} hint={t.hint}
+              opensAt={t.opensAt} currentStage={stage} href={t.href} />
+          ))}
+        </div>
+      </div>
+
+      {/* 항상 열린 활동 */}
+      <div>
+        <div className="text-sm font-bold text-gray-500 mb-2 px-1">🌟 언제든지 해요</div>
+        <div className={grid}>
+          <TaskCard emoji="✏️" label="쪽지시험" hint="얼마나 알까?" always currentStage={stage} href="/quiz" />
+          <TaskCard emoji="💭" label="성찰" hint="오늘 배운 것" always currentStage={stage} href="/reflect" />
+        </div>
+      </div>
     </div>
   )
-
-  if (role === 'ceo') return (
-    <div className={grid}>
-      <TaskCard emoji="🏭" label="회사 관리" hint="회사·상품 등록" opensAt={1} currentStage={stage} href="/company" />
-      <TaskCard emoji="👥" label="직원 채용" opensAt={1} currentStage={stage} href="/hire" />
-      <TaskCard emoji="🧾" label="품의서" hint="물건 사기" opensAt={1} currentStage={stage} href="/requisition" />
-      <TaskCard emoji="💵" label="급여 지급" opensAt={2} currentStage={stage} href="/payroll" />
-      <TaskCard emoji="🤝" label="교류" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
-      <TaskCard emoji="📱" label="수금 QR" hint="판매 받기" opensAt={4} currentStage={stage} href="/sell" />
-      <TaskCard emoji="💳" label="내 카드" hint="물건 살 때" opensAt={4} currentStage={stage} href="/card" />
-      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
-      <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
-    </div>
-  )
-
-  if (role === 'staff') return (
-    <div className={grid}>
-      <TaskCard emoji="📒" label="업무일지" hint="오늘 한 일" opensAt={2} currentStage={stage} href="/worklog" />
-      <TaskCard emoji="💳" label="내 카드" hint="물건 살 때 보여줘요" opensAt={4} currentStage={stage} href="/card" />
-      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
-      <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
-    </div>
-  )
-
-  if (role === 'officer') return (
-    <div className={grid}>
-      <TaskCard emoji="📋" label="시찰 보고서" hint="기업 둘러보기" opensAt={2} currentStage={stage} href="/inspection" />
-      <TaskCard emoji="🏪" label="시설 관리" hint="공용 시설" opensAt={1} currentStage={stage} href="/facilities" />
-      <TaskCard emoji="📖" label="거래 장부" opensAt={1} currentStage={stage} href="/ledger" />
-      <TaskCard emoji="🤝" label="교류 중개" hint="협력 기록" opensAt={3} currentStage={stage} href="/exchange" />
-      <TaskCard emoji="✏️" label="쪽지시험" always currentStage={stage} href="/quiz" />
-      <TaskCard emoji="💭" label="성찰" always currentStage={stage} href="/reflect" />
-    </div>
-  )
-
-  return null
 }
