@@ -7,6 +7,7 @@ import HomeHeader from './HomeHeader'
 import StageBanner from './StageBanner'
 import TaskCard from './TaskCard'
 import MayorControl from './MayorControl'
+import ActivityBoard from './ActivityBoard'
 import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
   companyName: string | null
   balance: number
   balanceLabel: string
+  openActivities: string[]
 }
 
 export default function RoleHome(props: Props) {
@@ -51,7 +53,10 @@ export default function RoleHome(props: Props) {
         />
 
         {isMayor ? (
-          <MayorControl classId={props.classId} currentStage={stage} />
+          <>
+            <MayorControl classId={props.classId} currentStage={stage} />
+            <ActivityBoard classId={props.classId} initial={props.openActivities} />
+          </>
         ) : (
           <>
             <StageBanner stage={stage} paused={props.paused} />

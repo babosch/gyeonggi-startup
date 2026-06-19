@@ -11,7 +11,7 @@ export default async function HomePage() {
 
   const { data: me } = await supabase
     .from('users')
-    .select('number, nickname, role, company_id, must_change_pin, intro_seen, reveal_pending, class_id, classes(id, name, color, stage, paused)')
+    .select('number, nickname, role, company_id, must_change_pin, intro_seen, reveal_pending, class_id, classes(id, name, color, stage, paused, open_activities)')
     .eq('id', user.id)
     .single()
 
@@ -21,7 +21,7 @@ export default async function HomePage() {
   if (me.role !== 'mayor' && !me.intro_seen) redirect('/intro')
 
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as {
-    id: string; name: string; color: string; stage: Stage; paused: boolean
+    id: string; name: string; color: string; stage: Stage; paused: boolean; open_activities: string[]
   }
 
   const role = me.role as Role
@@ -66,6 +66,7 @@ export default async function HomePage() {
         companyName={companyName}
         balance={balance}
         balanceLabel={balanceLabel}
+        openActivities={cls.open_activities ?? []}
       />
     </>
   )
