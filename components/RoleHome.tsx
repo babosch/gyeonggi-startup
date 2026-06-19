@@ -55,8 +55,8 @@ export default function RoleHome(props: Props) {
 
         {isMayor ? (
           <>
-            <MayorControl classId={props.classId} currentStage={stage} />
-            <ActivityBoard classId={props.classId} initial={props.openActivities} />
+            <MayorControl classId={props.classId} currentStage={stage} openActivities={openActivities} />
+            <ActivityBoard classId={props.classId} open={openActivities} />
           </>
         ) : (
           <>

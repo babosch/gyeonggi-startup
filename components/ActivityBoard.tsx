@@ -1,17 +1,23 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ACTIVITIES, ACTIVITY_BY_KEY } from '@/lib/activities'
-import { ROLE_INFO, type Role } from '@/lib/types'
+import { ROLE_INFO, STAGE_SHORT, type Role, type Stage } from '@/lib/types'
+
+const STAGE_GROUPS: Stage[] = [0, 1, 2, 3, 4]
 
 // 교사 수업 보드: 활동 켜기/끄기 + 드래그로 순서 배열.
 // 변경 즉시 classes.open_activities 저장 → 학생 화면 실시간 반영.
-export default function ActivityBoard({ classId, initial }: { classId: string; initial: string[] }) {
-  const [open, setOpen] = useState<string[]>(initial)
+// open은 부모(useStage 실시간)에서 내려오며, 단계 변경 등 외부 변경도 반영한다.
+export default function ActivityBoard({ classId, open: openProp }: { classId: string; open: string[] }) {
+  const [open, setOpen] = useState<string[]>(openProp)
   const [saving, setSaving] = useState(false)
   const dragFrom = useRef<number | null>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
+
+  // 외부(단계 변경 등)로 open_activities가 바뀌면 동기화
+  useEffect(() => { setOpen(openProp) }, [openProp])
 
   const closed = ACTIVITIES.filter(a => !open.includes(a.key))
 
@@ -87,19 +93,30 @@ export default function ActivityBoard({ classId, initial }: { classId: string; i
         )}
       </div>
 
-      {/* 닫힌 활동 — 클릭해서 추가 */}
+      {/* 닫힌 활동 — 단계별로 묶어서, 클릭해서 추가 */}
       {closed.length > 0 && (
         <div>
           <div className="text-sm font-medium text-gray-600 mb-2">추가할 수 있는 활동</div>
-          <div className="flex flex-wrap gap-2">
-            {closed.map(a => (
-              <button key={a.key} onClick={() => addActivity(a.key)}
-                className="flex items-center gap-1.5 bg-gray-50 border-2 border-gray-200 rounded-full px-3 py-2
-                  text-sm font-medium text-gray-600 hover:border-blue-400 active:scale-95 transition-all">
-                <span>{a.emoji}</span>{a.label}
-                <span className="text-xs text-gray-400">+</span>
-              </button>
-            ))}
+          <div className="flex flex-col gap-3">
+            {STAGE_GROUPS.map(st => {
+              const group = closed.filter(a => a.stage === st)
+              if (group.length === 0) return null
+              return (
+                <div key={st}>
+                  <div className="text-xs font-bold text-gray-400 mb-1.5">{st} {STAGE_SHORT[st]} 단계</div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.map(a => (
+                      <button key={a.key} onClick={() => addActivity(a.key)}
+                        className="flex items-center gap-1.5 bg-gray-50 border-2 border-gray-200 rounded-full px-3 py-2
+                          text-sm font-medium text-gray-600 hover:border-blue-400 active:scale-95 transition-all">
+                        <span>{a.emoji}</span>{a.label}
+                        <span className="text-xs text-gray-400">+</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

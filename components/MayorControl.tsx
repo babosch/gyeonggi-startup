@@ -2,25 +2,25 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { mergeStageActivities } from '@/lib/activities'
 import { STAGE_LABELS, STAGE_SHORT, type Stage } from '@/lib/types'
 
 const STAGES: Stage[] = [0, 1, 2, 3, 4]
 
-export default function MayorControl({ classId, currentStage }: { classId: string; currentStage: Stage }) {
-  const [stage, setStage] = useState<Stage>(currentStage)
+// currentStage·openActivities는 부모(useStage 실시간)에서 내려온다 — 로컬 state 없이 그대로 사용.
+export default function MayorControl({ classId, currentStage, openActivities }: {
+  classId: string; currentStage: Stage; openActivities: string[]
+}) {
+  const stage = currentStage
   const [saving, setSaving] = useState(false)
   const [confirm, setConfirm] = useState<Stage | null>(null)
-
-  // currentStage(실시간)와 로컬 동기화
-  if (stage !== currentStage && !saving && confirm === null) {
-    setStage(currentStage)
-  }
 
   async function changeStage(next: Stage) {
     setSaving(true)
     const supabase = createClient()
-    const { error } = await supabase.from('classes').update({ stage: next }).eq('id', classId)
-    if (!error) setStage(next)
+    // 단계 변경 + 그 단계 활동을 보드에 자동 추가 (이전 활동 유지)
+    const nextActivities = mergeStageActivities(openActivities, next)
+    await supabase.from('classes').update({ stage: next, open_activities: nextActivities }).eq('id', classId)
     setSaving(false)
     setConfirm(null)
   }
