@@ -20,7 +20,7 @@ export default async function CardPage() {
 
   return (
     <QrCard
-      userId={user.id} cityName={cls.name} color={cls.color}
+      cityName={cls.name} color={cls.color}
       number={me.number} nickname={me.nickname} balance={acct?.balance ?? 0}
     />
   )
