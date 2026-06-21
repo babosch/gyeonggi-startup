@@ -6,10 +6,17 @@ import { createClient } from '@/lib/supabase/client'
 import { CITY_COLORS, type ClassRow } from '@/lib/types'
 import { pinToPassword } from '@/lib/auth'
 
-type Step = 'class' | 'number' | 'pin'
+type Step = 'class' | 'confirm' | 'number' | 'pin'
 
 const PIN_FAIL_KEY = 'pin_fails'
 const PIN_LOCKOUT_UNTIL = 'pin_lockout_until'
+
+// 노출 순서 고정
+const CITY_ORDER = ['수원시', '이천시', '고양시', '부천시', '파주시']
+// 반 번호 매핑
+const CLASS_BAND: Record<string, number> = {
+  '수원시': 1, '이천시': 2, '고양시': 3, '부천시': 4, '파주시': 5,
+}
 
 function makeEmail(classCode: string, number: number) {
   return `${classCode.toLowerCase()}-${number}@classroom.local`
@@ -29,9 +36,20 @@ export default function LoginPage() {
   const [lockout, setLockout] = useState(0)
 
   useEffect(() => {
-    supabase.from('classes').select('*').order('name').then(({ data }) => {
-      if (data) setClasses(data as ClassRow[])
+    // 이미 로그인된 경우 홈으로 바로 이동
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/home')
     })
+
+    supabase.from('classes').select('*').then(({ data }) => {
+      if (data) {
+        const sorted = [...(data as ClassRow[])].sort(
+          (a, b) => CITY_ORDER.indexOf(a.name) - CITY_ORDER.indexOf(b.name)
+        )
+        setClasses(sorted)
+      }
+    })
+
     const until = parseInt(localStorage.getItem(PIN_LOCKOUT_UNTIL) || '0')
     const remaining = Math.ceil((until - Date.now()) / 1000)
     if (remaining > 0) setLockout(remaining)
@@ -64,22 +82,17 @@ export default function LoginPage() {
     setError('')
 
     const email = makeEmail(selectedClass.code, selectedNumber)
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pinToPassword(enteredPin) })
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email, password: pinToPassword(enteredPin),
+    })
 
     if (!signInErr) {
       localStorage.removeItem(PIN_FAIL_KEY)
       localStorage.removeItem(PIN_LOCKOUT_UNTIL)
       const { data: { user: authUser } } = await supabase.auth.getUser()
       const { data: userData } = await supabase
-        .from('users')
-        .select('must_change_pin, role')
-        .eq('id', authUser!.id)
-        .single()
-      if (userData?.must_change_pin) {
-        router.push('/pin-change')
-      } else {
-        router.push('/home')
-      }
+        .from('users').select('must_change_pin').eq('id', authUser!.id).single()
+      router.push(userData?.must_change_pin ? '/pin-change' : '/home')
       return
     }
 
@@ -98,12 +111,9 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  // 공통 래퍼 — 크롬북 화면에서 가운데 정렬, 넉넉한 패딩
   const Wrap = ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-xl">
-        {children}
-      </div>
+      <div className="w-full max-w-xl">{children}</div>
     </div>
   )
 
@@ -115,7 +125,7 @@ export default function LoginPage() {
       <div className="grid grid-cols-3 gap-4">
         {classes.map(cls => (
           <button key={cls.id}
-            onClick={() => { setSelectedClass(cls); setStep('number') }}
+            onClick={() => { setSelectedClass(cls); setStep('confirm') }}
             className={`h-32 rounded-2xl text-white font-bold text-xl shadow-md
               active:scale-95 transition-transform ${CITY_COLORS[cls.color] ?? 'bg-gray-400'}`}>
             {cls.name}
@@ -129,10 +139,41 @@ export default function LoginPage() {
     </Wrap>
   )
 
+  // ── 반 확인 ──────────────────────────────────
+  if (step === 'confirm') return (
+    <Wrap>
+      <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-8 block">
+        ← 반 다시 선택
+      </button>
+      <div className="bg-white rounded-3xl shadow-sm p-10 text-center">
+        <div className={`inline-block px-6 py-3 rounded-2xl text-white font-bold text-2xl mb-6
+          ${CITY_COLORS[selectedClass!.color]}`}>
+          {selectedClass!.name}
+        </div>
+        <p className="text-gray-800 font-bold text-3xl mb-2">
+          {selectedClass!.name} {CLASS_BAND[selectedClass!.name]}반
+        </p>
+        <p className="text-gray-500 text-xl mb-10">맞나요?</p>
+        <div className="flex gap-4">
+          <button onClick={() => setStep('class')}
+            className="flex-1 h-16 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold text-xl
+              hover:border-gray-400 active:scale-95 transition-all">
+            아니요
+          </button>
+          <button onClick={() => setStep('number')}
+            className={`flex-1 h-16 rounded-2xl text-white font-bold text-xl
+              active:scale-95 transition-all ${CITY_COLORS[selectedClass!.color]}`}>
+            맞아요!
+          </button>
+        </div>
+      </div>
+    </Wrap>
+  )
+
   // ── 번호 선택 ────────────────────────────────
   if (step === 'number') return (
     <Wrap>
-      <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-6 block">
+      <button onClick={() => setStep('confirm')} className="text-gray-400 text-sm mb-6 block">
         ← 반 다시 선택
       </button>
       <div className="flex items-center gap-3 mb-8">
@@ -161,8 +202,6 @@ export default function LoginPage() {
         className="text-gray-400 text-sm mb-6 w-full max-w-md">
         ← 번호 다시 선택
       </button>
-
-      {/* PIN 카드 — 앞 단계와 같은 폭감으로 채움 */}
       <div className="bg-white rounded-3xl shadow-sm p-10 w-full max-w-md flex flex-col items-center">
         <div className="flex items-center gap-3 mb-2">
           <span className={`px-4 py-2 rounded-full text-white font-bold ${CITY_COLORS[selectedClass!.color]}`}>

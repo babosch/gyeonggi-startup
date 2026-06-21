@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
               transition-colors ${i < code.length
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-400'}`}>
-              {code[i] ?? ''}
+              {i < code.length ? '•' : ''}
             </div>
           ))}
         </div>
