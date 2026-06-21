@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import QRCode from 'qrcode'
 import PageShell from '@/components/PageShell'
 import type { Stage } from '@/lib/types'
 
@@ -19,6 +20,7 @@ export default function CompanyManager({ stage, company, products: initial, stat
 }) {
   const router = useRouter()
   const supabase = createClient()
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const [icon, setIcon] = useState(company?.icon ?? '🏭')
   const [name, setName] = useState(company?.display_name ?? '')
@@ -28,6 +30,12 @@ export default function CompanyManager({ stage, company, products: initial, stat
   const [newPrice, setNewPrice] = useState(3000)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
+
+  useEffect(() => {
+    if (company?.id && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, `company:${company.id}`, { width: 220, margin: 2 }, () => {})
+    }
+  }, [company?.id])
 
   if (notCeo) return (
     <PageShell title="회사 관리" emoji="🏭">
@@ -106,6 +114,32 @@ export default function CompanyManager({ stage, company, products: initial, stat
           </button>
           {savedMsg && <p className="text-center text-green-600 text-sm mt-2">{savedMsg}</p>}
         </div>
+
+        {/* 판매대 QR 코드 */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="font-bold text-gray-800 mb-1">📱 판매대 QR 코드</div>
+          <p className="text-xs text-gray-400 mb-4">손님이 이 QR을 스캔하면 상품 목록이 바로 열려요</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="bg-white border-4 border-blue-100 rounded-2xl p-3 inline-block">
+              <canvas ref={qrCanvasRef} />
+            </div>
+            <div className="text-center">
+              <div className="font-bold text-gray-700 text-base">{icon} {name || company?.display_name}</div>
+              <p className="text-xs text-gray-400 mt-1">손님: 내 크롬북 → 물건 사기 → QR 스캔</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 자산 흐름 바로가기 */}
+        <button onClick={() => router.push('/company/flow')}
+          className="bg-white rounded-3xl p-5 shadow-sm flex items-center gap-4 active:scale-95 transition-transform">
+          <span className="text-4xl">📈</span>
+          <div className="text-left flex-1">
+            <div className="font-bold text-gray-800">자산 흐름 보기</div>
+            <div className="text-xs text-gray-400">돈이 어떻게 들어오고 나갔는지 확인해요</div>
+          </div>
+          <span className="text-gray-300 text-2xl">→</span>
+        </button>
 
         {/* 상품 목록 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
