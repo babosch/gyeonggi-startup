@@ -14,7 +14,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
 
   const { data: student } = await supabase
     .from('users')
-    .select('id, number, nickname, role, company_id, companies(display_name, icon)')
+    .select('id, number, nickname, role, company_id, class_id, companies(display_name, icon)')
     .eq('id', id).single()
   if (!student || student.class_id !== mayor.class_id) notFound()
 

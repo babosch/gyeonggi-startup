@@ -25,7 +25,7 @@ export default async function HirePage() {
   // 이 회사에 지원한 지원서 목록 (지원자 정보 포함)
   const { data: applications } = await supabase
     .from('job_applications')
-    .select('id, applicant_id, motivation, status, users(number, nickname)')
+    .select('id, applicant_id, motivation, status, users(id, number, nickname)')
     .eq('company_id', me.company_id)
     .order('created_at')
 

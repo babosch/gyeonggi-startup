@@ -53,7 +53,7 @@ export default function HireList({ stage, applications: initApps, staff: initial
     if (res.ok) {
       if (action === 'hire') {
         const app = apps.find(a => a.id === appId)
-        if (app?.user) setStaff([...staff, { id: app.applicantId, ...app.user }])
+        if (app?.user) setStaff([...staff, app.user])
         setApps(apps.map(a => a.id === appId ? { ...a, status: 'hired' }
           : a.applicantId === apps.find(x => x.id === appId)?.applicantId ? { ...a, status: 'rejected' }
           : a))
