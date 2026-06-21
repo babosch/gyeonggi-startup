@@ -1,7 +1,17 @@
-export const APP_VERSION = 'v1.2.1'
+export const APP_VERSION = 'v1.2.2'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.2.2',
+    date: '2026-06-22',
+    items: [
+      '슈퍼어드민 반별 학생 데이터 초기화 기능 추가',
+      '전체 초기화 시 학생 역할·계정 완전 삭제 버그 수정',
+      '반 목록 순서 고정 (수원→이천→고양→부천→파주→시흥)',
+      '슈퍼어드민 접근 안정화 (모든 교사 메뉴 표시)',
+    ],
+  },
   {
     version: 'v1.2.1',
     date: '2026-06-22',
