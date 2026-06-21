@@ -13,9 +13,10 @@ const PIN_LOCKOUT_UNTIL = 'pin_lockout_until'
 
 // 노출 순서 고정 (시흥시는 테스트 반이라 제일 마지막)
 const CITY_ORDER = ['수원시', '이천시', '고양시', '부천시', '파주시', '시흥시']
-// 반 번호 매핑
-const CLASS_BAND: Record<string, number> = {
-  '수원시': 1, '이천시': 2, '고양시': 3, '부천시': 4, '파주시': 5, '시흥시': 1,
+// 반 번호 매핑 (1반=수원, 2반=이천, 3반=고양, 4반=부천, 5반=파주)
+const CLASS_BAND: Record<string, string> = {
+  '수원시': '1반', '이천시': '2반', '고양시': '3반', '부천시': '4반', '파주시': '5반',
+  '시흥시': '테스트',
 }
 
 function makeEmail(classCode: string, number: number) {
@@ -151,7 +152,7 @@ export default function LoginPage() {
           {selectedClass!.name}
         </div>
         <p className="text-gray-800 font-bold text-3xl mb-2">
-          {selectedClass!.name} {CLASS_BAND[selectedClass!.name]}반
+          {selectedClass!.name} {CLASS_BAND[selectedClass!.name]}
         </p>
         <p className="text-gray-500 text-xl mb-10">맞나요?</p>
         <div className="flex gap-4">
