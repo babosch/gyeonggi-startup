@@ -41,9 +41,22 @@ export default function ActivityBoard({ classId, open: openProp, stage }: {
     return roles.map(r => ROLE_INFO[r].label).join('·')
   }
 
+  async function resetToStage() {
+    const defaults = allActivitiesForStage(stage)
+    persist(defaults)
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      {saving && <div className="text-xs text-blue-400 text-right px-1">저장 중…</div>}
+      {/* 현재 단계로 초기화 */}
+      <div className="flex items-center justify-between">
+        {saving && <span className="text-xs text-blue-400">저장 중…</span>}
+        {!saving && <span />}
+        <button onClick={resetToStage}
+          className="text-xs text-orange-500 border border-orange-200 rounded-lg px-2.5 py-1 hover:bg-orange-50 active:scale-95 transition-all font-medium">
+          🔄 현재 단계로 초기화
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         {/* 왼쪽: 열린 활동 */}

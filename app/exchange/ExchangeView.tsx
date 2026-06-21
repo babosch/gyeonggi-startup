@@ -94,7 +94,8 @@ function CeoView({ myCompanyId, initMyCard, ownCards, ownCompanyMap }: {
       setMyCard({ company_id: myCompanyId, offer: offer.trim(), want: want.trim(), updated_at: new Date().toISOString() })
       if (!initMyCard) setShowConcept(true)
     } else {
-      alert('저장 실패')
+      const d = await res.json().catch(() => ({}))
+      alert(`저장 실패: ${d.error ?? res.status}`)
     }
   }
 
