@@ -30,9 +30,7 @@ export default function QrCard({ userId, cityName, color, number, nickname, bala
           <div className="bg-white rounded-2xl p-4 inline-block">
             <canvas ref={canvasRef} />
           </div>
-          <p className="text-xs opacity-75 mt-4">
-            이 QR은 내 신원 확인용이에요 (구버전 결제)
-          </p>
+          <p className="text-xs opacity-75 mt-4">내 신원 QR — 판매자가 스캔해요</p>
         </div>
 
         {/* 물건 사기 버튼 — 판매대 QR 스캔 */}

@@ -60,6 +60,7 @@ export default function ExploreForm({
   const supabase = createClient()
   const readOnly = false
 
+  const cityInMap = MAP_CITIES.some(c => c.name === cityName)
   const [mapDone, setMapDone] = useState(existing?.map_selected ?? false)
   const [wrongAt, setWrongAt] = useState<string | null>(null)
 
@@ -126,59 +127,83 @@ export default function ExploreForm({
         {/* 1. 우리 도시 찾기 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="font-bold text-gray-800 mb-1">① 우리 도시를 찾아요</div>
-          <p className="text-sm text-gray-500 mb-4">경기도 지도에서 <b>{cityName}</b>를 찾아 눌러보세요!</p>
 
-          <div className="relative rounded-2xl overflow-hidden border-2 border-green-100" style={{ background: '#f0f9f0' }}>
-            <svg viewBox="0 0 460 340" xmlns="http://www.w3.org/2000/svg" className="w-full">
-              {/* 경기도 윤곽 */}
-              <polygon
-                points="45,22 130,4 230,0 360,18 440,95 448,218 392,308 228,328 82,302 28,198"
-                fill="#dcfce7" stroke="#86efac" strokeWidth="2" />
+          {cityInMap ? (
+            <>
+              <p className="text-sm text-gray-500 mb-4">경기도 지도에서 <b>{cityName}</b>를 찾아 눌러보세요!</p>
 
-              {/* 서울 */}
-              <ellipse cx="216" cy="190" rx="50" ry="40" fill="#9ca3af" />
-              <text x="216" y="187" textAnchor="middle" fontSize="13" fontWeight="bold" fill="white">서울</text>
-              <text x="216" y="204" textAnchor="middle" fontSize="10" fill="#e5e7eb">(서울특별시)</text>
+              <div className="relative rounded-2xl overflow-hidden border-2 border-green-100" style={{ background: '#f0f9f0' }}>
+                <svg viewBox="0 0 460 340" xmlns="http://www.w3.org/2000/svg" className="w-full">
+                  {/* 경기도 윤곽 */}
+                  <polygon
+                    points="45,22 130,4 230,0 360,18 440,95 448,218 392,308 228,328 82,302 28,198"
+                    fill="#dcfce7" stroke="#86efac" strokeWidth="2" />
 
-              {/* 5개 도시 클릭 영역 */}
-              {MAP_CITIES.map(c => {
-                const isMine = c.name === cityName
-                const correct = mapDone && isMine
-                const wrong = wrongAt === c.name
-                const inactive = mapDone && !isMine
-                const fill = correct ? c.active : wrong ? '#ef4444' : inactive ? '#e5e7eb' : c.light
-                const stroke = correct ? c.active : wrong ? '#ef4444' : inactive ? '#d1d5db' : c.stroke
-                const textFill = correct || wrong ? 'white' : inactive ? '#9ca3af' : c.textColor
-                return (
-                  <g key={c.name} onClick={() => pickCity(c.name)}
-                    style={{ cursor: mapDone ? 'default' : 'pointer' }}>
-                    <ellipse cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
-                      fill={fill} stroke={stroke} strokeWidth="2.5"
-                      style={{ transition: 'fill 0.3s, stroke 0.3s' }} />
-                    <text x={c.cx} y={c.cy + (correct ? -6 : 5)} textAnchor="middle"
-                      fontSize="15" fontWeight="bold" fill={textFill}>
-                      {inactive ? '?' : c.name}
-                    </text>
-                    {correct && (
-                      <text x={c.cx} y={c.cy + 14} textAnchor="middle" fontSize="12" fill="white">
-                        ✓ 찾았어요!
-                      </text>
-                    )}
-                  </g>
-                )
-              })}
-            </svg>
-          </div>
+                  {/* 서울 */}
+                  <ellipse cx="216" cy="190" rx="50" ry="40" fill="#9ca3af" />
+                  <text x="216" y="187" textAnchor="middle" fontSize="13" fontWeight="bold" fill="white">서울</text>
+                  <text x="216" y="204" textAnchor="middle" fontSize="10" fill="#e5e7eb">(서울특별시)</text>
 
-          {wrongAt && (
-            <p className="text-red-500 text-sm text-center mt-2 font-medium">
-              다시 생각해 봐요! 🤔
-            </p>
-          )}
-          {mapDone && (
-            <p className="text-green-600 text-sm text-center mt-2 font-medium">
-              🎉 {cityName}를 찾았어요! 아래에서 도시를 조사해 봐요.
-            </p>
+                  {/* 5개 도시 클릭 영역 */}
+                  {MAP_CITIES.map(c => {
+                    const isMine = c.name === cityName
+                    const correct = mapDone && isMine
+                    const wrong = wrongAt === c.name
+                    const inactive = mapDone && !isMine
+                    const fill = correct ? c.active : wrong ? '#ef4444' : inactive ? '#e5e7eb' : c.light
+                    const stroke = correct ? c.active : wrong ? '#ef4444' : inactive ? '#d1d5db' : c.stroke
+                    const textFill = correct || wrong ? 'white' : inactive ? '#9ca3af' : c.textColor
+                    return (
+                      <g key={c.name} onClick={() => pickCity(c.name)}
+                        style={{ cursor: mapDone ? 'default' : 'pointer' }}>
+                        <ellipse cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
+                          fill={fill} stroke={stroke} strokeWidth="2.5"
+                          style={{ transition: 'fill 0.3s, stroke 0.3s' }} />
+                        <text x={c.cx} y={c.cy + (correct ? -6 : 5)} textAnchor="middle"
+                          fontSize="15" fontWeight="bold" fill={textFill}>
+                          {inactive ? '?' : c.name}
+                        </text>
+                        {correct && (
+                          <text x={c.cx} y={c.cy + 14} textAnchor="middle" fontSize="12" fill="white">
+                            ✓ 찾았어요!
+                          </text>
+                        )}
+                      </g>
+                    )
+                  })}
+                </svg>
+              </div>
+
+              {wrongAt && (
+                <p className="text-red-500 text-sm text-center mt-2 font-medium">다시 생각해 봐요! 🤔</p>
+              )}
+              {mapDone && (
+                <p className="text-green-600 text-sm text-center mt-2 font-medium">
+                  🎉 {cityName}를 찾았어요! 아래에서 도시를 조사해 봐요.
+                </p>
+              )}
+            </>
+          ) : (
+            /* 지도에 없는 도시: 바로 탐구로 */
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                우리 도시 <b>{cityName}</b>에서 탐구를 시작해요!
+              </p>
+              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 text-center">
+                <div className="text-5xl mb-3">🏙️</div>
+                <div className="font-bold text-green-700 text-lg mb-1">{cityName}</div>
+                <p className="text-sm text-green-600 mb-4">우리 도시예요. 아래에서 조사를 시작해요!</p>
+                {!mapDone && (
+                  <button onClick={() => setMapDone(true)}
+                    className="bg-green-500 text-white rounded-2xl px-8 py-3 font-bold text-base active:scale-95 transition-transform">
+                    탐구 시작하기 →
+                  </button>
+                )}
+                {mapDone && (
+                  <p className="text-green-600 font-medium">✓ 탐구 중이에요!</p>
+                )}
+              </div>
+            </>
           )}
         </div>
 
