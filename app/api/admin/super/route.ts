@@ -106,38 +106,53 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'reset_all_students') {
-    // 학생 users 행 수집 (mayor 제외)
-    const { data: studentRows } = await admin.from('users').select('id').neq('role', 'mayor')
+    // 1. 학생 users 행 수집 (mayor 제외)
+    const { data: studentRows } = await admin.from('users')
+      .select('id').in('role', ['applicant', 'ceo', 'staff', 'officer'])
     const studentIds = (studentRows ?? []).map(r => r.id)
 
-    // 관련 데이터 삭제
-    const tables = [
-      'transactions', 'accounts',
-      'exchange_logs', 'exchange_matches', 'exchange_cards', 'exchanges',
-      'inspection_reports', 'officer_alerts', 'trade_reports',
-      'requisitions', 'job_applications', 'business_plans', 'city_research',
-      'activity_logs', 'reflections', 'concept_responses',
-      'wordcloud_words', 'word_merges', 'teacher_notes', 'facility_uses',
-      'products', 'companies',
-    ]
-    for (const table of tables) {
-      await admin.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    // 2. 데이터 테이블 삭제 (FK 하위 → 상위 순서)
+    if (studentIds.length > 0) {
+      const userTables = [
+        'transactions', 'accounts', 'inspection_reports', 'officer_alerts',
+        'trade_reports', 'requisitions', 'job_applications', 'business_plans',
+        'city_research', 'activity_logs', 'reflections', 'concept_responses',
+        'wordcloud_words', 'word_merges', 'teacher_notes', 'facility_uses',
+      ]
+      for (const t of userTables) {
+        await admin.from(t).delete().in('user_id', studentIds)
+      }
+    }
+    // 회사·상품·교류 (class 단위)
+    const { data: allCompanies } = await admin.from('companies').select('id')
+    const allCompanyIds = (allCompanies ?? []).map(c => c.id)
+    if (allCompanyIds.length > 0) {
+      await admin.from('products').delete().in('company_id', allCompanyIds)
+      await admin.from('exchange_cards').delete().in('company_id', allCompanyIds)
+    }
+    await admin.from('companies').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await admin.from('exchanges').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await admin.from('exchange_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await admin.from('exchange_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+
+    // 3. users 행 삭제 (역할 기준 명시)
+    if (studentIds.length > 0) {
+      await admin.from('users').delete().in('id', studentIds)
     }
 
-    // users 테이블에서 학생 행 삭제 (역할 정보 제거)
-    await admin.from('users').delete().neq('role', 'mayor')
-
-    // 학생 auth 계정 삭제 (mayor- 이메일 제외)
+    // 4. auth 계정 삭제 (mayor- 이메일 제외)
     const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 })
-    const students = (authList?.users ?? []).filter(u => u.email?.includes('classroom.local') && !u.email?.startsWith('mayor-'))
-    for (const u of students) {
+    const toDelete = (authList?.users ?? []).filter(u =>
+      u.email?.includes('classroom.local') && !u.email?.startsWith('mayor-')
+    )
+    for (const u of toDelete) {
       await admin.auth.admin.deleteUser(u.id)
     }
 
-    // 모든 반 0단계로 초기화
+    // 5. 모든 반 0단계로 초기화
     await admin.from('classes').update({ stage: 0 }).neq('id', '00000000-0000-0000-0000-000000000000')
 
-    return NextResponse.json({ ok: true, deleted: students.length })
+    return NextResponse.json({ ok: true, deleted: toDelete.length })
   }
 
   if (action === 'delete_account') {
