@@ -35,12 +35,27 @@ export function activitiesForStage(stage: Stage): string[] {
   return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
 }
 
-// 단계 변경 시: 기존 열린 활동에 새 단계 활동을 더한다 (이전 활동 유지 — 미완 학생 배려)
+// 단계 전환 시 자동으로 열 기본 활동 (최소 셋)
+// 교사가 추가로 열거나 뺄 수 있음
+export const STAGE_DEFAULTS: Record<Stage, string[]> = {
+  0: ['explore'],
+  1: ['plan'],           // 사업계획서 먼저 → 창업가 선정 후 교사가 apply/hire 수동 추가
+  2: ['worklog', 'payroll'],
+  3: ['exchange'],
+  4: ['sell', 'card', 'trade-report'],
+}
+
+// 단계 변경 시: 기존 열린 활동 + 새 단계 기본 활동 합산 (이전 활동 유지 — 미완 학생 배려)
 export function mergeStageActivities(current: string[], stage: Stage): string[] {
-  const add = activitiesForStage(stage)
+  const add = STAGE_DEFAULTS[stage] ?? []
   const next = [...current]
   for (const k of add) if (!next.includes(k)) next.push(k)
   return next
+}
+
+// 특정 단계의 모든 활동 (교사가 "이 단계 전체 열기" 할 때 사용)
+export function allActivitiesForStage(stage: Stage): string[] {
+  return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
 }
 
 export const ACTIVITY_BY_KEY: Record<string, Activity> =

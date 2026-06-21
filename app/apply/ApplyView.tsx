@@ -68,6 +68,13 @@ export default function ApplyView({ companies, myApps }: {
           💡 일하고 싶은 회사를 골라 지원 동기를 써서 지원해요. CEO가 검토 후 채용 여부를 결정해요.
         </div>
 
+        {/* 불합격 후 재지원 안내 */}
+        {myApps.some(a => a.status === 'rejected') && !hired && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl px-4 py-3 text-sm text-orange-700 font-medium">
+            🔄 불합격된 회사가 있어요. 다른 회사에 지원해 보세요!
+          </div>
+        )}
+
         {companies.length === 0 ? (
           <div className="bg-white rounded-3xl p-10 text-center text-gray-400">
             아직 선정된 회사가 없어요. 잠시 기다려요!
@@ -77,14 +84,17 @@ export default function ApplyView({ companies, myApps }: {
             {companies.map(c => {
               const myApp = appMap[c.id]
               const isSelected = selected === c.id
+              // 불합격된 회사는 클릭 불가, 대기중/채용된 회사도 클릭 불가, 미지원은 지원 가능
+              const canApply = !myApp
 
               return (
                 <div key={c.id}
-                  onClick={() => !myApp && setSelected(isSelected ? null : c.id)}
-                  className={`bg-white rounded-3xl p-5 shadow-sm border-2 transition-all cursor-pointer
-                    ${isSelected ? 'border-blue-400 bg-blue-50'
-                    : myApp ? 'border-gray-100 cursor-default opacity-80'
-                    : 'border-transparent hover:border-gray-200'}`}>
+                  onClick={() => canApply && setSelected(isSelected ? null : c.id)}
+                  className={`bg-white rounded-3xl p-5 shadow-sm border-2 transition-all
+                    ${isSelected ? 'border-blue-400 bg-blue-50 cursor-pointer'
+                    : myApp?.status === 'rejected' ? 'border-gray-100 opacity-60 cursor-not-allowed'
+                    : myApp ? 'border-gray-100 cursor-default'
+                    : 'border-transparent hover:border-gray-200 cursor-pointer'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-gray-800 text-lg">{c.display_name}</span>
                     {myApp && (

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageShell from '@/components/PageShell'
 import type { Stage } from '@/lib/types'
+import { MIN_STAFF_PER_COMPANY } from '@/lib/constants'
 
 interface Person { id: string; number: number; nickname: string | null }
 interface Application {
@@ -40,6 +41,7 @@ export default function HireList({ stage, applications: initApps, staff: initial
   )
 
   const full = staff.length >= maxStaff
+  const needMore = staff.length < MIN_STAFF_PER_COMPANY
   const pendingApps = apps.filter(a => a.status === 'pending')
   const rejectedApps = apps.filter(a => a.status === 'rejected')
 
@@ -71,10 +73,18 @@ export default function HireList({ stage, applications: initApps, staff: initial
   return (
     <PageShell title="직원 채용" emoji="👥">
       <div className="flex flex-col gap-4">
+        {/* 필수 채용 현황 */}
+        <div className={`rounded-2xl px-4 py-3 text-sm font-medium flex items-center gap-2
+          ${needMore ? 'bg-amber-50 border-2 border-amber-200 text-amber-700' : 'bg-green-50 border-2 border-green-200 text-green-700'}`}>
+          {needMore
+            ? `⚠️ 직원 ${staff.length}명 / 필수 ${MIN_STAFF_PER_COMPANY}명 — ${MIN_STAFF_PER_COMPANY - staff.length}명 더 채용해야 급여를 지급할 수 있어요`
+            : `✅ 필수 인원 ${MIN_STAFF_PER_COMPANY}명 채용 완료! (${staff.length}명)`}
+        </div>
+
         {/* 현재 직원 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="font-bold text-gray-800 mb-3">
-            우리 직원 <span className="text-sm text-gray-400">({staff.length}/{maxStaff})</span>
+            우리 직원 <span className="text-sm text-gray-400">({staff.length}/{maxStaff}명 중)</span>
           </div>
           {staff.length === 0 ? (
             <p className="text-gray-400 text-sm">아직 직원이 없어요. 지원서를 검토해 채용해요.</p>
