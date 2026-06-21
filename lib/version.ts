@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.2.3'
+export const APP_VERSION = 'v1.2.4'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.2.4',
+    date: '2026-06-22',
+    items: [
+      'PIN 입력 화면에 "번호 다시 선택" · "처음으로" 버튼 추가',
+      '반별 초기화 FK 버그 수정',
+    ],
+  },
   {
     version: 'v1.2.3',
     date: '2026-06-22',
