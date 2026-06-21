@@ -83,11 +83,15 @@ export function visibleActivities(openKeys: string[], role: Role, stage?: Stage)
 
   if (stage === undefined) return teacherOpened
 
-  // 상시 활동: 해당 활동의 단계 이상이면 항상 보임 (교사 설정 불필요)
+  // 상시 활동: 교사 설정 없이 자동 노출
+  // 공무원은 생산(2단계)부터 모든 상시 메뉴 표시; 나머지는 활동 자체 단계 기준
   const alwaysOnKeys = ALWAYS_ON_BY_ROLE[role] ?? []
   const alwaysOn = alwaysOnKeys
     .map(k => ACTIVITY_BY_KEY[k])
-    .filter((a): a is Activity => !!a && a.stage <= stage && a.roles.includes(role))
+    .filter((a): a is Activity => {
+      if (!a || !a.roles.includes(role)) return false
+      return role === 'officer' ? stage >= 2 : a.stage <= stage
+    })
 
   // 교사 설정 순서 유지, 상시 활동 중 중복 제외 후 뒤에 추가
   const seen = new Set(teacherOpened.map(a => a.key))
