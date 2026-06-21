@@ -20,8 +20,10 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
     if (next === currentStage) return
     setSaving(true)
     const supabase = createClient()
-    // 새 단계로 전환 시 해당 단계 기본 활동으로 자동 교체
-    const nextOpen = allActivitiesForStage(next)
+    // 새 단계 활동을 기존 열린 활동에 자동 추가 (누적 — 이전 단계 활동 유지)
+    const toAdd = allActivitiesForStage(next)
+    const nextOpen = [...openActivities]
+    for (const k of toAdd) if (!nextOpen.includes(k)) nextOpen.push(k)
     await supabase.from('classes').update({ stage: next, open_activities: nextOpen }).eq('id', classId)
     router.refresh()
     setSaving(false)
