@@ -48,33 +48,25 @@ export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
   officer: ['worklog', 'ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
 }
 
-// ─── 단계 기본 활동 ──────────────────────────────────────────────────────
-// 단계 진입 시 open_activities에 자동 추가되는 초기 세트.
-// 교사가 ActivityBoard에서 추가하거나 제거할 수 있음.
-export const STAGE_DEFAULTS: Record<Stage, string[]> = {
+// ─── 단계별 열릴 활동 세트 ──────────────────────────────────────────────
+// 단계 전환 시 open_activities를 이 목록으로 교체.
+// 지난 단계 활동 중 불필요한 것은 제거, 계속 필요한 것은 유지.
+export const STAGE_OPEN: Record<Stage, string[]> = {
   0: ['explore'],
-  1: ['plan', 'apply', 'hire', 'requisition'],             // company는 CEO 상시라 제외
+  1: ['plan', 'apply', 'hire', 'requisition'],
   2: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection'],
-  3: ['exchange', 'card'],
-  4: ['sell', 'card', 'trade-report'],
+  3: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'exchange'],
+  4: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'sell', 'trade-report'],
 }
 
-// 단계 변경 시: 기존 열린 활동 + 새 단계 기본 활동 합산 (이전 활동 유지 — 미완 학생 배려)
-export function mergeStageActivities(current: string[], stage: Stage): string[] {
-  const add = STAGE_DEFAULTS[stage] ?? []
-  const next = [...current]
-  for (const k of add) if (!next.includes(k)) next.push(k)
-  return next
-}
-
-// 특정 단계의 모든 활동
+// 특정 단계의 모든 활동 (ActivityBoard 버킷용)
 export function allActivitiesForStage(stage: Stage): string[] {
   return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
 }
 
-// 0단계부터 현재 단계까지 누적 활동 (초기화·복원용)
+// 단계 전환·초기화용: 해당 단계의 큐레이션된 열림 목록
 export function allActivitiesUpToStage(stage: Stage): string[] {
-  return ACTIVITIES.filter(a => a.stage <= stage).map(a => a.key)
+  return STAGE_OPEN[stage] ?? []
 }
 
 export const ACTIVITY_BY_KEY: Record<string, Activity> =
