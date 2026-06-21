@@ -10,7 +10,7 @@ import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
 import Link from 'next/link'
-import { allActivitiesForStage, ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, ACTIVITIES, type Activity } from '@/lib/activities'
+import { ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, ACTIVITIES, type Activity } from '@/lib/activities'
 import PausedOverlay from './PausedOverlay'
 import { cityTheme, STAGE_SHORT, STAGE_SESSIONS, STAGE_THEME, type Role, type Stage, type CityTheme } from '@/lib/types'
 
@@ -219,20 +219,7 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
   classId: string; stage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
 }) {
-  const [boardOpen, setBoardOpen] = useState(false)
-  const [addingAll, setAddingAll] = useState(false)
-
-  async function openAllStageActivities() {
-    setAddingAll(true)
-    const all = allActivitiesForStage(stage)
-    const next = [...openActivities]
-    for (const k of all) if (!next.includes(k)) next.push(k)
-    const supabase = createClient()
-    await supabase.from('classes').update({ open_activities: next }).eq('id', classId)
-    setAddingAll(false)
-    window.location.reload()
-  }
-
+  const [boardOpen, setBoardOpen] = useState(true)
   const featured = STAGE_FEATURED[stage]
 
   return (
@@ -258,7 +245,7 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
         </div>
       </div>
 
-      {/* 수업 보드 (접을 수 있음) */}
+      {/* 수업 보드 */}
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <button onClick={() => setBoardOpen(v => !v)}
           className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
@@ -266,19 +253,15 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
             <span className="text-xl">📋</span>
             <div className="text-left">
               <div className="font-bold text-gray-800">수업 보드 — 활동 열기/닫기</div>
-              <div className="text-xs text-gray-400">열린 활동 {openActivities.length}개 · 드래그로 순서 변경</div>
+              <div className="text-xs text-gray-400">열린 활동 {openActivities.length}개 · 클릭해서 열거나 닫아요</div>
             </div>
           </div>
           <span className="text-gray-400 text-lg">{boardOpen ? '▲' : '▼'}</span>
         </button>
 
         {boardOpen && (
-          <div className="border-t border-gray-100 px-5 pb-5 pt-3 flex flex-col gap-3">
-            <button onClick={openAllStageActivities} disabled={addingAll}
-              className="w-full bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-xl py-2.5 text-sm font-medium hover:bg-blue-100 disabled:opacity-40">
-              {addingAll ? '추가 중…' : `+ 이번 단계 활동 전체 추가`}
-            </button>
-            <ActivityBoard classId={classId} open={openActivities} />
+          <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+            <ActivityBoard classId={classId} open={openActivities} stage={stage} />
           </div>
         )}
       </div>
@@ -286,13 +269,13 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
       {/* 전체 관리 카드 그리드 */}
       <div>
         <div className="text-sm font-bold text-gray-500 mb-2 px-1">🛠️ 전체 관리</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2.5">
           {ADMIN_CARDS.map(c => (
             <Link key={c.label} href={c.href}
-              className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1.5 active:scale-[0.98]">
-              <span className="text-3xl">{c.emoji}</span>
-              <div className="font-bold text-gray-800 text-base leading-tight">{c.label}</div>
-              <div className="text-xs text-gray-400 leading-tight">{c.desc}</div>
+              className="bg-white rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 active:scale-[0.97]">
+              <span className="text-2xl">{c.emoji}</span>
+              <div className="font-bold text-gray-800 text-sm leading-tight">{c.label}</div>
+              <div className="text-[10px] text-gray-400 leading-tight">{c.desc}</div>
             </Link>
           ))}
         </div>
