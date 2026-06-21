@@ -10,14 +10,14 @@ export default async function AdminPage() {
   if (!user) redirect('/admin/login')
 
   const { data: me } = await supabase
-    .from('users').select('role, classes(name, code)').eq('id', user.id).single()
+    .from('users').select('role, classes(name)').eq('id', user.id).single()
   if (!me || me.role !== 'mayor') redirect('/admin/setup')
 
   const { ok: superAdmin } = await isSuperAdmin()
-  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; code: string } | null
+  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string } | null
 
-  // 시흥시(테스트 반) 교사도 슈퍼어드민 접근 허용
-  const canSuper = superAdmin || cls?.code === '3643410'
+  // 시흥시(테스트 반) 교사도 슈퍼어드민 접근 허용 — 이메일로 직접 판별
+  const canSuper = superAdmin || user.email === 'mayor-3643410@classroom.local'
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
