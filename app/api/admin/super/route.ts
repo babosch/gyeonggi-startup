@@ -54,55 +54,58 @@ export async function POST(req: NextRequest) {
   if (action === 'reset_class_students') {
     if (!classId) return NextResponse.json({ error: 'classId required' }, { status: 400 })
 
-    // 해당 반 학생 ID 수집 (mayor 제외)
+    // 1. 해당 반 학생 ID 수집 (mayor 제외)
     const { data: studentRows } = await admin.from('users')
-      .select('id').eq('class_id', classId).neq('role', 'mayor')
+      .select('id').eq('class_id', classId).in('role', ['applicant', 'ceo', 'staff', 'officer'])
     const studentIds = (studentRows ?? []).map(r => r.id)
 
     if (studentIds.length > 0) {
+      // 2. CASCADE 없는 FK 먼저 NULL 처리
+      await admin.from('officer_alerts').update({ officer_id: null }).in('officer_id', studentIds)
+      await admin.from('facilities').update({ created_by: null }).in('created_by', studentIds)
+
+      // 3. user_id 기준 삭제 (officer_alerts는 class_id로 별도 처리)
       const userTables = [
-        'transactions', 'accounts', 'inspection_reports', 'officer_alerts',
+        'transactions', 'accounts', 'inspection_reports',
         'trade_reports', 'requisitions', 'job_applications', 'business_plans',
         'city_research', 'activity_logs', 'reflections', 'concept_responses',
-        'wordcloud_words', 'word_merges', 'teacher_notes', 'facility_uses',
+        'wordcloud_words', 'teacher_notes',
       ]
       for (const table of userTables) {
         await admin.from(table).delete().in('user_id', studentIds)
       }
     }
 
-    // 반 단위 데이터 (class_id 기준)
+    // 4. 반 단위 데이터 삭제
     const { data: companies } = await admin.from('companies').select('id').eq('class_id', classId)
     const companyIds = (companies ?? []).map(c => c.id)
     if (companyIds.length > 0) {
       await admin.from('products').delete().in('company_id', companyIds)
       await admin.from('exchange_cards').delete().in('company_id', companyIds)
+      await admin.from('facility_uses').delete().in('company_id', companyIds)
     }
+    await admin.from('officer_alerts').delete().eq('class_id', classId)
     await admin.from('companies').delete().eq('class_id', classId)
     await admin.from('exchanges').delete().eq('class_id', classId)
     await admin.from('exchange_logs').delete().eq('class_id', classId)
     await admin.from('exchange_matches').delete().eq('class_id', classId)
 
-    // 학생 users 행 삭제
+    // 5. users 행 삭제
     if (studentIds.length > 0) {
       await admin.from('users').delete().in('id', studentIds)
     }
 
-    // 학생 auth 계정 삭제
+    // 6. auth 계정 삭제
     const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 })
-    const toDelete = (authList?.users ?? []).filter(u =>
-      studentIds.includes(u.id) ||
-      (u.email?.includes('classroom.local') && !u.email?.startsWith('mayor-') &&
-        u.email?.startsWith(`${classId}-`))  // fallback: 이메일 패턴
-    )
+    const toDelete = (authList?.users ?? []).filter(u => studentIds.includes(u.id))
     for (const u of toDelete) {
       await admin.auth.admin.deleteUser(u.id)
     }
 
-    // 반 단계 0으로 초기화
+    // 7. 반 단계 0으로 초기화
     await admin.from('classes').update({ stage: 0 }).eq('id', classId)
 
-    return NextResponse.json({ ok: true, deleted: studentIds.length })
+    return NextResponse.json({ ok: true, deleted: toDelete.length })
   }
 
   if (action === 'reset_all_students') {
