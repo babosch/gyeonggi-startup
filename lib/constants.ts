@@ -12,12 +12,9 @@ export const WAGE = {
   staff: 10_400,
 } as const
 
-// 단계별 급여 지급 최대 일수 (해당 단계 내에서만 카운트)
-// 생산 4일 + 교류 1일 + 판매 1일 = 최대 6일
-export const STAGE_PAYROLL_MAX: Partial<Record<number, number>> = {
-  2: 4,  // 생산단계: 최대 4일
-  3: 1,  // 교류단계: 최대 1일
-  4: 1,  // 판매단계: 최대 1일
-}
+// 급여 지급 한도 — 단계 구분 없이 전체 통합
+export const PAYROLL_TOTAL_MAX = 6      // 수업 전체 최대 6회
+export const PAYROLL_DAILY_MAX = 2      // 하루 최대 2회
+export const PAYROLL_COOLDOWN_MIN = 30  // 최소 지급 간격(분)
 
 export const PRODUCT_PRICE = { min: 1, max: 100_000 }
