@@ -191,8 +191,8 @@ const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: 
     { emoji: '💵', label: '급여 지급',        desc: '업무일지 확인 후 직원 급여 지급', href: '/payroll',            color: 'bg-indigo-500' },
   ],
   3: [
-    { emoji: '🤝', label: '교류 매칭 현황',   desc: '성사 건수 · 우수기업 배지',     href: '/admin/monitor',       color: 'bg-purple-500' },
-    { emoji: '📋', label: '공무원 급여',      desc: '교류 업무일지 확인 후 지급',     href: '/admin/officer-payroll', color: 'bg-violet-500' },
+    { emoji: '🤝', label: '교류 전체 현황',   desc: '도시별 카드 · 교류 성사 일지',   href: '/admin/exchange-monitor', color: 'bg-purple-500' },
+    { emoji: '📋', label: '공무원 급여',      desc: '교류 업무일지 확인 후 지급',     href: '/admin/officer-payroll',  color: 'bg-violet-500' },
   ],
   4: [
     { emoji: '📡', label: '종합 모니터링',    desc: '판매 현황 · 거래 내역',         href: '/admin/monitor',       color: 'bg-blue-500' },
@@ -208,6 +208,7 @@ const ADMIN_CARDS = [
   { emoji: '🗺️', label: '도시 대표 카드', desc: '탐구 결과 워드클라우드·카드',     href: '/admin/citycard' },
   { emoji: '🚨', label: '이상 거래 보고', desc: '공무원 신고 거래 검토',           href: '/admin/trade-reports' },
   { emoji: '📊', label: '평가 현황',       desc: '개념 응답·제출물 확인',          href: '/admin/submissions' },
+  { emoji: '🤝', label: '교류 전체 현황', desc: '도시별 카드·교류 성사 일지',      href: '/admin/exchange-monitor' },
   { emoji: '📋', label: '공무원 임명',     desc: '지원자를 공무원으로 임명',        href: '/admin/officers' },
   { emoji: '🏛️', label: '공무원 급여',    desc: '업무일지 확인 후 급여 지급',      href: '/admin/officer-payroll' },
   { emoji: '📊', label: '현황 보드',       desc: '반 전체 진행·시찰·경보',          href: '/admin/board' },

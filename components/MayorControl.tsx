@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { mergeStageActivities, allActivitiesForStage, STAGE_DEFAULTS } from '@/lib/activities'
-import { STAGE_LABELS, STAGE_SHORT, type Stage } from '@/lib/types'
+import { STAGE_LABELS, STAGE_SHORT, STAGE_SESSIONS, type Stage } from '@/lib/types'
 
 const STAGES: Stage[] = [0, 1, 2, 3, 4]
 const STAGE_ICONS = ['🗺️', '🏭', '⚙️', '🤝', '🛒']
@@ -13,18 +13,17 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
   classId: string; currentStage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
 }) {
   const [saving, setSaving] = useState(false)
-  const [confirm, setConfirm] = useState<Stage | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const router = useRouter()
 
   async function changeStage(next: Stage) {
+    if (next === currentStage) return
     setSaving(true)
     const supabase = createClient()
     const nextActivities = mergeStageActivities(openActivities, next)
     await supabase.from('classes').update({ stage: next, open_activities: nextActivities }).eq('id', classId)
     router.refresh()
     setSaving(false)
-    setConfirm(null)
   }
 
   async function setPause(p: boolean) {
@@ -54,27 +53,15 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
             <span className="font-bold text-gray-800 text-lg">
               {STAGE_ICONS[currentStage]} {STAGE_LABELS[currentStage]}
             </span>
-            <span className="ml-2 text-xs text-gray-400">단계 {currentStage}/4</span>
+            <span className="ml-2 text-xs text-gray-400">{STAGE_SESSIONS[currentStage]}</span>
           </div>
-          {/* 빠른 액션 */}
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPause(!paused)} disabled={busy !== null}
-              title={paused ? '수업 재개' : '수업 멈추기'}
-              className={`px-3 py-1.5 rounded-xl text-sm font-bold border-2 transition-all
-                ${paused
-                  ? 'bg-amber-100 border-amber-300 text-amber-700'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-amber-300'}`}>
-              {paused ? '▶️ 재개' : '⏸️ 멈춤'}
-            </button>
-            <button onClick={() => setFair(!fairMode)} disabled={busy !== null}
-              title={fairMode ? '박람회 끄기' : '박람회 켜기'}
-              className={`px-3 py-1.5 rounded-xl text-sm font-bold border-2 transition-all
-                ${fairMode
-                  ? 'bg-purple-100 border-purple-300 text-purple-700'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-purple-300'}`}>
-              🎪
-            </button>
-          </div>
+          <button onClick={() => setPause(!paused)} disabled={busy !== null}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all
+              ${paused
+                ? 'bg-amber-100 border-amber-300 text-amber-700'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-amber-300'}`}>
+            {paused ? '▶️ 수업 재개' : '⏸️ 수업 멈춤'}
+          </button>
         </div>
 
         {/* 진행 바 */}
@@ -86,7 +73,7 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
         <div className="flex gap-1.5">
           {STAGES.map(s => (
             <button key={s}
-              onClick={() => s !== currentStage && setConfirm(s)}
+              onClick={() => changeStage(s)}
               disabled={saving}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all
                 ${s === currentStage
@@ -101,27 +88,32 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
         </div>
       </div>
 
-      {/* 단계 전환 확인 */}
-      {confirm !== null && (
-        <div className="mx-5 mb-4 bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
-          <p className="text-blue-800 font-bold mb-1">
-            {STAGE_ICONS[confirm]} {STAGE_LABELS[confirm]} 단계로 전환할까요?
-          </p>
-          <p className="text-xs text-blue-600 mb-3">
-            기본 활동 자동 추가: {(STAGE_DEFAULTS[confirm] ?? []).join(', ') || '없음'}
-          </p>
-          <div className="flex gap-2">
-            <button onClick={() => changeStage(confirm)} disabled={saving}
-              className="flex-1 bg-blue-500 text-white rounded-xl py-2.5 font-bold text-sm disabled:opacity-50">
-              {saving ? '전환 중…' : '✓ 전환하기'}
-            </button>
-            <button onClick={() => setConfirm(null)}
-              className="px-4 bg-white border-2 border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm">
-              취소
-            </button>
+      {/* 박람회 모드 */}
+      <div className="border-t border-gray-100 px-5 py-3">
+        <button
+          onClick={() => setFair(!fairMode)}
+          disabled={busy !== null}
+          className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 border-2 transition-all
+            ${fairMode
+              ? 'bg-purple-50 border-purple-300'
+              : 'bg-gray-50 border-gray-200 hover:border-purple-200'}`}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎪</span>
+            <div className="text-left">
+              <div className={`font-bold text-sm ${fairMode ? 'text-purple-700' : 'text-gray-600'}`}>
+                박람회 모드
+              </div>
+              <div className={`text-xs ${fairMode ? 'text-purple-500' : 'text-gray-400'}`}>
+                {fairMode ? '공무원이 다른 반 교류 카드 열람 가능' : '교류 박람회 (켜면 다른 반 카드 공개)'}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+          <div className={`w-12 h-6 rounded-full flex items-center transition-all duration-300 px-1
+            ${fairMode ? 'bg-purple-500 justify-end' : 'bg-gray-300 justify-start'}`}>
+            <div className="w-4 h-4 rounded-full bg-white shadow" />
+          </div>
+        </button>
+      </div>
     </div>
   )
 }
