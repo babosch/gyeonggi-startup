@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface ReqItem { name: string; qty: number; price: number }
+interface ReqItem { name: string; qty: number; price: number; purpose?: string }
 interface DroppedItem { name: string; reason: string }
 interface CompanyUser { number: number; nickname: string | null; role: string }
 interface ReqCompany { display_name: string; icon?: string | null; users?: CompanyUser | CompanyUser[] | null }
@@ -116,12 +116,17 @@ export default function ReqReview({ reqs }: { reqs: Req[] }) {
                         <div className="text-xs font-bold text-gray-500 mb-2">📦 구매 항목</div>
                         <div className="space-y-1.5">
                           {items.map((it, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700 font-medium">{it.name}</span>
-                              <div className="flex items-center gap-3 text-gray-500 text-xs">
-                                <span>{it.qty}개 × {it.price.toLocaleString()}원</span>
-                                <span className="font-bold text-gray-700">{(it.qty * it.price).toLocaleString()}원</span>
+                            <div key={i} className="py-1.5 border-b border-gray-50 last:border-0">
+                              <div className="flex items-baseline justify-between text-sm">
+                                <span className="text-gray-800 font-medium">{it.name}</span>
+                                <div className="flex items-center gap-3 text-gray-500 text-xs shrink-0 ml-2">
+                                  <span>{it.qty}개 × {it.price.toLocaleString()}원</span>
+                                  <span className="font-bold text-gray-700">{(it.qty * it.price).toLocaleString()}원</span>
+                                </div>
                               </div>
+                              {it.purpose && (
+                                <div className="text-xs text-blue-600 mt-0.5">→ {it.purpose}</div>
+                              )}
                             </div>
                           ))}
                         </div>
