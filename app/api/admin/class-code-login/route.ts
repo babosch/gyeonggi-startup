@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     userId = existing.id
+    // 비밀번호를 항상 코드 기반으로 맞춰둠 (이전에 다르게 생성된 경우 대비)
+    await admin.auth.admin.updateUserById(userId, { password })
   } else {
     const { data, error } = await admin.auth.admin.createUser({
       email, password, email_confirm: true,
