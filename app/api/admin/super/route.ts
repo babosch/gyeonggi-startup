@@ -111,36 +111,44 @@ export async function POST(req: NextRequest) {
       .select('id').in('role', ['applicant', 'ceo', 'staff', 'officer'])
     const studentIds = (studentRows ?? []).map(r => r.id)
 
-    // 2. 데이터 테이블 삭제 (FK 하위 → 상위 순서)
     if (studentIds.length > 0) {
+      // 2. CASCADE 없는 FK 먼저 NULL로 처리 (삭제 차단 방지)
+      await admin.from('officer_alerts').update({ officer_id: null }).in('officer_id', studentIds)
+      await admin.from('facilities').update({ created_by: null }).in('created_by', studentIds)
+
+      // 3. user_id 기준 삭제
       const userTables = [
-        'transactions', 'accounts', 'inspection_reports', 'officer_alerts',
+        'transactions', 'accounts', 'inspection_reports',
         'trade_reports', 'requisitions', 'job_applications', 'business_plans',
         'city_research', 'activity_logs', 'reflections', 'concept_responses',
-        'wordcloud_words', 'word_merges', 'teacher_notes', 'facility_uses',
+        'wordcloud_words', 'teacher_notes',
       ]
       for (const t of userTables) {
         await admin.from(t).delete().in('user_id', studentIds)
       }
     }
-    // 회사·상품·교류 (class 단위)
+
+    // 4. 회사·상품·교류 전체 삭제
     const { data: allCompanies } = await admin.from('companies').select('id')
     const allCompanyIds = (allCompanies ?? []).map(c => c.id)
     if (allCompanyIds.length > 0) {
       await admin.from('products').delete().in('company_id', allCompanyIds)
       await admin.from('exchange_cards').delete().in('company_id', allCompanyIds)
+      await admin.from('facility_uses').delete().in('company_id', allCompanyIds)
     }
+    await admin.from('officer_alerts').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     await admin.from('companies').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     await admin.from('exchanges').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     await admin.from('exchange_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     await admin.from('exchange_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await admin.from('word_merges').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
-    // 3. users 행 삭제 (역할 기준 명시)
+    // 5. users 행 삭제
     if (studentIds.length > 0) {
       await admin.from('users').delete().in('id', studentIds)
     }
 
-    // 4. auth 계정 삭제 (mayor- 이메일 제외)
+    // 6. auth 계정 삭제
     const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 })
     const toDelete = (authList?.users ?? []).filter(u =>
       u.email?.includes('classroom.local') && !u.email?.startsWith('mayor-')
@@ -149,7 +157,7 @@ export async function POST(req: NextRequest) {
       await admin.auth.admin.deleteUser(u.id)
     }
 
-    // 5. 모든 반 0단계로 초기화
+    // 7. 모든 반 0단계로 초기화
     await admin.from('classes').update({ stage: 0 }).neq('id', '00000000-0000-0000-0000-000000000000')
 
     return NextResponse.json({ ok: true, deleted: toDelete.length })
