@@ -16,7 +16,7 @@ export default async function HomePage() {
     .eq('id', user.id)
     .single()
 
-  if (!me) redirect('/admin/setup')
+  if (!me) redirect('/login')
   if (me.must_change_pin) redirect('/pin-change')
   // 교사는 인트로 없음. 학생은 최초 1회 인트로.
   if (me.role !== 'mayor' && !me.intro_seen) redirect('/intro')

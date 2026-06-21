@@ -62,6 +62,22 @@ export default function AdminSetupPage() {
     </div>
   )
 
+  // 반 정보가 없으면 세션 문제 — 로그아웃 안내
+  if (!classId) return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
+      <div className="bg-white rounded-3xl shadow-sm p-10 w-full max-w-md text-center">
+        <div className="text-4xl mb-4">⚠️</div>
+        <p className="text-gray-800 font-bold text-xl mb-2">세션이 만료됐습니다</p>
+        <p className="text-gray-500 text-sm mb-8">로그아웃 후 학급비번으로 다시 로그인해 주세요.</p>
+        <button
+          onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
+          className="w-full h-14 bg-blue-600 text-white rounded-2xl font-bold text-lg active:scale-95 transition-all">
+          로그아웃 후 처음으로
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 max-w-md mx-auto">
       <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm mb-6">
