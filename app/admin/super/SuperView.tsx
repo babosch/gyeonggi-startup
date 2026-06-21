@@ -16,6 +16,22 @@ export default function SuperView({ classRows, orphanAccounts }: {
   const [orphans, setOrphans] = useState(orphanAccounts)
   const [resetDone, setResetDone] = useState(false)
   const [codeFixed, setCodeFixed] = useState(false)
+  const [classResetDone, setClassResetDone] = useState<Record<string, number>>({})
+
+  async function resetClassStudents(classId: string, name: string) {
+    if (!confirm(`⚠️ ${name}의 학생 데이터를 초기화할까요?\n\n삭제: 학생 계정·회사·잔액·거래·업무일지 등\n유지: 교사(시장) 계정\n\n되돌릴 수 없어요.`)) return
+    setBusy(classId + '_reset')
+    const res = await fetch('/api/admin/super', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_class_students', classId }),
+    })
+    const d = await res.json()
+    setBusy(null)
+    if (res.ok) {
+      setClassResetDone(prev => ({ ...prev, [classId]: d.deleted }))
+      alert(`${name} 초기화 완료! 학생 ${d.deleted}명 데이터가 삭제됐어요.`)
+    } else alert('초기화 실패: ' + (d.error ?? '알 수 없는 오류'))
+  }
 
   async function fixClassCodes() {
     setBusy('fix')
@@ -111,6 +127,38 @@ export default function SuperView({ classRows, orphanAccounts }: {
           )}
         </div>
 
+        {/* 반별 학생 데이터 초기화 */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm mb-4">
+          <div className="font-bold text-gray-800 mb-1">반별 학생 데이터 초기화</div>
+          <p className="text-xs text-gray-400 mb-4">특정 반만 초기화할 때 사용해요. 교사 계정은 유지됩니다.</p>
+          <div className="flex flex-col gap-2">
+            {rows.map(r => {
+              const theme = cityTheme(r.color)
+              const done = classResetDone[r.id]
+              return (
+                <div key={r.id} className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${theme.solid}`} />
+                    <span className="font-medium text-gray-800">{r.name}</span>
+                    {r.mayorId
+                      ? <span className="text-xs text-green-600">교사 등록됨</span>
+                      : <span className="text-xs text-gray-300">교사 없음</span>}
+                  </div>
+                  {done !== undefined ? (
+                    <span className="text-xs text-green-600 font-bold">✅ 완료({done}명)</span>
+                  ) : (
+                    <button onClick={() => resetClassStudents(r.id, r.name)}
+                      disabled={busy === r.id + '_reset'}
+                      className="text-sm px-4 py-1.5 rounded-xl border-2 border-red-200 text-red-500 font-medium disabled:opacity-40">
+                      {busy === r.id + '_reset' ? '...' : '초기화'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* 반별 시장 현황 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm mb-4">
           <div className="font-bold text-gray-800 mb-3">반별 시장 현황</div>
@@ -122,8 +170,8 @@ export default function SuperView({ classRows, orphanAccounts }: {
                   <div className="flex items-center gap-3">
                     <span className={`w-3 h-3 rounded-full ${theme.solid}`} />
                     <span className="font-medium text-gray-800">{r.name}</span>
-                    {r.mayorEmail
-                      ? <span className="text-sm text-gray-500">{r.mayorEmail}</span>
+                    {r.mayorId
+                      ? <span className="text-sm text-blue-500">등록됨</span>
                       : <span className="text-sm text-gray-300">시장 없음</span>}
                   </div>
                   {r.mayorId && (
