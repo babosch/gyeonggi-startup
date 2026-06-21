@@ -1,38 +1,47 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { mergeStageActivities } from '@/lib/activities'
 import { STAGE_LABELS, STAGE_SHORT, type Stage } from '@/lib/types'
 
 const STAGES: Stage[] = [0, 1, 2, 3, 4]
 
-// currentStage·openActivities는 부모(useStage 실시간)에서 내려온다 — 로컬 state 없이 그대로 사용.
-export default function MayorControl({ classId, currentStage, openActivities }: {
-  classId: string; currentStage: Stage; openActivities: string[]
+// currentStage·paused·fairMode는 부모(useStage 실시간)에서 내려온다 — 실시간 값 그대로 표시.
+export default function MayorControl({ classId, currentStage, openActivities, paused, fairMode }: {
+  classId: string; currentStage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
 }) {
   const stage = currentStage
   const [saving, setSaving] = useState(false)
   const [confirm, setConfirm] = useState<Stage | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)  // 어떤 동작이 처리 중인지
+  const router = useRouter()
 
   async function changeStage(next: Stage) {
     setSaving(true)
     const supabase = createClient()
-    // 단계 변경 + 그 단계 활동을 보드에 자동 추가 (이전 활동 유지)
     const nextActivities = mergeStageActivities(openActivities, next)
     await supabase.from('classes').update({ stage: next, open_activities: nextActivities }).eq('id', classId)
+    router.refresh()  // 교사 화면 즉시 갱신 (실시간 보완)
     setSaving(false)
     setConfirm(null)
   }
 
-  async function togglePause(paused: boolean) {
+  async function setPause(p: boolean) {
+    setBusy(p ? 'pause' : 'resume')
     const supabase = createClient()
-    await supabase.from('classes').update({ paused }).eq('id', classId)
+    await supabase.from('classes').update({ paused: p }).eq('id', classId)
+    router.refresh()
+    setBusy(null)
   }
 
-  async function toggleFair(fair_mode: boolean) {
+  async function setFair(f: boolean) {
+    setBusy(f ? 'fair-on' : 'fair-off')
     const supabase = createClient()
-    await supabase.from('classes').update({ fair_mode }).eq('id', classId)
+    await supabase.from('classes').update({ fair_mode: f }).eq('id', classId)
+    router.refresh()
+    setBusy(null)
   }
 
   return (
@@ -57,7 +66,6 @@ export default function MayorControl({ classId, currentStage, openActivities }: 
         ))}
       </div>
 
-      {/* 확인 다이얼로그 */}
       {confirm !== null && (
         <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
           <p className="text-blue-800 font-medium mb-3">
@@ -66,7 +74,7 @@ export default function MayorControl({ classId, currentStage, openActivities }: 
           <div className="flex gap-2">
             <button onClick={() => changeStage(confirm)} disabled={saving}
               className="flex-1 bg-blue-500 text-white rounded-xl py-2.5 font-bold disabled:opacity-50">
-              {saving ? '...' : '네, 넘길게요'}
+              {saving ? '넘기는 중…' : '네, 넘길게요'}
             </button>
             <button onClick={() => setConfirm(null)} disabled={saving}
               className="px-5 bg-gray-100 text-gray-600 rounded-xl py-2.5 font-medium">
@@ -76,28 +84,51 @@ export default function MayorControl({ classId, currentStage, openActivities }: 
         </div>
       )}
 
-      {/* 일시정지 */}
-      <div className="flex gap-2 border-t border-gray-100 pt-4">
-        <button onClick={() => togglePause(true)}
-          className="flex-1 bg-amber-50 text-amber-700 border-2 border-amber-200 rounded-xl py-2.5 font-medium">
-          ⏸️ 전체 멈춤
-        </button>
-        <button onClick={() => togglePause(false)}
-          className="flex-1 bg-green-50 text-green-700 border-2 border-green-200 rounded-xl py-2.5 font-medium">
-          ▶️ 다시 시작
-        </button>
+      {/* 수업 멈춤 — 현재 상태를 크게 보여주고 토글 */}
+      <div className="border-t border-gray-100 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="font-bold text-gray-800">수업 멈춤</div>
+            <div className="text-xs text-gray-400">멈추면 학생 화면이 흐려지고 활동을 못 해요 (설명할 때 집중시키기)</div>
+          </div>
+          <span className={`text-sm font-bold px-3 py-1 rounded-full ${paused ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+            {paused ? '⏸️ 멈춤 중' : '▶️ 수업 중'}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setPause(true)} disabled={paused || busy !== null}
+            className={`flex-1 rounded-xl py-3 font-bold border-2 transition-all
+              ${paused ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-white border-amber-200 text-amber-700 hover:bg-amber-50'}
+              disabled:opacity-100`}>
+            {busy === 'pause' ? '멈추는 중…' : paused ? '✓ 멈춰 있어요' : '⏸️ 지금 멈추기'}
+          </button>
+          <button onClick={() => setPause(false)} disabled={!paused || busy !== null}
+            className={`flex-1 rounded-xl py-3 font-bold border-2 transition-all
+              ${!paused ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-green-200 text-green-700 hover:bg-green-50'}`}>
+            {busy === 'resume' ? '여는 중…' : !paused ? '✓ 진행 중이에요' : '▶️ 다시 시작'}
+          </button>
+        </div>
       </div>
 
-      {/* 박람회 모드 */}
-      <div className="flex gap-2">
-        <button onClick={() => toggleFair(true)}
-          className="flex-1 bg-purple-50 text-purple-700 border-2 border-purple-200 rounded-xl py-2.5 font-medium">
-          🎪 박람회 열기
-        </button>
-        <button onClick={() => toggleFair(false)}
-          className="flex-1 bg-gray-50 text-gray-600 border-2 border-gray-200 rounded-xl py-2.5 font-medium">
-          박람회 닫기
-        </button>
+      {/* 박람회 — 상태 표시 + 토글 */}
+      <div className="border-t border-gray-100 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="font-bold text-gray-800">🎪 박람회</div>
+          <span className={`text-sm font-bold px-3 py-1 rounded-full ${fairMode ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500'}`}>
+            {fairMode ? '열림' : '닫힘'}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setFair(true)} disabled={fairMode || busy !== null}
+            className={`flex-1 rounded-xl py-3 font-medium border-2 transition-all
+              ${fairMode ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-white border-purple-200 text-purple-700 hover:bg-purple-50'}`}>
+            {busy === 'fair-on' ? '여는 중…' : fairMode ? '✓ 열려 있어요' : '박람회 열기'}
+          </button>
+          <button onClick={() => setFair(false)} disabled={!fairMode || busy !== null}
+            className="flex-1 rounded-xl py-3 font-medium border-2 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+            {busy === 'fair-off' ? '닫는 중…' : '박람회 닫기'}
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -9,6 +9,7 @@ import TaskCard from './TaskCard'
 import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
+import PausedOverlay from './PausedOverlay'
 import { visibleActivities, type Activity } from '@/lib/activities'
 import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
 
@@ -25,11 +26,12 @@ interface Props {
   balance: number
   balanceLabel: string
   openActivities: string[]
+  fairMode: boolean
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
 }
 
 export default function RoleHome(props: Props) {
-  const { stage, paused, openActivities } = useStage(props.classId, props.initialStage, props.openActivities, props.paused)
+  const { stage, paused, fairMode, openActivities } = useStage(props.classId, props.initialStage, props.openActivities, props.paused, props.fairMode)
   const router = useRouter()
 
   async function logout() {
@@ -42,6 +44,8 @@ export default function RoleHome(props: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      {/* 교사가 멈추면 학생 화면을 흐리게 덮음 */}
+      {!isMayor && paused && <PausedOverlay />}
       <div className="max-w-3xl mx-auto flex flex-col gap-4">
 
         <HomeHeader
@@ -57,7 +61,7 @@ export default function RoleHome(props: Props) {
 
         {isMayor ? (
           <>
-            <MayorControl classId={props.classId} currentStage={stage} openActivities={openActivities} />
+            <MayorControl classId={props.classId} currentStage={stage} openActivities={openActivities} paused={paused} fairMode={fairMode} />
             <ActivityBoard classId={props.classId} open={openActivities} />
             {props.submissions && (
               <SubmissionsView
