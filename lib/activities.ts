@@ -9,39 +9,52 @@ export interface Activity {
   hint?: string
   href: string
   roles: Role[]   // 이 활동이 보이는 역할
-  stage: Stage    // 이 활동이 속한 수업 단계
+  stage: Stage    // 이 활동이 속한 수업 단계 (ActivityBoard 버킷)
 }
 
 export const ACTIVITIES: Activity[] = [
-  { key: 'explore',     label: '도시 탐구',   emoji: '🗺️', hint: '우리 도시 알아보기', href: '/explore',     roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 0 },
-  { key: 'plan',        label: '사업계획서',  emoji: '📝', hint: '창업 아이디어 내기', href: '/plan',        roles: ['applicant', 'ceo'], stage: 1 },
-  { key: 'apply',       label: '취업 지원',   emoji: '💼', hint: '일하고 싶은 회사에 지원',   href: '/apply',       roles: ['applicant'], stage: 1 },
-  { key: 'company',     label: '회사 관리',   emoji: '🏭', hint: '회사·상품 등록',     href: '/company',     roles: ['ceo'], stage: 1 },
-  { key: 'hire',        label: '직원 채용',   emoji: '👥', hint: '지원서 검토 · 채용', href: '/hire',        roles: ['ceo'], stage: 1 },
-  { key: 'requisition', label: '품의서',      emoji: '🧾', hint: '물건 사기',          href: '/requisition', roles: ['ceo'], stage: 1 },
-  { key: 'ledger',      label: '거래 장부',   emoji: '📖', hint: '돈 흐름 보기',       href: '/ledger',      roles: ['officer'], stage: 1 },
-  { key: 'facilities',  label: '시설',        emoji: '🏪', hint: '공용 시설',          href: '/facilities',  roles: ['ceo', 'officer'], stage: 1 },
-  { key: 'worklog',     label: '업무일지',    emoji: '📒', hint: '오늘 한 일',         href: '/worklog',     roles: ['staff', 'ceo', 'officer'], stage: 2 },
-  { key: 'payroll',     label: '급여 지급',   emoji: '💵', hint: '직원에게 월급',      href: '/payroll',     roles: ['ceo'], stage: 2 },
-  { key: 'inspection',  label: '시찰 보고서', emoji: '📋', hint: '기업 둘러보기',      href: '/inspection',  roles: ['officer'], stage: 2 },
-  { key: 'exchange',    label: '교류',        emoji: '🤝', hint: '협력 기록',          href: '/exchange',    roles: ['ceo', 'officer'], stage: 3 },
-  { key: 'sell',        label: '판매(수금)',  emoji: '📱', hint: 'QR 보여주기',        href: '/sell',        roles: ['ceo', 'staff'], stage: 4 },
-  { key: 'card',        label: '내 카드',     emoji: '💳', hint: '잔액 확인 · 결제',  href: '/card',        roles: ['ceo', 'staff', 'officer'], stage: 4 },
-  { key: 'trade-report',label: '이상 거래 보고', emoji: '🚨', hint: '이상한 거래 신고', href: '/trade-report', roles: ['officer'], stage: 4 },
+  // ─── 0단계 도시탐구 ────────────────────────────────────────────────────
+  { key: 'explore',      label: '도시 탐구',      emoji: '🗺️', hint: '우리 도시 알아보기', href: '/explore',      roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 0 },
+
+  // ─── 1단계 창업 ────────────────────────────────────────────────────────
+  { key: 'plan',         label: '사업계획서',     emoji: '📝', hint: '창업 아이디어 내기',   href: '/plan',         roles: ['applicant', 'ceo'], stage: 1 },
+  { key: 'apply',        label: '취업 지원',      emoji: '💼', hint: '일하고 싶은 회사에 지원', href: '/apply',      roles: ['applicant'], stage: 1 },
+  { key: 'company',      label: '회사 관리',      emoji: '🏭', hint: '회사·상품 등록',       href: '/company',      roles: ['ceo'], stage: 1 },
+  { key: 'hire',         label: '직원 채용',      emoji: '👥', hint: '지원서 검토 · 채용',   href: '/hire',         roles: ['ceo'], stage: 1 },
+  { key: 'requisition',  label: '품의서',         emoji: '🧾', hint: '물건 구입 신청',       href: '/requisition',  roles: ['ceo'], stage: 1 },
+
+  // ─── 2단계 생산 ────────────────────────────────────────────────────────
+  { key: 'ledger',       label: '거래 장부',      emoji: '📖', hint: '돈 흐름 보기',         href: '/ledger',       roles: ['officer'], stage: 2 },
+  { key: 'facilities',   label: '시설',           emoji: '🏪', hint: '공용 시설',            href: '/facilities',   roles: ['ceo', 'officer'], stage: 2 },
+  { key: 'worklog',      label: '업무일지',       emoji: '📒', hint: '오늘 한 일',           href: '/worklog',      roles: ['staff', 'ceo', 'officer'], stage: 2 },
+  { key: 'payroll',      label: '급여 지급',      emoji: '💵', hint: '직원에게 급여 지급',   href: '/payroll',      roles: ['ceo'], stage: 2 },
+  { key: 'inspection',   label: '시찰 보고서',    emoji: '📋', hint: '기업 둘러보기',        href: '/inspection',   roles: ['officer'], stage: 2 },
+  { key: 'card',         label: '내 카드',        emoji: '💳', hint: '잔액 확인 · 결제',    href: '/card',         roles: ['ceo', 'staff', 'officer'], stage: 2 },
+
+  // ─── 3단계 교류 ────────────────────────────────────────────────────────
+  { key: 'exchange',     label: '교류',           emoji: '🤝', hint: '협력 요청 · 매칭',    href: '/exchange',     roles: ['ceo', 'officer'], stage: 3 },
+
+  // ─── 4단계 판매 ────────────────────────────────────────────────────────
+  { key: 'sell',         label: '판매(수금)',     emoji: '📱', hint: 'QR 보여주기',          href: '/sell',         roles: ['ceo', 'staff'], stage: 4 },
+  { key: 'trade-report', label: '이상 거래 보고', emoji: '🚨', hint: '이상한 거래 신고',     href: '/trade-report', roles: ['officer'], stage: 4 },
 ]
 
-// 단계 진입 시 보드에 자동으로 추가할 활동들 (그 단계에 새로 열리는 활동)
-export function activitiesForStage(stage: Stage): string[] {
-  return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
+// ─── 역할별 상시 활동 ─────────────────────────────────────────────────────
+// 교사가 열지 않아도, 해당 역할 + activity.stage <= 현재 단계이면 항상 보임.
+// 교사는 ActivityBoard에서 추가로 제어 가능.
+export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
+  ceo:     ['company'],                                     // CEO: 회사관리 항상
+  officer: ['ledger', 'facilities', 'inspection', 'exchange', 'trade-report'], // 공무원 업무 항상
 }
 
-// 단계 전환 시 자동으로 열 기본 활동 (최소 셋)
-// 교사가 추가로 열거나 뺄 수 있음
+// ─── 단계 기본 활동 ──────────────────────────────────────────────────────
+// 단계 진입 시 open_activities에 자동 추가되는 초기 세트.
+// 교사가 ActivityBoard에서 추가하거나 제거할 수 있음.
 export const STAGE_DEFAULTS: Record<Stage, string[]> = {
   0: ['explore'],
-  1: ['plan'],           // 사업계획서 먼저 → 창업가 선정 후 교사가 apply/hire 수동 추가
-  2: ['worklog', 'payroll'],
-  3: ['exchange'],
+  1: ['plan', 'apply', 'hire', 'requisition'],             // company는 CEO 상시라 제외
+  2: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection'],
+  3: ['exchange', 'card'],
   4: ['sell', 'card', 'trade-report'],
 }
 
@@ -61,9 +74,22 @@ export function allActivitiesForStage(stage: Stage): string[] {
 export const ACTIVITY_BY_KEY: Record<string, Activity> =
   Object.fromEntries(ACTIVITIES.map(a => [a.key, a]))
 
-// 학생 홈: 교사가 켠 활동(open) 중 내 역할에 해당하는 것만, 교사가 짠 순서대로
-export function visibleActivities(openKeys: string[], role: Role): Activity[] {
-  return openKeys
+// 학생 홈: 교사가 켠 활동(open) 중 내 역할에 해당하는 것 + 상시 활동(stage 이하인 것)
+export function visibleActivities(openKeys: string[], role: Role, stage?: Stage): Activity[] {
+  const teacherOpened = openKeys
     .map(k => ACTIVITY_BY_KEY[k])
     .filter((a): a is Activity => !!a && a.roles.includes(role))
+
+  if (stage === undefined) return teacherOpened
+
+  // 상시 활동: 해당 역할 + 현재 단계 이하인 것
+  const alwaysOnKeys = ALWAYS_ON_BY_ROLE[role] ?? []
+  const alwaysOn = alwaysOnKeys
+    .map(k => ACTIVITY_BY_KEY[k])
+    .filter((a): a is Activity => !!a && a.stage <= stage && a.roles.includes(role))
+
+  // 교사 설정 순서 유지, 상시 활동 중 중복 제외 후 뒤에 추가
+  const seen = new Set(teacherOpened.map(a => a.key))
+  const extras = alwaysOn.filter(a => !seen.has(a.key))
+  return [...teacherOpened, ...extras]
 }

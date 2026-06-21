@@ -10,9 +10,8 @@ import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
 import Link from 'next/link'
-import { allActivitiesForStage } from '@/lib/activities'
+import { allActivitiesForStage, ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, type Activity } from '@/lib/activities'
 import PausedOverlay from './PausedOverlay'
-import { visibleActivities, type Activity } from '@/lib/activities'
 import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
 
 interface Props {
@@ -46,7 +45,6 @@ export default function RoleHome(props: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      {/* 교사가 멈추면 학생 화면을 흐리게 덮음 */}
       {!isMayor && paused && <PausedOverlay />}
       <div className="max-w-3xl mx-auto flex flex-col gap-4">
 
@@ -73,12 +71,11 @@ export default function RoleHome(props: Props) {
         ) : (
           <>
             <StageBanner stage={stage} paused={paused} />
-            <RoleTasks role={props.role} openActivities={openActivities} color={props.color} />
+            <RoleTasks role={props.role} openActivities={openActivities} color={props.color} stage={stage} />
           </>
         )}
 
-        <button onClick={logout}
-          className="mt-2 mx-auto text-sm text-gray-400 underline">
+        <button onClick={logout} className="mt-2 mx-auto text-sm text-gray-400 underline">
           로그아웃
         </button>
       </div>
@@ -86,22 +83,49 @@ export default function RoleHome(props: Props) {
   )
 }
 
-// 학생 홈: 교사가 켠 활동(openActivities)만, 교사가 짠 순서대로 부각.
-function RoleTasks({ role, openActivities, color }: { role: Role; openActivities: string[]; color: string }) {
-  const tasks = visibleActivities(openActivities, role)
+// ─── 학생 홈 ─────────────────────────────────────────────────────────────
+function RoleTasks({ role, openActivities, color, stage }: {
+  role: Role; openActivities: string[]; color: string; stage: Stage
+}) {
   const theme = cityTheme(color)
+
+  // 교사가 연 활동 (이 역할에 해당하는 것)
+  const teacherOpened = openActivities
+    .map(k => ACTIVITY_BY_KEY[k])
+    .filter((a): a is Activity => !!a && a.roles.includes(role))
+
+  // 역할 상시 활동 (stage 이하인 것 중 교사가 아직 안 연 것)
+  const alwaysOnKeys = ALWAYS_ON_BY_ROLE[role] ?? []
+  const alwaysOnExtras = alwaysOnKeys
+    .map(k => ACTIVITY_BY_KEY[k])
+    .filter((a): a is Activity =>
+      !!a && a.roles.includes(role) && a.stage <= stage && !openActivities.includes(a.key)
+    )
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 지금 할 일 */}
-      {tasks.length > 0 ? (
+      {/* 교사가 연 활동 */}
+      {teacherOpened.length > 0 && (
         <div>
           <div className="text-sm font-bold text-gray-500 mb-2 px-1">📌 지금 할 일</div>
           <div className="grid grid-cols-3 gap-3">
-            {tasks.map(t => <SquareTask key={t.key} task={t} theme={theme} active />)}
+            {teacherOpened.map(t => <SquareTask key={t.key} task={t} theme={theme} active />)}
           </div>
         </div>
-      ) : (
+      )}
+
+      {/* 역할 기본 상시 메뉴 */}
+      {alwaysOnExtras.length > 0 && (
+        <div>
+          <div className="text-sm font-bold text-gray-500 mb-2 px-1">🔧 내 역할 기본 메뉴</div>
+          <div className="grid grid-cols-3 gap-3">
+            {alwaysOnExtras.map(t => <SquareTask key={t.key} task={t} theme={theme} />)}
+          </div>
+        </div>
+      )}
+
+      {/* 아무것도 없을 때 */}
+      {teacherOpened.length === 0 && alwaysOnExtras.length === 0 && (
         <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
           <div className="text-4xl mb-2">🌱</div>
           <p className="text-gray-600 font-medium">선생님이 활동을 열어줄 때까지 기다려요</p>
@@ -120,7 +144,42 @@ function RoleTasks({ role, openActivities, color }: { role: Role; openActivities
   )
 }
 
-// ─── 교사 홈 ─────────────────────────────────────────────────────────
+// ─── 교사 홈 ─────────────────────────────────────────────────────────────
+// 단계별 핵심 바로가기 + 활동 보드 + 전체 관리 그리드
+const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: string; href: string; color: string }>> = {
+  0: [
+    { emoji: '🗺️', label: '도시 탐구 현황',  desc: '학생 탐구 제출 · 워드클라우드', href: '/admin/citycard',      color: 'bg-green-500' },
+    { emoji: '🏙️', label: '도시 대표 카드',  desc: '묶기 · 카드 만들기',            href: '/admin/citycard',      color: 'bg-emerald-500' },
+  ],
+  1: [
+    { emoji: '⭐', label: '사업체 선정',      desc: '계획서 심사 · 창업가 선정',     href: '/admin/plans',         color: 'bg-amber-500' },
+    { emoji: '🧾', label: '품의서 결재',      desc: '물품 구입 승인',                href: '/admin/requisitions',  color: 'bg-orange-500' },
+  ],
+  2: [
+    { emoji: '📡', label: '종합 모니터링',    desc: '업무일지 · 채용 · 거래 확인',   href: '/admin/monitor',       color: 'bg-blue-500' },
+    { emoji: '👤', label: '학생별 현황',      desc: '개인별 상세 보기',              href: '/admin/monitor',       color: 'bg-indigo-500' },
+  ],
+  3: [
+    { emoji: '🤝', label: '교류 매칭 현황',   desc: '성사 건수 · 우수기업 배지',     href: '/admin/monitor',       color: 'bg-purple-500' },
+    { emoji: '👤', label: '학생별 현황',      desc: '개인별 활동 확인',              href: '/admin/monitor',       color: 'bg-violet-500' },
+  ],
+  4: [
+    { emoji: '📡', label: '종합 모니터링',    desc: '판매 현황 · 거래 내역',         href: '/admin/monitor',       color: 'bg-blue-500' },
+    { emoji: '🚨', label: '이상 거래 보고',   desc: '공무원이 신고한 거래',          href: '/admin/trade-reports', color: 'bg-red-500' },
+  ],
+}
+
+const ADMIN_CARDS = [
+  { emoji: '📡', label: '종합 모니터링',   desc: '학생 관리·채용·거래·잔액',      href: '/admin/monitor' },
+  { emoji: '👤', label: '학생별 현황',     desc: '개인 업무일지·거래·활동 기록',   href: '/admin/monitor' },
+  { emoji: '⭐', label: '사업체 선정',     desc: '계획서 심사·창업가 선정',        href: '/admin/plans' },
+  { emoji: '🧾', label: '품의서 결재',     desc: '물품 구입 승인',                 href: '/admin/requisitions' },
+  { emoji: '🗺️', label: '도시 대표 카드', desc: '탐구 결과 워드클라우드·카드',     href: '/admin/citycard' },
+  { emoji: '🚨', label: '이상 거래 보고', desc: '공무원 신고 거래 검토',           href: '/admin/trade-reports' },
+  { emoji: '📊', label: '평가 현황',       desc: '개념 응답·제출물 확인',          href: '/admin/submissions' },
+  { emoji: '🛡️', label: '관리자 설정',    desc: '학생 계정·공무원 임명',           href: '/admin' },
+]
+
 function MayorHome({ classId, stage, openActivities, paused, fairMode, submissions }: {
   classId: string; stage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
@@ -139,34 +198,37 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
     window.location.reload()
   }
 
-  const CARDS = [
-    { emoji: '🗺️', label: '도시 탐구 현황', desc: '워드클라우드·묶기·도시 카드', href: '/admin/citycard' },
-    { emoji: '⭐', label: '사업체 선정', desc: '계획서 심사·창업가 선정·지원금', href: '/admin/plans' },
-    { emoji: '🧾', label: '품의서 결재', desc: '물품 구입 승인', href: '/admin/requisitions' },
-    { emoji: '📡', label: '종합 모니터링', desc: '학생 관리·채용·거래·잔액 수정', href: '/admin/monitor' },
-    { emoji: '🚨', label: '이상 거래 보고', desc: '공무원이 신고한 거래 검토', href: '/admin/trade-reports' },
-    { emoji: '🏙️', label: '도시 대표 카드', desc: '탐구 결과로 카드 만들기', href: '/admin/citycard' },
-    { emoji: '📊', label: '평가 대시보드', desc: '타임라인·개념 응답·학생별 현황', href: '/admin/submissions' },
-    { emoji: '🛡️', label: '관리자 설정', desc: '학생 계정·공무원 임명', href: '/admin' },
-  ]
+  const featured = STAGE_FEATURED[stage]
 
   return (
     <div className="flex flex-col gap-4">
       {/* 단계 컨트롤 */}
       <MayorControl classId={classId} currentStage={stage} openActivities={openActivities} paused={paused} fairMode={fairMode} />
 
+      {/* 이번 단계 핵심 바로가기 */}
+      <div>
+        <div className="text-sm font-bold text-gray-500 mb-2 px-1">⚡ 이번 단계 핵심</div>
+        <div className="grid grid-cols-2 gap-3">
+          {featured.map(c => (
+            <Link key={c.href + c.label} href={c.href}
+              className={`${c.color} rounded-3xl p-5 text-white flex flex-col gap-1.5 active:scale-[0.98] transition-transform shadow-sm`}>
+              <span className="text-3xl">{c.emoji}</span>
+              <div className="font-bold text-base leading-tight">{c.label}</div>
+              <div className="text-xs opacity-80 leading-tight">{c.desc}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* 수업 보드 (접을 수 있음) */}
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <button
-          onClick={() => setBoardOpen(v => !v)}
+        <button onClick={() => setBoardOpen(v => !v)}
           className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
             <span className="text-xl">📋</span>
             <div className="text-left">
-              <div className="font-bold text-gray-800">수업 보드</div>
-              <div className="text-xs text-gray-400">
-                지금 열린 활동 {openActivities.length}개 · 탭 눌러 열고 닫기
-              </div>
+              <div className="font-bold text-gray-800">수업 보드 — 활동 열기/닫기</div>
+              <div className="text-xs text-gray-400">열린 활동 {openActivities.length}개 · 드래그로 순서 변경</div>
             </div>
           </div>
           <span className="text-gray-400 text-lg">{boardOpen ? '▲' : '▼'}</span>
@@ -176,23 +238,26 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
           <div className="border-t border-gray-100 px-5 pb-5 pt-3 flex flex-col gap-3">
             <button onClick={openAllStageActivities} disabled={addingAll}
               className="w-full bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-xl py-2.5 text-sm font-medium hover:bg-blue-100 disabled:opacity-40">
-              {addingAll ? '추가 중…' : `+ 이번 단계(${stage}) 활동 전체 추가`}
+              {addingAll ? '추가 중…' : `+ 이번 단계 활동 전체 추가`}
             </button>
             <ActivityBoard classId={classId} open={openActivities} />
           </div>
         )}
       </div>
 
-      {/* 기능 카드 그리드 */}
-      <div className="grid grid-cols-2 gap-3">
-        {CARDS.map(c => (
-          <Link key={c.href + c.label} href={c.href}
-            className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2 active:scale-[0.98]">
-            <span className="text-3xl">{c.emoji}</span>
-            <div className="font-bold text-gray-800 text-base leading-tight">{c.label}</div>
-            <div className="text-xs text-gray-400 leading-tight">{c.desc}</div>
-          </Link>
-        ))}
+      {/* 전체 관리 카드 그리드 */}
+      <div>
+        <div className="text-sm font-bold text-gray-500 mb-2 px-1">🛠️ 전체 관리</div>
+        <div className="grid grid-cols-2 gap-3">
+          {ADMIN_CARDS.map(c => (
+            <Link key={c.label} href={c.href}
+              className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1.5 active:scale-[0.98]">
+              <span className="text-3xl">{c.emoji}</span>
+              <div className="font-bold text-gray-800 text-base leading-tight">{c.label}</div>
+              <div className="text-xs text-gray-400 leading-tight">{c.desc}</div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {submissions && (
@@ -206,7 +271,7 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
   )
 }
 
-// ─── 정사각형 카드 (그리드용) ────────────────────────────────────────
+// ─── 정사각형 카드 ────────────────────────────────────────────────────────
 function SquareTask({ task, theme, active }: { task: Activity; theme: CityTheme; active?: boolean }) {
   const router = useRouter()
   return (
