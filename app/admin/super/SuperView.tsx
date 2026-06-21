@@ -15,6 +15,18 @@ export default function SuperView({ classRows, orphanAccounts }: {
   const [rows, setRows] = useState(classRows)
   const [orphans, setOrphans] = useState(orphanAccounts)
   const [resetDone, setResetDone] = useState(false)
+  const [codeFixed, setCodeFixed] = useState(false)
+
+  async function fixClassCodes() {
+    setBusy('fix')
+    const res = await fetch('/api/admin/super', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'fix_class_codes' }),
+    })
+    setBusy(null)
+    if (res.ok) { setCodeFixed(true); alert('반 코드 복구 완료! 이제 학급비번으로 로그인할 수 있어요.') }
+    else alert('복구에 실패했어요.')
+  }
 
   async function resetAllStudents() {
     if (!confirm('⚠️ 모든 반의 학생 데이터를 전체 초기화할까요?\n\n삭제되는 것: 학생 계정·역할·회사·잔액·거래·품의서·업무일지 등\n유지되는 것: 교사(시장) 계정, 반 목록\n\n되돌릴 수 없어요. 계속할까요?')) return
@@ -67,6 +79,20 @@ export default function SuperView({ classRows, orphanAccounts }: {
         <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm mb-4">← 관리자 홈</button>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">🛡️ 슈퍼어드민</h1>
         <p className="text-gray-500 text-sm mb-6">잘못 등록된 시장·계정을 정리해요</p>
+
+        {/* 반 코드 복구 */}
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 shadow-sm mb-4">
+          <div className="font-bold text-amber-700 mb-1">🔧 반 코드 복구</div>
+          <p className="text-sm text-amber-600 mb-4">학급비번(숫자)으로 로그인이 안 될 때 실행하세요. 수원·이천·고양·부천·파주·시흥 코드를 올바르게 설정합니다.</p>
+          {codeFixed ? (
+            <div className="bg-green-100 text-green-700 rounded-2xl py-3 text-center font-bold text-sm">✅ 복구 완료</div>
+          ) : (
+            <button onClick={fixClassCodes} disabled={busy === 'fix'}
+              className="w-full bg-amber-500 text-white rounded-2xl py-3 font-bold text-base disabled:opacity-40 active:scale-95 transition-transform">
+              {busy === 'fix' ? '복구 중...' : '🔧 반 코드 복구 실행'}
+            </button>
+          )}
+        </div>
 
         {/* 학생 데이터 전체 초기화 */}
         <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-6 shadow-sm mb-4">
