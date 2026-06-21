@@ -15,10 +15,11 @@ export default function PageShell({ title, emoji, children, locked }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-3xl mx-auto">
-        <button onClick={() => router.push('/home')}
-          className="flex items-center gap-1.5 text-red-500 font-bold text-base mb-4 hover:text-red-600 active:scale-95 transition-all">
-          <span className="text-xl leading-none">←</span>
-          <span>홈 메뉴로</span>
+        <button
+          onClick={() => typeof window !== 'undefined' && window.history.length > 1 ? router.back() : router.push('/home')}
+          className="flex items-center gap-1.5 text-red-500 font-bold text-lg mb-5 hover:text-red-600 active:scale-95 transition-all">
+          <span className="text-2xl leading-none font-black">←</span>
+          <span>이전으로</span>
         </button>
 
         <h1 className="text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2">

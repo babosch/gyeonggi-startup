@@ -177,7 +177,10 @@ const ADMIN_CARDS = [
   { emoji: '🗺️', label: '도시 대표 카드', desc: '탐구 결과 워드클라우드·카드',     href: '/admin/citycard' },
   { emoji: '🚨', label: '이상 거래 보고', desc: '공무원 신고 거래 검토',           href: '/admin/trade-reports' },
   { emoji: '📊', label: '평가 현황',       desc: '개념 응답·제출물 확인',          href: '/admin/submissions' },
-  { emoji: '🛡️', label: '관리자 설정',    desc: '학생 계정·공무원 임명',           href: '/admin' },
+  { emoji: '📋', label: '공무원 임명',     desc: '지원자를 공무원으로 임명',        href: '/admin/officers' },
+  { emoji: '🏛️', label: '공무원 급여',    desc: '업무일지 확인 후 급여 지급',      href: '/admin/officer-payroll' },
+  { emoji: '📊', label: '현황 보드',       desc: '반 전체 진행·시찰·경보',          href: '/admin/board' },
+  { emoji: '🛡️', label: '관리자 설정',    desc: '학생 계정 생성·핀번호 초기화',    href: '/admin' },
 ]
 
 function MayorHome({ classId, stage, openActivities, paused, fairMode, submissions }: {
