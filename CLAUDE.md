@@ -9,8 +9,10 @@
 > 3. `CHANGELOG.md` — 무엇이 언제 바뀌었는지 (상세는 `git log`)
 > 4. `docs/ARCHITECTURE.md` — 코드 구조·핵심 패턴·개발 워크플로·함정
 > 5. `docs/DECISIONS.md` — 왜 이렇게 만들었는지(되돌리기 전 확인)
-> 6. `docs/base_idea/웹앱_요구사항_사양서_v4.md` — 전체 기능 명세(가장 상세)
+> 6. `docs/협업가이드.md` — 브랜치 흐름·충돌 해결·AI 작업 체크리스트 (**협업 중이면 필독**)
+> 7. `docs/base_idea/웹앱_요구사항_사양서_v4.md` — 전체 기능 명세(가장 상세)
 >
+> **작업 전: 아래 "협업 브랜치 규칙"을 반드시 확인할 것.**
 > **작업 후: `CHANGELOG.md` 맨 위에 한 줄 추가하고, 큰 변화면 `docs/PROGRESS.md`도 갱신할 것.**
 >
 > 코드 수정 전 ARCHITECTURE의 "핵심 패턴"과 "흔한 함정"을 반드시 확인할 것.
@@ -21,6 +23,37 @@
 ## 프로젝트 한 줄 요약
 
 초등 4학년 사회 수업용 창업 시뮬레이션 웹앱. 교사(시장)가 수업 단계를 통제하고, 학생이 CEO·직원·공무원 역할로 창업→생산→교류→판매를 경험한다. 모든 활동이 과정중심평가 데이터로 자동 기록된다.
+
+---
+
+## 협업 브랜치 규칙 (AI·사람 모두 적용, 예외 없음)
+
+> `main` 브랜치 = 실서비스. Vercel이 즉시 배포함. **직접 push 금지.**
+
+**작업 시작 전 반드시 실행:**
+
+```bash
+git checkout main
+git pull origin main              # 최신 상태 동기화
+git checkout -b feat/작업이름     # 새 브랜치 생성 (예: feat/quiz-fix)
+```
+
+**작업 완료 후:**
+
+```bash
+git add 파일명                    # 관련 파일만 선택 (git add -A 금지)
+git commit -m "feat: 무엇을 했는지"
+git push -u origin feat/작업이름
+# → GitHub에서 Pull Request 생성 → 확인 → Merge
+```
+
+**AI(Claude 등)에게 적용되는 추가 규칙:**
+- 세션 시작 시 `git branch --show-current`로 현재 브랜치 확인할 것
+- `main` 브랜치에 있으면 작업 전 사용자에게 "브랜치를 만들까요?" 물어볼 것
+- `git push origin main` 또는 `git push -f` 명령은 사용자가 명시적으로 허락해야만 실행
+- 단독 작업자 1인이 명시적으로 "main에 바로 push"를 허락할 때만 예외 허용
+
+상세 흐름·충돌 해결 → `docs/협업가이드.md`
 
 ---
 
