@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── 타입 ────────────────────────────────────────────
 interface Student {
@@ -18,6 +19,8 @@ interface Transaction {
   id: string; fromName: string; toName: string; amount: number
   type: string; memo: string; voided: boolean; createdAt: string
 }
+interface QuizCount { total: number; correct: number }
+interface PresenceInfo { page: string; hidden: boolean; role: string; nickname: string }
 
 const ROLE_LABEL: Record<string, string> = {
   applicant: '지원자', ceo: 'CEO', staff: '직원', officer: '공무원',
@@ -28,17 +31,29 @@ const ROLE_COLOR: Record<string, string> = {
   staff: 'bg-blue-100 text-blue-700',
   officer: 'bg-purple-100 text-purple-700',
 }
+const ROLE_EMOJI: Record<string, string> = {
+  applicant: '🙋', ceo: '👑', staff: '🛠️', officer: '📋',
+}
 const TX_TYPE_LABEL: Record<string, string> = {
   grant: '지원금', purchase: '구매', payroll: '급여',
   facility: '시설', exchange: '교류', refund: '환불', adjust: '조정',
 }
+// ─── 접속 상태 점 ────────────────────────────────────
+function OnlineDot({ info }: { info: PresenceInfo | undefined }) {
+  if (!info) return (
+    <span className="w-2.5 h-2.5 rounded-full bg-gray-300 shrink-0 inline-block" title="미접속" />
+  )
+  if (info.hidden) return (
+    <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 inline-block animate-pulse" title={`다른 화면 중 (${info.page})`} />
+  )
+  return (
+    <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0 inline-block" title={`접속 중: ${info.page}`} />
+  )
+}
 
 // ─── 학생 수정 모달 ──────────────────────────────────
 function StudentEditModal({ student, companies, onClose, onSave }: {
-  student: Student
-  companies: Company[]
-  onClose: () => void
-  onSave: () => void
+  student: Student; companies: Company[]; onClose: () => void; onSave: () => void
 }) {
   const [role, setRole] = useState(student.role)
   const [companyId, setCompanyId] = useState(student.companyId ?? '')
@@ -85,23 +100,19 @@ function StudentEditModal({ student, companies, onClose, onSave }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-3xl w-full max-w-md p-6 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center">
           <div>
-            <div className="text-lg font-bold text-gray-800">
-              {student.nickname ?? `${student.number}번`} 수정
-            </div>
+            <div className="text-lg font-bold text-gray-800">{student.nickname ?? `${student.number}번`} 수정</div>
             <div className="text-sm text-gray-400">현재 잔액 {student.balance.toLocaleString()}원</div>
           </div>
           <button onClick={onClose} className="text-gray-400 text-2xl leading-none">×</button>
         </div>
 
-        {msg && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700">{msg}</div>
-        )}
+        {msg && <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700">{msg}</div>}
 
-        {/* 역할 변경 */}
         <div className="bg-gray-50 rounded-2xl p-4">
           <div className="font-medium text-gray-700 mb-3">① 역할 변경</div>
           <select value={role} onChange={e => setRole(e.target.value)}
@@ -124,7 +135,6 @@ function StudentEditModal({ student, companies, onClose, onSave }: {
           </button>
         </div>
 
-        {/* 잔액 조정 */}
         <div className="bg-gray-50 rounded-2xl p-4">
           <div className="font-medium text-gray-700 mb-3">② 잔액 수동 조정</div>
           <div className="flex gap-2 mb-2">
@@ -141,7 +151,6 @@ function StudentEditModal({ student, companies, onClose, onSave }: {
           </button>
         </div>
 
-        {/* PIN 재설정 */}
         <div className="bg-gray-50 rounded-2xl p-4">
           <div className="font-medium text-gray-700 mb-3">③ PIN 재설정</div>
           <div className="flex gap-2">
@@ -161,28 +170,166 @@ function StudentEditModal({ student, companies, onClose, onSave }: {
   )
 }
 
+// ─── 회사 잔액 조정 ───────────────────────────────────
+function CompanyBalanceAdjust({ companyId, companyName, onDone }: {
+  companyId: string; companyName: string; onDone: () => void
+}) {
+  const [show, setShow] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [memo, setMemo] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function save() {
+    const amt = parseInt(amount)
+    if (!amt) return
+    setBusy(true)
+    await fetch('/api/admin/adjust-balance', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ownerType: 'company', ownerId: companyId, amount: amt, memo: memo || '교사 조정' }),
+    })
+    setBusy(false)
+    setShow(false); setAmount(''); setMemo('')
+    onDone()
+  }
+
+  if (!show) return (
+    <button onClick={() => setShow(true)} className="text-xs text-gray-400 underline">잔액 조정</button>
+  )
+  return (
+    <div className="flex gap-2 mt-1">
+      <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
+        placeholder="금액 (음수=차감)"
+        className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
+      <input value={memo} onChange={e => setMemo(e.target.value)}
+        placeholder="사유"
+        className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
+      <button onClick={save} disabled={busy || !amount}
+        className="bg-blue-500 text-white rounded-xl px-3 py-2 text-sm font-medium disabled:opacity-40">저장</button>
+      <button onClick={() => setShow(false)} className="text-gray-400 text-sm px-1">✕</button>
+    </div>
+  )
+}
+
 // ─── 메인 모니터 뷰 ──────────────────────────────────
-export default function MonitorView({ cityName, stage, classId, students, companies, applications, transactions }: {
+export default function MonitorView({
+  cityName, stage, classId,
+  students: initialStudents, companies, applications, transactions,
+  quizCountMap: initialQuiz, reflectCountMap: initialReflect, worklogCountMap: initialWorklog,
+}: {
   cityName: string; stage: number; classId: string
   students: Student[]; companies: Company[]
   applications: Application[]; transactions: Transaction[]
+  quizCountMap: Record<string, Record<string, QuizCount>>
+  reflectCountMap: Record<string, number>
+  worklogCountMap: Record<string, number>
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<'students' | 'companies' | 'hiring' | 'transactions'>('students')
+  const [tab, setTab] = useState<'students' | 'companies' | 'hiring' | 'transactions' | 'learning'>('students')
   const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [voidBusy, setVoidBusy] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // 실시간으로 업데이트되는 상태
+  const [students, setStudents] = useState<Student[]>(initialStudents)
+  const [quizCounts, setQuizCounts] = useState(initialQuiz)
+  const [reflectCounts, setReflectCounts] = useState(initialReflect)
+  const [worklogCounts, setWorklogCounts] = useState(initialWorklog)
+  const [presence, setPresence] = useState<Record<string, PresenceInfo>>({})
+
+  const studentIdSet = useRef(new Set(initialStudents.map(s => s.id)))
+  const companyMap = useRef<Record<string, string>>(
+    Object.fromEntries(companies.map(c => [c.id, c.name]))
+  )
+
   const STAGE_LABELS = ['⓪ 도시탐구', '① 창업', '② 생산', '③ 교류', '④ 판매']
 
+  // ── Realtime 구독 ──
+  useEffect(() => {
+    const supabase = createClient()
+
+    // 1. Presence 채널 구독 (학생 접속 상태)
+    const presenceCh = supabase.channel(`monitor:${classId}`)
+    presenceCh
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceCh.presenceState<{
+          userId: string; nickname: string; role: string; page: string; hidden: boolean
+        }>()
+        const newPresence: Record<string, PresenceInfo> = {}
+        for (const entries of Object.values(state)) {
+          for (const e of entries) {
+            if (e.userId) {
+              newPresence[e.userId] = { page: e.page, hidden: e.hidden, role: e.role, nickname: e.nickname }
+            }
+          }
+        }
+        setPresence(newPresence)
+      })
+      .subscribe()
+
+    // 2. 데이터 변경 구독 (퀴즈/성찰/업무일지/학생정보)
+    const dataCh = supabase.channel(`monitor-data:${classId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'concept_responses',
+        filter: `class_id=eq.${classId}`,
+      }, (payload) => {
+        const { user_id, kind, is_correct } = payload.new as { user_id: string; kind: string; is_correct: boolean }
+        setQuizCounts(prev => {
+          const next = { ...prev, [user_id]: { ...prev[user_id] } }
+          if (!next[user_id][kind]) next[user_id][kind] = { total: 0, correct: 0 }
+          next[user_id][kind] = {
+            total: next[user_id][kind].total + 1,
+            correct: next[user_id][kind].correct + (is_correct ? 1 : 0),
+          }
+          return next
+        })
+      })
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'reflections',
+      }, (payload) => {
+        const { user_id } = payload.new as { user_id: string }
+        if (studentIdSet.current.has(user_id)) {
+          setReflectCounts(prev => ({ ...prev, [user_id]: (prev[user_id] ?? 0) + 1 }))
+        }
+      })
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'activity_logs',
+        filter: `class_id=eq.${classId}`,
+      }, (payload) => {
+        const { user_id, action } = payload.new as { user_id: string; action: string }
+        if (action === 'worklog') {
+          setWorklogCounts(prev => ({ ...prev, [user_id]: (prev[user_id] ?? 0) + 1 }))
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'users',
+        filter: `class_id=eq.${classId}`,
+      }, (payload) => {
+        const u = payload.new as { id: string; role: string; company_id: string | null }
+        setStudents(prev => prev.map(s => s.id === u.id
+          ? { ...s, role: u.role, companyId: u.company_id, companyName: u.company_id ? (companyMap.current[u.company_id] ?? null) : null }
+          : s
+        ))
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(presenceCh)
+      supabase.removeChannel(dataCh)
+    }
+  }, [classId])
+
   const filteredStudents = students.filter(s =>
-    !searchQuery || `${s.number}번 ${s.nickname ?? ''}`.includes(searchQuery)
+    !searchQuery || `${s.number}번 ${s.nickname ?? ''}`.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const pendingApps = applications.filter(a => a.status === 'pending')
   const roleCounts = students.reduce<Record<string, number>>((acc, s) => {
     acc[s.role] = (acc[s.role] ?? 0) + 1; return acc
   }, {})
+
+  // 접속 중인 학생 수
+  const onlineCount = Object.keys(presence).length
+  const activeCount = Object.values(presence).filter(p => !p.hidden).length
 
   async function voidTx(txId: string) {
     if (!confirm('이 거래를 취소하면 잔액이 원상복구돼요. 진행할까요?')) return
@@ -197,6 +344,7 @@ export default function MonitorView({ cityName, stage, classId, students, compan
 
   const tabs = [
     { key: 'students', label: '👥 학생', badge: students.length },
+    { key: 'learning', label: '📊 학습현황', badge: undefined },
     { key: 'companies', label: '🏭 회사', badge: companies.length },
     { key: 'hiring', label: '💼 채용', badge: pendingApps.length || undefined },
     { key: 'transactions', label: '💸 거래', badge: undefined },
@@ -207,25 +355,30 @@ export default function MonitorView({ cityName, stage, classId, students, compan
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm">←</button>
-          <div>
-            <div className="font-bold text-gray-800">{cityName} 모니터링</div>
-            <div className="text-xs text-gray-400">현재 단계: {STAGE_LABELS[stage] ?? stage}</div>
+          <button onClick={() => router.push('/home')} className="text-gray-400 text-sm">←</button>
+          <div className="flex-1">
+            <div className="font-bold text-gray-800">{cityName} 종합모니터링</div>
+            <div className="text-xs text-gray-400">
+              현재 단계: {STAGE_LABELS[stage] ?? stage}
+              {onlineCount > 0 && (
+                <span className="ml-2">
+                  <span className="text-green-600">● {activeCount}명 접속 중</span>
+                  {onlineCount > activeCount && <span className="text-red-400"> · 🔴 {onlineCount - activeCount}명 다른 화면</span>}
+                </span>
+              )}
+            </div>
           </div>
-          <button onClick={() => router.refresh()} className="ml-auto text-sm text-blue-500 font-medium">
-            새로고침
-          </button>
         </div>
 
         {/* 탭 */}
-        <div className="max-w-3xl mx-auto px-4 flex gap-1 pb-0 overflow-x-auto">
+        <div className="max-w-3xl mx-auto px-4 flex gap-0 pb-0 overflow-x-auto">
           {tabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key as typeof tab)}
-              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative
+              className={`px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative
                 ${tab === t.key ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               {t.label}
               {t.badge != null && (
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-bold
+                <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full font-bold
                   ${tab === t.key ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                   {t.badge}
                 </span>
@@ -240,14 +393,22 @@ export default function MonitorView({ cityName, stage, classId, students, compan
         {/* ── 학생 탭 ── */}
         {tab === 'students' && (
           <>
-            {/* 역할 요약 */}
+            {/* 역할 요약 카드 */}
             <div className="grid grid-cols-4 gap-2">
-              {['applicant', 'ceo', 'staff', 'officer'].map(r => (
+              {(['applicant', 'ceo', 'staff', 'officer'] as const).map(r => (
                 <div key={r} className="bg-white rounded-2xl p-3 text-center shadow-sm">
+                  <div className="text-xl mb-0.5">{ROLE_EMOJI[r]}</div>
                   <div className="text-2xl font-bold text-gray-800">{roleCounts[r] ?? 0}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{ROLE_LABEL[r]}</div>
+                  <div className="text-xs text-gray-500">{ROLE_LABEL[r]}</div>
                 </div>
               ))}
+            </div>
+
+            {/* 접속 현황 범례 */}
+            <div className="bg-white rounded-2xl px-4 py-2.5 flex items-center gap-4 text-xs text-gray-500 shadow-sm">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> 접속 중 (이 사이트)</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> 다른 화면 사용 중</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" /> 미접속</span>
             </div>
 
             {/* 검색 */}
@@ -255,43 +416,159 @@ export default function MonitorView({ cityName, stage, classId, students, compan
               placeholder="🔍 번호나 닉네임으로 검색..."
               className="w-full bg-white border-2 border-gray-200 rounded-2xl px-4 py-3 focus:border-blue-400 outline-none" />
 
-            {/* 학생 목록 */}
+            {/* 학생 목록 — 역할/회사/접속상태 한눈에 */}
             <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-              {filteredStudents.map((s, i) => (
-                <div key={s.id}
-                  className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
-                    {s.number}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-800 text-sm">
-                        {s.nickname ?? `${s.number}번`}
-                      </span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${ROLE_COLOR[s.role] ?? 'bg-gray-100 text-gray-500'}`}>
-                        {ROLE_LABEL[s.role] ?? s.role}
-                      </span>
+              {filteredStudents.map((s, i) => {
+                const pInfo = presence[s.id]
+                const name = s.nickname ?? `${s.number}번`
+                const quiz = quizCounts[s.id] ?? {}
+                const quizDone = Object.keys(quiz).length
+                const reflectN = reflectCounts[s.id] ?? 0
+                const worklogN = worklogCounts[s.id] ?? 0
+                return (
+                  <div key={s.id}
+                    className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                    {/* 번호 + 접속 dot */}
+                    <div className="relative shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
+                        {s.number}
+                      </div>
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white
+                        ${!pInfo ? 'bg-gray-300' : pInfo.hidden ? 'bg-red-500' : 'bg-green-500'}`} />
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5 truncate">
-                      {s.companyName ? `🏭 ${s.companyName} · ` : ''}
-                      잔액 {s.balance.toLocaleString()}원
+
+                    {/* 이름 + 역할 + 회사 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-gray-800 text-sm">{name}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${ROLE_COLOR[s.role] ?? 'bg-gray-100 text-gray-500'}`}>
+                          {ROLE_EMOJI[s.role]} {ROLE_LABEL[s.role] ?? s.role}
+                        </span>
+                      </div>
+                      <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
+                        {s.companyName && (
+                          <span className="text-blue-600 font-medium truncate max-w-[120px]">🏭 {s.companyName}</span>
+                        )}
+                        {s.role === 'officer' && (
+                          <span className="text-purple-600 font-medium">🏛️ 공무원</span>
+                        )}
+                        <span className="text-gray-400">
+                          잔액 {s.balance.toLocaleString()}원
+                        </span>
+                      </div>
+                      {/* 학습 미니 현황 */}
+                      <div className="text-xs mt-0.5 flex items-center gap-2 text-gray-400">
+                        <span title="쪽지시험">✏️ {quizDone}/3</span>
+                        <span title="성찰">💭 {reflectN}</span>
+                        <span title="업무일지">📝 {worklogN}</span>
+                        {pInfo && !pInfo.hidden && (
+                          <span className="text-green-600 truncate max-w-[100px]" title={`현재: ${pInfo.page}`}>
+                            📍 {pInfo.page}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1.5 shrink-0">
+                      <button onClick={() => setEditStudent(s)}
+                        className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-xl font-medium hover:bg-blue-100 transition-colors">
+                        수정
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => router.push(`/admin/students/${s.id}`)}
-                      className="text-xs bg-gray-50 text-gray-600 px-2.5 py-1.5 rounded-xl font-medium hover:bg-gray-100 transition-colors">
-                      상세
-                    </button>
-                    <button onClick={() => setEditStudent(s)}
-                      className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-xl font-medium hover:bg-blue-100 transition-colors">
-                      수정
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
               {filteredStudents.length === 0 && (
                 <div className="py-10 text-center text-gray-400 text-sm">검색 결과가 없어요</div>
               )}
+            </div>
+          </>
+        )}
+
+        {/* ── 학습현황 탭 ── */}
+        {tab === 'learning' && (
+          <>
+            <div className="bg-blue-50 rounded-2xl px-4 py-2.5 text-xs text-blue-700">
+              실시간으로 업데이트돼요 · 쪽지시험은 5문항, 문항수/정답수로 표시
+            </div>
+
+            {/* 퀴즈 현황 */}
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
+                <div className="font-bold text-gray-700 text-sm">✏️ 쪽지시험 현황</div>
+              </div>
+              {/* 헤더 */}
+              <div className="grid grid-cols-5 text-xs font-bold text-gray-500 px-4 py-2 border-b border-gray-100 bg-gray-50/50">
+                <div className="col-span-2">이름</div>
+                <div className="text-center">1차</div>
+                <div className="text-center">2차</div>
+                <div className="text-center">최종</div>
+              </div>
+              {students.map((s, i) => {
+                const quiz = quizCounts[s.id] ?? {}
+                const name = s.nickname ?? `${s.number}번`
+                return (
+                  <div key={s.id} className={`grid grid-cols-5 items-center px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                    <div className="col-span-2 flex items-center gap-2">
+                      <OnlineDot info={presence[s.id]} />
+                      <div>
+                        <div className="font-medium text-gray-800 text-xs">{name}</div>
+                        <div className="text-[10px] text-gray-400">{ROLE_LABEL[s.role]}</div>
+                      </div>
+                    </div>
+                    {(['quiz_1', 'quiz_2', 'quiz_final'] as const).map(kind => {
+                      const q = quiz[kind]
+                      if (!q) return <div key={kind} className="text-center text-gray-300 text-lg">—</div>
+                      const done = q.total >= 5
+                      return (
+                        <div key={kind} className="text-center">
+                          <div className={`text-xs font-bold ${done ? 'text-green-600' : 'text-amber-500'}`}>
+                            {done ? '✅' : '⏳'} {q.correct}/{q.total}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 성찰 + 업무일지 현황 */}
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
+                <div className="font-bold text-gray-700 text-sm">💭 성찰 · 📝 업무일지 현황</div>
+              </div>
+              <div className="grid grid-cols-4 text-xs font-bold text-gray-500 px-4 py-2 border-b border-gray-100 bg-gray-50/50">
+                <div className="col-span-2">이름</div>
+                <div className="text-center">성찰 수</div>
+                <div className="text-center">업무일지</div>
+              </div>
+              {students.map((s, i) => {
+                const name = s.nickname ?? `${s.number}번`
+                const reflectN = reflectCounts[s.id] ?? 0
+                const worklogN = worklogCounts[s.id] ?? 0
+                return (
+                  <div key={s.id} className={`grid grid-cols-4 items-center px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                    <div className="col-span-2 flex items-center gap-2">
+                      <OnlineDot info={presence[s.id]} />
+                      <div>
+                        <div className="font-medium text-gray-800 text-xs">{name}</div>
+                        <div className="text-[10px] text-gray-400">{ROLE_LABEL[s.role]}</div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <span className={`text-sm font-bold ${reflectN > 0 ? 'text-purple-600' : 'text-gray-300'}`}>
+                        {reflectN > 0 ? `💭 ${reflectN}` : '—'}
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <span className={`text-sm font-bold ${worklogN > 0 ? 'text-blue-600' : 'text-gray-300'}`}>
+                        {worklogN > 0 ? `📝 ${worklogN}` : '—'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </>
         )}
@@ -302,23 +579,38 @@ export default function MonitorView({ cityName, stage, classId, students, compan
             {companies.length === 0 && (
               <div className="bg-white rounded-3xl p-10 text-center text-gray-400">아직 선정된 회사가 없어요.</div>
             )}
-            {companies.map(c => (
-              <div key={c.id} className="bg-white rounded-3xl p-5 shadow-sm">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="font-bold text-gray-800 text-lg">{c.name}</div>
-                    <div className="text-sm text-gray-500">CEO {c.ceo} · 직원 {c.staffCount}명</div>
+            {companies.map(c => {
+              const ceoStudent = students.find(s => s.companyId === c.id && s.role === 'ceo')
+              const staffStudents = students.filter(s => s.companyId === c.id && s.role === 'staff')
+              return (
+                <div key={c.id} className="bg-white rounded-3xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="font-bold text-gray-800 text-lg">{c.name}</div>
+                      <div className="text-sm text-gray-500 mt-0.5">
+                        👑 CEO {c.ceo}
+                        {ceoStudent && <OnlineDot info={presence[ceoStudent.id]} />}
+                      </div>
+                      {staffStudents.length > 0 && (
+                        <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-1">
+                          {staffStudents.map(st => (
+                            <span key={st.id} className="flex items-center gap-0.5">
+                              <OnlineDot info={presence[st.id]} />
+                              {st.nickname ?? `${st.number}번`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-blue-600 text-lg">{c.balance.toLocaleString()}원</div>
+                      <div className="text-xs text-gray-400">잔액</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-blue-600 text-lg">{c.balance.toLocaleString()}원</div>
-                    <div className="text-xs text-gray-400">잔액</div>
-                  </div>
+                  <CompanyBalanceAdjust companyId={c.id} companyName={c.name} onDone={() => router.refresh()} />
                 </div>
-
-                {/* 회사 잔액 조정 */}
-                <CompanyBalanceAdjust companyId={c.id} companyName={c.name} onDone={() => router.refresh()} />
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
@@ -376,9 +668,7 @@ export default function MonitorView({ cityName, stage, classId, students, compan
                       </span>
                       {t.voided && <span className="text-xs text-red-400 font-medium">취소됨</span>}
                     </div>
-                    <div className="text-sm text-gray-700 truncate">
-                      {t.fromName} → {t.toName}
-                    </div>
+                    <div className="text-sm text-gray-700 truncate">{t.fromName} → {t.toName}</div>
                     {t.memo && <div className="text-xs text-gray-400 truncate">{t.memo}</div>}
                   </div>
                   <div className="text-right ml-3 shrink-0">
@@ -406,47 +696,9 @@ export default function MonitorView({ cityName, stage, classId, students, compan
           student={editStudent}
           companies={companies}
           onClose={() => setEditStudent(null)}
-          onSave={() => { setEditStudent(null); router.refresh() }}
+          onSave={() => setEditStudent(null)}
         />
       )}
-    </div>
-  )
-}
-
-// 회사 잔액 조정 인라인 컴포넌트
-function CompanyBalanceAdjust({ companyId, companyName, onDone }: {
-  companyId: string; companyName: string; onDone: () => void
-}) {
-  const [show, setShow] = useState(false)
-  const [amount, setAmount] = useState('')
-  const [memo, setMemo] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function save() {
-    const amt = parseInt(amount)
-    if (!amt) return
-    setBusy(true)
-    await fetch('/api/admin/adjust-balance', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ownerType: 'company', ownerId: companyId, amount: amt, memo: memo || '교사 조정' }),
-    })
-    setBusy(false)
-    setShow(false); setAmount(''); setMemo('')
-    onDone()
-  }
-
-  if (!show) return (
-    <button onClick={() => setShow(true)} className="text-xs text-gray-400 underline">잔액 조정</button>
-  )
-  return (
-    <div className="flex gap-2 mt-1">
-      <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
-        placeholder="금액 (음수=차감)" className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
-      <input value={memo} onChange={e => setMemo(e.target.value)}
-        placeholder="사유" className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
-      <button onClick={save} disabled={busy || !amount}
-        className="bg-blue-500 text-white rounded-xl px-3 py-2 text-sm font-medium disabled:opacity-40">저장</button>
-      <button onClick={() => setShow(false)} className="text-gray-400 text-sm px-1">✕</button>
     </div>
   )
 }

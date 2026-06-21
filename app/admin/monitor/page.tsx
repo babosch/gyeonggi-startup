@@ -69,16 +69,41 @@ export default async function MonitorPage() {
     .order('created_at', { ascending: false })
     .limit(60)
 
-  // 급여 내역 (payroll)
-  const { data: payroll } = await supabase
-    .from('transactions')
-    .select('id, to_account_id, amount, memo, created_at')
-    .eq('type', 'payroll')
-    .in(
-      'to_account_id',
-      (userAccounts ?? []).map(a => a.owner_id).length ? (userAccounts ?? []).map(a => a.owner_id) : ['_']
-    )
-    .order('created_at', { ascending: false })
+  // 퀴즈(쪽지시험) 응답 — concept_responses에 class_id 있음
+  const { data: quizRows } = await supabase
+    .from('concept_responses')
+    .select('user_id, kind, is_correct')
+    .eq('class_id', me.class_id!)
+
+  const quizCountMap: Record<string, Record<string, { total: number; correct: number }>> = {}
+  for (const r of quizRows ?? []) {
+    if (!quizCountMap[r.user_id]) quizCountMap[r.user_id] = {}
+    if (!quizCountMap[r.user_id][r.kind]) quizCountMap[r.user_id][r.kind] = { total: 0, correct: 0 }
+    quizCountMap[r.user_id][r.kind].total++
+    if (r.is_correct) quizCountMap[r.user_id][r.kind].correct++
+  }
+
+  // 성찰 건수 — reflections는 class_id 없으므로 user_id로 필터
+  const { data: reflectRows } = studentIds.length
+    ? await supabase.from('reflections').select('user_id').in('user_id', studentIds)
+    : { data: [] }
+
+  const reflectCountMap: Record<string, number> = {}
+  for (const r of reflectRows ?? []) {
+    reflectCountMap[r.user_id] = (reflectCountMap[r.user_id] ?? 0) + 1
+  }
+
+  // 업무일지 건수 — activity_logs에 class_id 있음
+  const { data: worklogRows } = await supabase
+    .from('activity_logs')
+    .select('user_id')
+    .eq('class_id', me.class_id!)
+    .eq('action', 'worklog')
+
+  const worklogCountMap: Record<string, number> = {}
+  for (const r of worklogRows ?? []) {
+    worklogCountMap[r.user_id] = (worklogCountMap[r.user_id] ?? 0) + 1
+  }
 
   // account_id → 소유자 이름 매핑 빌드
   const accountOwnerMap: Record<string, string> = {}
@@ -99,7 +124,7 @@ export default async function MonitorPage() {
     <MonitorView
       cityName={cls.name}
       stage={cls.stage}
-      classId={me.class_id}
+      classId={me.class_id!}
       students={(students ?? []).map(s => ({
         id: s.id,
         number: s.number,
@@ -130,6 +155,9 @@ export default async function MonitorPage() {
           createdAt: a.created_at,
         }
       })}
+      quizCountMap={quizCountMap}
+      reflectCountMap={reflectCountMap}
+      worklogCountMap={worklogCountMap}
       transactions={(transactions ?? []).map(t => ({
         id: t.id,
         fromName: t.from_account_id ? (accountOwnerMap[t.from_account_id] ?? t.from_account_id.slice(0, 8)) : '정부',
