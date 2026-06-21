@@ -141,35 +141,63 @@ export default function LoginPage() {
   )
 
   // ── 반 확인 ──────────────────────────────────
-  if (step === 'confirm') return (
-    <Wrap>
-      <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-8 block">
-        ← 반 다시 선택
-      </button>
-      <div className="bg-white rounded-3xl shadow-sm p-10 text-center">
-        <div className={`inline-block px-6 py-3 rounded-2xl text-white font-bold text-2xl mb-6
-          ${CITY_COLORS[selectedClass!.color]}`}>
-          {selectedClass!.name}
+  if (step === 'confirm') {
+    // 시흥시 = 선생님 테스트 반
+    if (selectedClass!.name === '시흥시') return (
+      <Wrap>
+        <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-8 block">
+          ← 반 다시 선택
+        </button>
+        <div className="bg-white rounded-3xl shadow-sm p-10 text-center">
+          <div className="text-5xl mb-4">🏫</div>
+          <p className="text-gray-800 font-bold text-2xl mb-2">선생님용 테스트 반입니다.</p>
+          <p className="text-gray-500 text-lg mb-10">선생님이신가요?</p>
+          <div className="flex gap-4">
+            <button onClick={() => setStep('class')}
+              className="flex-1 h-16 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold text-xl
+                active:scale-95 transition-all">
+              아니요
+            </button>
+            <button onClick={() => setStep('number')}
+              className="flex-1 h-16 rounded-2xl bg-teal-500 text-white font-bold text-xl
+                active:scale-95 transition-all">
+              네, 맞아요
+            </button>
+          </div>
         </div>
-        <p className="text-gray-800 font-bold text-3xl mb-2">
-          {selectedClass!.name} {CLASS_BAND[selectedClass!.name]}
-        </p>
-        <p className="text-gray-500 text-xl mb-10">맞나요?</p>
-        <div className="flex gap-4">
-          <button onClick={() => setStep('class')}
-            className="flex-1 h-16 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold text-xl
-              hover:border-gray-400 active:scale-95 transition-all">
-            아니요
-          </button>
-          <button onClick={() => setStep('number')}
-            className={`flex-1 h-16 rounded-2xl text-white font-bold text-xl
-              active:scale-95 transition-all ${CITY_COLORS[selectedClass!.color]}`}>
-            맞아요!
-          </button>
+      </Wrap>
+    )
+
+    return (
+      <Wrap>
+        <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-8 block">
+          ← 반 다시 선택
+        </button>
+        <div className="bg-white rounded-3xl shadow-sm p-10 text-center">
+          <div className={`inline-block px-6 py-3 rounded-2xl text-white font-bold text-2xl mb-6
+            ${CITY_COLORS[selectedClass!.color]}`}>
+            {selectedClass!.name}
+          </div>
+          <p className="text-gray-800 font-bold text-3xl mb-2">
+            {selectedClass!.name} {CLASS_BAND[selectedClass!.name]}
+          </p>
+          <p className="text-gray-500 text-xl mb-10">맞나요?</p>
+          <div className="flex gap-4">
+            <button onClick={() => setStep('class')}
+              className="flex-1 h-16 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold text-xl
+                hover:border-gray-400 active:scale-95 transition-all">
+              아니요
+            </button>
+            <button onClick={() => setStep('number')}
+              className={`flex-1 h-16 rounded-2xl text-white font-bold text-xl
+                active:scale-95 transition-all ${CITY_COLORS[selectedClass!.color]}`}>
+              맞아요!
+            </button>
+          </div>
         </div>
-      </div>
-    </Wrap>
-  )
+      </Wrap>
+    )
+  }
 
   // ── 번호 선택 ────────────────────────────────
   if (step === 'number') return (
