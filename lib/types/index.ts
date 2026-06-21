@@ -13,6 +13,18 @@ export const STAGE_SHORT: Record<Stage, string> = {
   0: '탐구', 1: '창업', 2: '생산', 3: '교류', 4: '판매',
 }
 
+export const STAGE_SESSIONS: Record<Stage, string> = {
+  0: '1차시', 1: '2~4차시', 2: '5~8차시', 3: '9~11차시', 4: '12~15차시',
+}
+
+export const STAGE_THEME: Record<Stage, string> = {
+  0: '우리 도시의 특산품과 강점을 조사해요',
+  1: '사업계획을 세우고 회사를 창업해요',
+  2: '물건을 만들고 업무일지를 기록해요',
+  3: '다른 도시 기업과 협력하고 교류해요',
+  4: '제품을 판매하고 거래를 정산해요',
+}
+
 // 역할별 라벨·이모지 (4학년 친근형)
 export const ROLE_INFO: Record<Role, { label: string; emoji: string }> = {
   mayor:     { label: '시장',   emoji: '🏛️' },

@@ -10,9 +10,9 @@ import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
 import Link from 'next/link'
-import { allActivitiesForStage, ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, type Activity } from '@/lib/activities'
+import { allActivitiesForStage, ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, ACTIVITIES, type Activity } from '@/lib/activities'
 import PausedOverlay from './PausedOverlay'
-import { cityTheme, type Role, type Stage, type CityTheme } from '@/lib/types'
+import { cityTheme, STAGE_SHORT, STAGE_SESSIONS, STAGE_THEME, type Role, type Stage, type CityTheme } from '@/lib/types'
 
 interface Props {
   classId: string
@@ -102,8 +102,39 @@ function RoleTasks({ role, openActivities, color, stage }: {
       !!a && a.roles.includes(role) && a.stage <= stage && !openActivities.includes(a.key)
     )
 
+  // 이번 단계에서 내 역할에 해당하는 모든 활동 (수업 보드용)
+  const stageAllForRole = ACTIVITIES.filter(a => a.stage === stage && a.roles.includes(role))
+  const openSet = new Set(openActivities)
+
   return (
     <div className="flex flex-col gap-4">
+      {/* 수업 보드 — 이번 단계 전체 흐름 */}
+      {stageAllForRole.length > 0 && (
+        <div className="bg-white rounded-3xl px-5 py-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base font-black text-gray-700">📚 이번 단계 수업</span>
+            <span className="text-xs bg-blue-100 text-blue-600 font-bold rounded-full px-2 py-0.5">{STAGE_SESSIONS[stage]}</span>
+          </div>
+          <div className="text-xs text-gray-400 mb-3">{STAGE_THEME[stage]}</div>
+          <div className="flex flex-wrap gap-2">
+            {stageAllForRole.map(a => {
+              const isOpen = openSet.has(a.key) || (ALWAYS_ON_BY_ROLE[role]?.includes(a.key) ?? false)
+              return (
+                <div key={a.key}
+                  className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium border-2
+                    ${isOpen
+                      ? `${theme.soft} ${theme.border} ${theme.accent}`
+                      : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                  <span>{a.emoji}</span>
+                  <span>{a.label}</span>
+                  {!isOpen && <span className="text-xs opacity-60">🔒</span>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 교사가 연 활동 */}
       {teacherOpened.length > 0 && (
         <div>
@@ -148,8 +179,8 @@ function RoleTasks({ role, openActivities, color, stage }: {
 // 단계별 핵심 바로가기 + 활동 보드 + 전체 관리 그리드
 const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: string; href: string; color: string }>> = {
   0: [
-    { emoji: '🗺️', label: '도시 탐구 현황',  desc: '학생 탐구 제출 · 워드클라우드', href: '/admin/citycard',      color: 'bg-green-500' },
-    { emoji: '🏙️', label: '도시 대표 카드',  desc: '묶기 · 카드 만들기',            href: '/admin/citycard',      color: 'bg-emerald-500' },
+    { emoji: '🗺️', label: '도시 탐구 현황',  desc: '워드클라우드 · 대표카드 만들기', href: '/admin/citycard',      color: 'bg-green-500' },
+    { emoji: '📊', label: '평가 현황',        desc: '학생 탐구 제출물 확인',          href: '/admin/submissions',   color: 'bg-emerald-500' },
   ],
   1: [
     { emoji: '⭐', label: '사업체 선정',      desc: '계획서 심사 · 창업가 선정',     href: '/admin/plans',         color: 'bg-amber-500' },
@@ -157,11 +188,11 @@ const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: 
   ],
   2: [
     { emoji: '📡', label: '종합 모니터링',    desc: '업무일지 · 채용 · 거래 확인',   href: '/admin/monitor',       color: 'bg-blue-500' },
-    { emoji: '👤', label: '학생별 현황',      desc: '개인별 상세 보기',              href: '/admin/monitor',       color: 'bg-indigo-500' },
+    { emoji: '💵', label: '급여 지급',        desc: '업무일지 확인 후 직원 급여 지급', href: '/payroll',            color: 'bg-indigo-500' },
   ],
   3: [
     { emoji: '🤝', label: '교류 매칭 현황',   desc: '성사 건수 · 우수기업 배지',     href: '/admin/monitor',       color: 'bg-purple-500' },
-    { emoji: '👤', label: '학생별 현황',      desc: '개인별 활동 확인',              href: '/admin/monitor',       color: 'bg-violet-500' },
+    { emoji: '📋', label: '공무원 급여',      desc: '교류 업무일지 확인 후 지급',     href: '/admin/officer-payroll', color: 'bg-violet-500' },
   ],
   4: [
     { emoji: '📡', label: '종합 모니터링',    desc: '판매 현황 · 거래 내역',         href: '/admin/monitor',       color: 'bg-blue-500' },
@@ -210,7 +241,10 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
 
       {/* 이번 단계 핵심 바로가기 */}
       <div>
-        <div className="text-sm font-bold text-gray-500 mb-2 px-1">⚡ 이번 단계 핵심</div>
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <span className="text-sm font-bold text-gray-500">⚡ 이번 단계 핵심</span>
+          <span className="text-xs font-bold bg-blue-100 text-blue-600 rounded-full px-2 py-0.5">{STAGE_SESSIONS[stage]}</span>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           {featured.map(c => (
             <Link key={c.href + c.label} href={c.href}
