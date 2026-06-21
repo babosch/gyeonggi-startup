@@ -4,14 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const CODE_TO_EMAIL: Record<string, string> = {
-  '3643441': 'mayor-suwon@classroom.local',
-  '3643442': 'mayor-icheon@classroom.local',
-  '3643443': 'mayor-goyang@classroom.local',
-  '3643444': 'mayor-bucheon@classroom.local',
-  '3643445': 'mayor-paju@classroom.local',
-}
-
 export default function AdminLoginPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -28,6 +20,8 @@ export default function AdminLoginPage() {
 
   async function submit(inputCode: string) {
     setLoading(true)
+
+    // 1. 반 코드 검증 + 시장 계정 생성(멱등) → 이메일 반환
     const res = await fetch('/api/admin/class-code-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -41,8 +35,11 @@ export default function AdminLoginPage() {
       return
     }
 
+    const { email } = await res.json()
+
+    // 2. 반환된 이메일로 로그인
     const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: CODE_TO_EMAIL[inputCode],
+      email,
       password: `gg_${inputCode}`,
     })
     if (signInErr) {
@@ -52,7 +49,6 @@ export default function AdminLoginPage() {
       return
     }
 
-    // 전체 페이지 리로드로 서버 세션 쿠키를 확실히 적용
     window.location.href = '/admin'
   }
 

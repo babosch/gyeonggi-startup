@@ -70,6 +70,11 @@ export const CITY_THEME: Record<string, CityTheme> = {
     soft: 'bg-pink-50', border: 'border-pink-200',
     accent: 'text-pink-700', solid: 'bg-pink-500', ring: 'border-pink-400',
   },
+  teal: {
+    header: 'bg-teal-500 text-white',
+    soft: 'bg-teal-50', border: 'border-teal-200',
+    accent: 'text-teal-700', solid: 'bg-teal-500', ring: 'border-teal-400',
+  },
 }
 
 export function cityTheme(color: string): CityTheme {
@@ -79,7 +84,7 @@ export function cityTheme(color: string): CityTheme {
 // 단순 배경 클래스 (로그인 등에서 사용)
 export const CITY_COLORS: Record<string, string> = {
   blue: 'bg-blue-500', purple: 'bg-purple-500', green: 'bg-green-500',
-  amber: 'bg-amber-500', pink: 'bg-pink-500',
+  amber: 'bg-amber-500', pink: 'bg-pink-500', teal: 'bg-teal-500',
 }
 
 export interface ClassRow {
