@@ -8,10 +8,11 @@ import FeedbackBanner from '@/components/FeedbackBanner'
 import { GRANT_AMOUNT } from '@/lib/constants'
 import type { Stage } from '@/lib/types'
 
+interface ProductDef { name: string; materials: string; method: string }
 interface PlanItem { name: string; qty: number; price: number }
 interface PlanContent {
   companyName: string
-  whatToSell: string
+  products: ProductDef[]
   target: string
   useSpecialty: boolean
   specialtyDetail: string
@@ -21,35 +22,50 @@ interface PlanContent {
 
 interface ExistingPlan {
   id: string
-  content: PlanContent
+  content: PlanContent & { whatToSell?: string }
   reserve_amount: number
   status: string
   version: number
   feedback?: string | null
 }
 
+const DEFAULT_PRODUCT: ProductDef = { name: '', materials: '', method: '' }
+
 export default function PlanForm({ role, cityName, stage, existing }: {
   role: string; cityName: string; stage: Stage; existing: ExistingPlan | null
 }) {
   const router = useRouter()
   const selected = existing?.status === 'selected'
-  // 보드로 열려 있는 동안 작성 가능 (선정되면 읽기전용, 수정본 1회 후 잠금)
   const canEdit = !selected && (existing?.version ?? 0) === 0
 
   const c = existing?.content
-  const [companyName, setCompanyName] = useState(c?.companyName ?? '')
-  const [whatToSell, setWhatToSell] = useState(c?.whatToSell ?? '')
-  const [target, setTarget] = useState(c?.target ?? '')
-  const [useSpecialty, setUseSpecialty] = useState(c?.useSpecialty ?? false)
-  const [specialtyDetail, setSpecialtyDetail] = useState(c?.specialtyDetail ?? '')
-  const [reason, setReason] = useState(c?.reason ?? '')
-  const [items, setItems] = useState<PlanItem[]>(c?.items ?? [{ name: '', qty: 1, price: 0 }])
-  const [reserve, setReserve] = useState(existing?.reserve_amount ?? 20000)
-  const [saving, setSaving] = useState(false)
-  const [showConcept, setShowConcept] = useState(false)
 
-  const itemTotal = items.reduce((s, it) => s + it.qty * it.price, 0)
+  // 이전 데이터 호환 (whatToSell 문자열 → products 배열)
+  const initProducts: ProductDef[] = c?.products?.length
+    ? c.products
+    : c?.whatToSell
+      ? [{ name: c.whatToSell, materials: '', method: '' }]
+      : [{ ...DEFAULT_PRODUCT }]
+
+  const [companyName, setCompanyName]     = useState(c?.companyName ?? '')
+  const [products, setProducts]           = useState<ProductDef[]>(initProducts)
+  const [target, setTarget]               = useState(c?.target ?? '')
+  const [useSpecialty, setUseSpecialty]   = useState(c?.useSpecialty ?? false)
+  const [specialtyDetail, setSpecialtyDetail] = useState(c?.specialtyDetail ?? '')
+  const [reason, setReason]               = useState(c?.reason ?? '')
+  const [items, setItems]                 = useState<PlanItem[]>(c?.items ?? [{ name: '', qty: 1, price: 0 }])
+  const [reserve, setReserve]             = useState(existing?.reserve_amount ?? 20000)
+  const [saving, setSaving]               = useState(false)
+  const [showConcept, setShowConcept]     = useState(false)
+
+  const itemTotal    = items.reduce((s, it) => s + it.qty * it.price, 0)
   const plannedSpend = GRANT_AMOUNT - reserve
+
+  function updateProduct(i: number, patch: Partial<ProductDef>) {
+    setProducts(products.map((p, idx) => idx === i ? { ...p, ...patch } : p))
+  }
+  function addProduct() { if (products.length < 6) setProducts([...products, { ...DEFAULT_PRODUCT }]) }
+  function removeProduct(i: number) { if (products.length > 1) setProducts(products.filter((_, idx) => idx !== i)) }
 
   function updateItem(i: number, patch: Partial<PlanItem>) {
     setItems(items.map((it, idx) => idx === i ? { ...it, ...patch } : it))
@@ -59,7 +75,7 @@ export default function PlanForm({ role, cityName, stage, existing }: {
 
   async function submit() {
     setSaving(true)
-    const content: PlanContent = { companyName, whatToSell, target, useSpecialty, specialtyDetail, reason, items }
+    const content: PlanContent = { companyName, products, target, useSpecialty, specialtyDetail, reason, items }
     const res = await fetch('/api/plan/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, reserve, planId: existing?.id, version: existing?.version ?? 0 }),
@@ -81,7 +97,6 @@ export default function PlanForm({ role, cityName, stage, existing }: {
     )
   }
 
-
   return (
     <PageShell title="사업계획서" emoji="📝">
       <div className="flex flex-col gap-4">
@@ -92,11 +107,12 @@ export default function PlanForm({ role, cityName, stage, existing }: {
         )}
         <FeedbackBanner feedback={existing?.feedback} />
 
+        {/* 기본 정보 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col gap-4">
           <Field label="🏢 회사 이름" value={companyName} onChange={setCompanyName} disabled={!canEdit} max={20} />
-          <Field label="🎨 무엇을 만들거나 팔까요?" value={whatToSell} onChange={setWhatToSell} disabled={!canEdit} max={40} />
           <Field label="🙋 누구에게 팔까요?" value={target} onChange={setTarget} disabled={!canEdit} max={40} placeholder="예: 같은 반 친구들" />
 
+          {/* 특산품 활용 */}
           <div className={`rounded-2xl p-4 border-2 ${useSpecialty ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={useSpecialty} disabled={!canEdit}
@@ -109,40 +125,79 @@ export default function PlanForm({ role, cityName, stage, existing }: {
                 className="w-full mt-3 border-2 border-amber-200 rounded-xl px-4 py-2.5 text-gray-800 focus:border-amber-400 outline-none disabled:bg-gray-50" />
             )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">💪 우리를 뽑아야 하는 이유</label>
-            <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={2} maxLength={120}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50" />
-          </div>
         </div>
 
-        {/* 품목표 */}
+        {/* 만들 물건 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <div className="font-bold text-gray-800 mb-1">🧾 사고 싶은 물건</div>
-          <p className="text-xs text-gray-400 mb-3">지원금 {GRANT_AMOUNT.toLocaleString()}원으로 무엇을 살까요?</p>
+          <div className="font-bold text-gray-800 mb-1">🎨 만들 물건</div>
+          <p className="text-xs text-gray-400 mb-3">어떤 물건을 만들 건가요? 재료와 생산 방법도 적어보세요.</p>
+          <div className="flex flex-col gap-4">
+            {products.map((p, i) => (
+              <div key={i} className="border-2 border-gray-100 rounded-2xl p-4 flex flex-col gap-2.5 relative">
+                {canEdit && products.length > 1 && (
+                  <button onClick={() => removeProduct(i)}
+                    className="absolute top-3 right-3 text-gray-300 hover:text-red-400 text-lg transition-colors">✕</button>
+                )}
+                <input value={p.name} onChange={e => updateProduct(i, { name: e.target.value })} disabled={!canEdit}
+                  placeholder="물건 이름 (예: 도자기 머그컵)"
+                  maxLength={30}
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                <input value={p.materials} onChange={e => updateProduct(i, { materials: e.target.value })} disabled={!canEdit}
+                  placeholder="어떤 재료로 만드나요? (예: 흙, 유약)"
+                  maxLength={40}
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                <input value={p.method} onChange={e => updateProduct(i, { method: e.target.value })} disabled={!canEdit}
+                  placeholder="어떻게 생산하나요? (예: 손으로 빚어서 가마에 구움)"
+                  maxLength={50}
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
+              </div>
+            ))}
+          </div>
+          {canEdit && products.length < 6 && (
+            <button onClick={addProduct} className="mt-3 text-blue-500 text-sm font-medium">+ 물건 추가</button>
+          )}
+        </div>
+
+        {/* 물건 생산에 필요한 재료 구입 */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="font-bold text-gray-800 mb-1">🧾 물건 생산에 필요한 재료</div>
+          <p className="text-xs text-gray-400 mb-1">아이스크림몰에서 재료를 구입해요.</p>
+          <p className="text-xs text-gray-400 mb-3">물건 이름은 아이스크림몰에 있는 것 그대로 입력하세요.</p>
+          <div className="grid grid-cols-12 gap-2 mb-2 px-1">
+            <span className="col-span-5 text-xs text-gray-500 font-medium">물건 이름</span>
+            <span className="col-span-3 text-xs text-gray-500 font-medium text-center">필요한 수량</span>
+            <span className="col-span-3 text-xs text-gray-500 font-medium text-center">1개당 금액</span>
+          </div>
           <div className="flex flex-col gap-2">
             {items.map((it, i) => (
-              <div key={i} className="flex gap-2 items-center">
+              <div key={i} className="grid grid-cols-12 gap-2 items-center">
                 <input value={it.name} onChange={e => updateItem(i, { name: e.target.value })} disabled={!canEdit}
-                  placeholder="물건" className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                  placeholder="물건 이름" className="col-span-5 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
                 <input type="number" value={it.qty || ''} onChange={e => updateItem(i, { qty: +e.target.value })} disabled={!canEdit}
-                  placeholder="개" min={1} className="w-14 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                  placeholder="개" min={1} className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
                 <input type="number" value={it.price || ''} onChange={e => updateItem(i, { price: +e.target.value })} disabled={!canEdit}
-                  placeholder="원" min={0} className="w-20 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                <span className="w-16 text-right text-sm text-gray-500">{(it.qty * it.price).toLocaleString()}</span>
+                  placeholder="원" min={0} className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
                 {canEdit && items.length > 1 && (
-                  <button onClick={() => removeItem(i)} className="text-red-400 px-1">✕</button>
+                  <button onClick={() => removeItem(i)} className="col-span-1 text-gray-300 hover:text-red-400 transition-colors">✕</button>
                 )}
               </div>
             ))}
           </div>
           {canEdit && items.length < 8 && (
-            <button onClick={addItem} className="mt-3 text-blue-500 text-sm font-medium">+ 물건 추가</button>
+            <button onClick={addItem} className="mt-3 text-blue-500 text-sm font-medium">+ 재료 추가</button>
           )}
           <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between font-bold text-gray-800">
             <span>합계</span><span>{itemTotal.toLocaleString()}원</span>
           </div>
+        </div>
+
+        {/* 이 도시에 필요한 이유 */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            💡 우리 회사가 이 도시에 필요한 이유
+          </label>
+          <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={3} maxLength={120}
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50" />
         </div>
 
         {/* 예비비 */}
@@ -158,7 +213,7 @@ export default function PlanForm({ role, cityName, stage, existing }: {
         </div>
 
         {canEdit ? (
-          <button onClick={submit} disabled={saving || !companyName || !whatToSell || !reason}
+          <button onClick={submit} disabled={saving || !companyName || !products[0].name || !reason}
             className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
             {saving ? '제출 중...' : existing ? '계획서 수정 제출' : '시장님께 제출하기'}
           </button>

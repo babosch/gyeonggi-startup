@@ -19,17 +19,11 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleDigit(digit: string) {
-    if (loading || code.length >= 7) return
-    const next = code + digit
-    setCode(next)
+  async function handleChange(val: string) {
+    const clean = val.replace(/\D/g, '').slice(0, 7)
+    setCode(clean)
     setError('')
-    if (next.length === 7) await submit(next)
-  }
-
-  function handleDelete() {
-    setCode(c => c.slice(0, -1))
-    setError('')
+    if (clean.length === 7) await submit(clean)
   }
 
   async function submit(inputCode: string) {
@@ -57,7 +51,9 @@ export default function AdminLoginPage() {
       setLoading(false)
       return
     }
-    router.push('/admin')
+
+    // 전체 페이지 리로드로 서버 세션 쿠키를 확실히 적용
+    window.location.href = '/admin'
   }
 
   return (
@@ -66,39 +62,22 @@ export default function AdminLoginPage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-1">선생님 로그인</h1>
         <p className="text-gray-500 text-sm mb-8">학급비번을 입력하세요</p>
 
-        {/* 입력 표시 — 7칸 점 */}
-        <div className="flex gap-3 mb-8">
-          {Array.from({ length: 7 }, (_, i) => (
-            <div key={i} className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm
-              transition-colors ${i < code.length
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-400'}`}>
-              {i < code.length ? '•' : ''}
-            </div>
-          ))}
-        </div>
+        <input
+          type="password"
+          inputMode="numeric"
+          autoFocus
+          value={code}
+          onChange={e => handleChange(e.target.value)}
+          disabled={loading}
+          maxLength={7}
+          placeholder="●●●●●●●"
+          className="w-full text-center text-3xl tracking-[0.5em] border-2 border-gray-200
+            rounded-2xl px-4 py-5 text-gray-800 focus:border-blue-400 outline-none
+            disabled:opacity-50 placeholder:text-gray-200"
+        />
 
-        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-        {loading && <p className="text-blue-500 text-sm mb-4">로그인 중...</p>}
-
-        {/* 숫자 키패드 */}
-        <div className="grid grid-cols-3 gap-3 w-full">
-          {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => {
-            if (key === '') return <div key={i} />
-            return (
-              <button key={i}
-                onClick={() => key === '⌫' ? handleDelete() : handleDigit(key)}
-                disabled={loading}
-                className={`h-16 rounded-2xl font-bold text-xl shadow-sm transition-all active:scale-95
-                  ${key === '⌫'
-                    ? 'bg-gray-200 text-gray-600'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-800 hover:border-blue-400'}
-                  disabled:opacity-40`}>
-                {key}
-              </button>
-            )
-          })}
-        </div>
+        {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+        {loading && <p className="text-blue-500 text-sm mt-4">로그인 중...</p>}
       </div>
 
       <button onClick={() => router.push('/login')}
