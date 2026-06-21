@@ -11,11 +11,11 @@ type Step = 'class' | 'confirm' | 'number' | 'pin'
 const PIN_FAIL_KEY = 'pin_fails'
 const PIN_LOCKOUT_UNTIL = 'pin_lockout_until'
 
-// 노출 순서 고정
-const CITY_ORDER = ['수원시', '이천시', '고양시', '부천시', '파주시']
+// 노출 순서 고정 (시흥시는 테스트 반이라 제일 마지막)
+const CITY_ORDER = ['수원시', '이천시', '고양시', '부천시', '파주시', '시흥시']
 // 반 번호 매핑
 const CLASS_BAND: Record<string, number> = {
-  '수원시': 1, '이천시': 2, '고양시': 3, '부천시': 4, '파주시': 5,
+  '수원시': 1, '이천시': 2, '고양시': 3, '부천시': 4, '파주시': 5, '시흥시': 1,
 }
 
 function makeEmail(classCode: string, number: number) {
