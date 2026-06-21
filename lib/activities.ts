@@ -45,7 +45,7 @@ export const ACTIVITIES: Activity[] = [
 export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
   ceo:     ['company', 'worklog', 'payroll', 'card'],
   staff:   ['worklog', 'card'],
-  officer: ['ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
+  officer: ['worklog', 'ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
 }
 
 // ─── 단계 기본 활동 ──────────────────────────────────────────────────────
