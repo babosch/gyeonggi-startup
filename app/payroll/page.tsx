@@ -17,10 +17,9 @@ export default async function PayrollPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: Stage }
 
   if (me.role !== 'ceo' || !me.company_id) {
-    return <PayrollList stage={cls.stage} notCeo members={[]} balance={0} paidToday={[]} />
+    return <PayrollList stage={cls.stage} notCeo members={[]} paidToday={[]} />
   }
 
-  const { data: company } = await supabase.from('companies').select('balance').eq('id', me.company_id).single()
   const { data: members } = await supabase
     .from('users').select('id, number, nickname, role').eq('company_id', me.company_id).order('role').order('number')
 
@@ -47,7 +46,7 @@ export default async function PayrollPage() {
   }
 
   return (
-    <PayrollList stage={cls.stage} members={members ?? []} balance={company?.balance ?? 0}
+    <PayrollList stage={cls.stage} members={members ?? []}
       paidToday={paidToday} latestLogMap={latestLogMap} />
   )
 }

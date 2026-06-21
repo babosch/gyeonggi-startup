@@ -42,8 +42,8 @@ export default function RevealWatcher({ userId, initialPending }: {
   const info = ROLE_INFO[reveal]
   const msg: Record<string, { title: string; body: string }> = {
     ceo:     { title: '사업계획서가 선정됐어요!', body: '지원금 100,000원이 회사 계좌에 들어왔어요. 이제 CEO입니다.' },
-    staff:   { title: '직원으로 채용됐어요!', body: '회사의 한 식구가 되었어요. 일급 3,000원을 받아요.' },
-    officer: { title: '공무원으로 임명됐어요!', body: '도시의 살림을 맡았어요. 일급 3,500원을 받아요.' },
+    staff:   { title: '직원으로 채용됐어요!', body: '회사의 한 식구가 되었어요. 일급 10,400원을 받아요.' },
+    officer: { title: '공무원으로 임명됐어요!', body: '도시의 살림을 맡았어요. 일급 10,400원을 받아요.' },
   }
   const m = msg[reveal]
 

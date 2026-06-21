@@ -8,12 +8,12 @@ import type { Stage } from '@/lib/types'
 interface Member { id: string; number: number; nickname: string | null; role: string }
 interface WorklogEntry { text: string; created_at: string }
 
-export default function PayrollList({ stage, members, balance, paidToday, notCeo, latestLogMap, maxStaff = 6 }: {
-  stage: Stage; members: Member[]; balance: number; paidToday: string[]
+export default function PayrollList({ stage, members, paidToday, notCeo, latestLogMap, maxStaff = 6 }: {
+  stage: Stage; members: Member[]; paidToday: string[]
   notCeo?: boolean; latestLogMap?: Record<string, WorklogEntry>; maxStaff?: number
 }) {
   const [paid, setPaid] = useState<string[]>(paidToday)
-  const [bal, setBal] = useState(balance)
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<string | null>(null)
 
   if (notCeo) return (
@@ -25,6 +25,10 @@ export default function PayrollList({ stage, members, balance, paidToday, notCeo
   const staffCount = members.filter(m => m.role !== 'ceo').length
   const needMore = staffCount < MIN_STAFF_PER_COMPANY
 
+  function confirm(id: string) {
+    setConfirmed(prev => { const next = new Set(prev); next.add(id); return next })
+  }
+
   async function pay(m: Member) {
     setBusy(m.id)
     const res = await fetch('/api/payroll', {
@@ -33,72 +37,87 @@ export default function PayrollList({ stage, members, balance, paidToday, notCeo
     })
     const d = await res.json()
     setBusy(null)
-    if (res.ok) { setPaid([...paid, m.id]); setBal(b => b - d.wage) }
-    else alert(d.error === '잔액이 부족합니다.' ? '회사 잔액이 부족해요' : `오류: ${d.error}`)
+    if (res.ok) setPaid(prev => [...prev, m.id])
+    else alert(`오류: ${d.error}`)
   }
 
   return (
     <PageShell title="급여 지급" emoji="💵">
-      <div className="bg-blue-50 rounded-2xl p-4 text-center mb-4">
-        <span className="text-sm text-blue-600">회사 잔액</span>
-        <div className="text-2xl font-bold text-blue-700">{bal.toLocaleString()}원</div>
-      </div>
-
       {needMore && (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl px-4 py-3 text-sm text-amber-700 mb-4">
           ⚠️ 직원 {staffCount}명 / 최소 {MIN_STAFF_PER_COMPANY}명 필요 — 채용을 더 해야 해요
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 shadow-sm">
-        <div className="font-bold text-gray-800 mb-1">오늘 급여 주기</div>
-        <p className="text-xs text-gray-400 mb-4">업무일지를 확인하고 지급해요 · 하루에 한 번만 줄 수 있어요</p>
+      <div className="bg-blue-50 rounded-2xl px-4 py-3 text-sm text-blue-700 mb-2">
+        💡 업무일지를 확인한 다음 급여를 지급해요 · 하루에 한 번만 줄 수 있어요
+      </div>
 
-        <div className="flex flex-col gap-3">
-          {members.map(m => {
-            const wage = m.role === 'ceo' ? WAGE.ceo : WAGE.staff
-            const done = paid.includes(m.id)
-            const log = latestLogMap?.[m.id]
-            const name = m.nickname ?? `${m.number}번`
+      <div className="flex flex-col gap-4">
+        {members.map(m => {
+          const wage = m.role === 'ceo' ? WAGE.ceo : WAGE.staff
+          const done = paid.includes(m.id)
+          const isConfirmed = confirmed.has(m.id) || done
+          const log = latestLogMap?.[m.id]
+          const name = m.nickname ?? `${m.number}번`
 
-            return (
-              <div key={m.id} className={`rounded-2xl border-2 transition-colors
-                ${done ? 'border-green-200 bg-green-50' : 'border-gray-100 bg-gray-50'}`}>
-                <div className="flex items-center justify-between px-4 py-3">
+          return (
+            <div key={m.id} className={`bg-white rounded-3xl shadow-sm overflow-hidden border-2 transition-colors
+              ${done ? 'border-green-200' : isConfirmed ? 'border-blue-200' : 'border-gray-100'}`}>
+
+              {/* 헤더 */}
+              <div className={`flex items-center justify-between px-5 py-4
+                ${done ? 'bg-green-50' : isConfirmed ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{m.role === 'ceo' ? '👑' : '🛠️'}</span>
                   <div>
-                    <span className="font-medium text-gray-800">
-                      {m.role === 'ceo' ? '👑' : '🛠️'} {name}
-                    </span>
-                    <span className="text-sm text-gray-400 ml-2">{wage.toLocaleString()}원</span>
+                    <div className="font-bold text-gray-800">{name}</div>
+                    <div className="text-xs text-gray-400">{wage.toLocaleString()}원</div>
                   </div>
-                  <button onClick={() => pay(m)} disabled={done || busy === m.id || bal < wage}
-                    className={`px-5 py-2 rounded-xl font-bold text-sm transition-all
-                      ${done ? 'bg-green-100 text-green-600' : 'bg-blue-500 text-white disabled:opacity-40'}`}>
-                    {done ? '✓ 지급함' : busy === m.id ? '...' : '지급'}
-                  </button>
                 </div>
+                {done && (
+                  <span className="text-green-600 font-bold text-sm">✓ 지급 완료</span>
+                )}
+              </div>
 
-                <div className="px-4 pb-3 border-t border-gray-100">
-                  {log ? (
-                    <>
-                      <div className="flex items-start gap-2 mt-2">
-                        <span className="text-xs text-gray-400 shrink-0 mt-0.5">📝 최근 일지</span>
-                        <span className="text-sm text-gray-700 leading-snug">{log.text}</span>
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(log.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </>
+              {/* 업무일지 */}
+              <div className="px-5 py-4 border-t border-gray-100">
+                <div className="text-xs font-bold text-gray-500 mb-2">📝 최근 업무일지</div>
+                {log ? (
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-sm text-gray-800 leading-relaxed">{log.text}</p>
+                    <p className="text-xs text-gray-400 mt-1.5">
+                      {new Date(log.created_at).toLocaleDateString('ko-KR', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+                    ⚠️ 아직 업무일지가 없어요
+                  </div>
+                )}
+              </div>
+
+              {/* 확인 → 지급 흐름 */}
+              {!done && (
+                <div className="px-5 pb-4">
+                  {!isConfirmed ? (
+                    <button onClick={() => confirm(m.id)}
+                      className="w-full bg-gray-100 text-gray-700 rounded-2xl py-3 font-bold text-sm hover:bg-gray-200 transition-colors active:scale-95">
+                      ✓ 업무일지 확인했어요
+                    </button>
                   ) : (
-                    <div className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                      ⚠️ 업무일지 없음 — 지급 전 확인해요
-                    </div>
+                    <button onClick={() => pay(m)} disabled={busy === m.id}
+                      className="w-full bg-blue-500 text-white rounded-2xl py-3 font-bold text-base disabled:opacity-40 active:scale-95 transition-transform">
+                      {busy === m.id ? '지급 중...' : `💵 ${wage.toLocaleString()}원 지급하기`}
+                    </button>
                   )}
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </PageShell>
   )
