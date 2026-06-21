@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { activityLocked } from '@/lib/guard'
 import ActivityLocked from '@/components/ActivityLocked'
 import PayrollList from './PayrollList'
+import { STAGE_PAYROLL_MAX } from '@/lib/constants'
 import type { Stage } from '@/lib/types'
 
 export default async function PayrollPage() {
@@ -17,7 +18,7 @@ export default async function PayrollPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: Stage }
 
   if (me.role !== 'ceo' || !me.company_id) {
-    return <PayrollList stage={cls.stage} notCeo members={[]} paidToday={[]} />
+    return <PayrollList stage={cls.stage} notCeo members={[]} paidToday={[]} stagePaidCountMap={{}} stageMax={undefined} />
   }
 
   const { data: members } = await supabase
@@ -28,6 +29,22 @@ export default async function PayrollPage() {
   const { data: paid } = await supabase
     .from('transactions').select('idempotency_key').like('idempotency_key', `payroll:%:${today}`)
   const paidToday = (paid ?? []).map(p => p.idempotency_key?.split(':')[1]).filter(Boolean) as string[]
+
+  // 이번 단계에서 각 직원에게 지급한 횟수 (format: payroll:{userId}:{stage}:{date})
+  const stage = cls.stage as number
+  const { data: stagePaidRows } = await supabase
+    .from('transactions')
+    .select('idempotency_key')
+    .like('idempotency_key', `payroll:%:${stage}:%`)
+
+  const stagePaidCountMap: Record<string, number> = {}
+  for (const row of stagePaidRows ?? []) {
+    const parts = row.idempotency_key?.split(':')
+    if (parts?.length >= 4 && parts[2] === String(stage)) {
+      const userId = parts[1]
+      stagePaidCountMap[userId] = (stagePaidCountMap[userId] ?? 0) + 1
+    }
+  }
 
   // 각 직원의 최근 업무일지 (최대 1개씩)
   const memberIds = (members ?? []).map(m => m.id)
@@ -46,7 +63,13 @@ export default async function PayrollPage() {
   }
 
   return (
-    <PayrollList stage={cls.stage} members={members ?? []}
-      paidToday={paidToday} latestLogMap={latestLogMap} />
+    <PayrollList
+      stage={cls.stage}
+      members={members ?? []}
+      paidToday={paidToday}
+      latestLogMap={latestLogMap}
+      stagePaidCountMap={stagePaidCountMap}
+      stageMax={STAGE_PAYROLL_MAX[stage]}
+    />
   )
 }

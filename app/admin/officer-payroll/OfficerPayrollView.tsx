@@ -10,9 +10,10 @@ interface Officer {
 }
 
 export default function OfficerPayrollView({
-  officers, paidToday,
+  officers, paidToday, stagePaidCountMap, stageMax,
 }: {
   officers: Officer[]; paidToday: string[]
+  stagePaidCountMap: Record<string, number>; stageMax: number | undefined
 }) {
   const [paid, setPaid] = useState<string[]>(paidToday)
   const [confirmed, setConfirmed] = useState<Set<string>>(new Set())
@@ -30,8 +31,13 @@ export default function OfficerPayrollView({
     })
     const d = await res.json()
     setBusy(null)
-    if (res.ok) setPaid(prev => [...prev, officerId])
-    else alert(`오류: ${d.error}`)
+    if (res.ok) {
+      setPaid(prev => [...prev, officerId])
+    } else if (d.error === 'payroll_limit_reached') {
+      alert(`이번 단계 급여 한도에 도달했어요. (${d.paid}/${d.max}일)`)
+    } else {
+      alert(`오류: ${d.error}`)
+    }
   }
 
   return (
@@ -45,19 +51,24 @@ export default function OfficerPayrollView({
         <div className="flex flex-col gap-4">
           <div className="bg-blue-50 rounded-2xl px-4 py-3 text-sm text-blue-700">
             💡 공무원이 업무일지를 작성한 것을 확인한 후 급여를 지급해요 · 하루에 한 번
+            {stageMax !== undefined && (
+              <span className="ml-2 font-bold">· 이번 단계 최대 {stageMax}일</span>
+            )}
           </div>
 
           {officers.map(o => {
             const name = o.nickname ?? `${o.number}번`
             const done = paid.includes(o.id)
             const isConfirmed = confirmed.has(o.id) || done
+            const stagePaid = stagePaidCountMap[o.id] ?? 0
+            const limitReached = stageMax !== undefined && stagePaid >= stageMax
 
             return (
               <div key={o.id} className={`bg-white rounded-3xl shadow-sm overflow-hidden border-2 transition-colors
-                ${done ? 'border-green-200' : isConfirmed ? 'border-blue-200' : 'border-gray-100'}`}>
+                ${done ? 'border-green-200' : limitReached ? 'border-red-100' : isConfirmed ? 'border-blue-200' : 'border-gray-100'}`}>
 
                 <div className={`flex items-center justify-between px-5 py-4
-                  ${done ? 'bg-green-50' : isConfirmed ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                  ${done ? 'bg-green-50' : limitReached ? 'bg-red-50' : isConfirmed ? 'bg-blue-50' : 'bg-gray-50'}`}>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🏛️</span>
                     <div>
@@ -65,7 +76,16 @@ export default function OfficerPayrollView({
                       <div className="text-xs text-gray-400">{WAGE.officer.toLocaleString()}원</div>
                     </div>
                   </div>
-                  {done && <span className="text-green-600 font-bold text-sm">✓ 지급 완료</span>}
+                  <div className="flex items-center gap-2">
+                    {stageMax !== undefined && (
+                      <span className={`text-xs font-bold rounded-full px-2.5 py-1
+                        ${limitReached ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                        {stagePaid}/{stageMax}일
+                      </span>
+                    )}
+                    {done && !limitReached && <span className="text-green-600 font-bold text-sm">✓ 오늘 완료</span>}
+                    {limitReached && <span className="text-red-500 font-bold text-sm">🚫 한도 도달</span>}
+                  </div>
                 </div>
 
                 <div className="px-5 py-4 border-t border-gray-100">
@@ -86,7 +106,7 @@ export default function OfficerPayrollView({
                   )}
                 </div>
 
-                {!done && (
+                {!done && !limitReached && (
                   <div className="px-5 pb-4">
                     {!isConfirmed ? (
                       <button onClick={() => confirm(o.id)}
@@ -99,6 +119,14 @@ export default function OfficerPayrollView({
                         {busy === o.id ? '지급 중...' : `🏛️ ${WAGE.officer.toLocaleString()}원 지급하기`}
                       </button>
                     )}
+                  </div>
+                )}
+
+                {limitReached && (
+                  <div className="px-5 pb-4">
+                    <div className="bg-red-50 border border-red-200 rounded-2xl py-3 text-center text-sm text-red-500 font-bold">
+                      이번 단계 급여 한도({stageMax}일)에 도달했어요
+                    </div>
                   </div>
                 )}
               </div>

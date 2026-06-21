@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import OfficerPayrollView from './OfficerPayrollView'
+import { STAGE_PAYROLL_MAX } from '@/lib/constants'
 
 export default async function OfficerPayrollPage() {
   const supabase = await createClient()
@@ -8,8 +9,10 @@ export default async function OfficerPayrollPage() {
   if (!user) redirect('/login')
 
   const { data: me } = await supabase
-    .from('users').select('role, class_id').eq('id', user.id).single()
+    .from('users').select('role, class_id, classes(stage)').eq('id', user.id).single()
   if (!me || me.role !== 'mayor') redirect('/home')
+  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: number } | null
+  const stage = cls?.stage ?? 2
 
   // 공무원 목록
   const { data: officers } = await supabase
@@ -42,6 +45,22 @@ export default async function OfficerPayrollPage() {
   const paidToday = (paid ?? [])
     .map(p => p.idempotency_key?.split(':')[1]).filter(Boolean) as string[]
 
+  // 이번 단계에서 각 공무원에게 지급한 횟수
+  const { data: stagePaidRows } = await supabase
+    .from('transactions')
+    .select('idempotency_key')
+    .like('idempotency_key', `officer-payroll:%:${stage}:%`)
+
+  const stagePaidCountMap: Record<string, number> = {}
+  for (const row of stagePaidRows ?? []) {
+    const parts = row.idempotency_key?.split(':')
+    // format: officer-payroll:{userId}:{stage}:{date}
+    if (parts?.length >= 4 && parts[2] === String(stage)) {
+      const userId = parts[1]
+      stagePaidCountMap[userId] = (stagePaidCountMap[userId] ?? 0) + 1
+    }
+  }
+
   const officerData = (officers ?? []).map(o => ({
     id: o.id,
     number: o.number,
@@ -49,5 +68,12 @@ export default async function OfficerPayrollPage() {
     worklog: latestLogMap[o.id] ?? null,
   }))
 
-  return <OfficerPayrollView officers={officerData} paidToday={paidToday} />
+  return (
+    <OfficerPayrollView
+      officers={officerData}
+      paidToday={paidToday}
+      stagePaidCountMap={stagePaidCountMap}
+      stageMax={STAGE_PAYROLL_MAX[stage]}
+    />
+  )
 }

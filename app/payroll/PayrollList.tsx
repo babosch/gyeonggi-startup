@@ -8,9 +8,10 @@ import type { Stage } from '@/lib/types'
 interface Member { id: string; number: number; nickname: string | null; role: string }
 interface WorklogEntry { text: string; created_at: string }
 
-export default function PayrollList({ stage, members, paidToday, notCeo, latestLogMap, maxStaff = 6 }: {
+export default function PayrollList({ stage, members, paidToday, notCeo, latestLogMap, maxStaff = 6, stagePaidCountMap, stageMax }: {
   stage: Stage; members: Member[]; paidToday: string[]
   notCeo?: boolean; latestLogMap?: Record<string, WorklogEntry>; maxStaff?: number
+  stagePaidCountMap: Record<string, number>; stageMax: number | undefined
 }) {
   const [paid, setPaid] = useState<string[]>(paidToday)
   const [confirmed, setConfirmed] = useState<Set<string>>(new Set())
@@ -37,8 +38,13 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
     })
     const d = await res.json()
     setBusy(null)
-    if (res.ok) setPaid(prev => [...prev, m.id])
-    else alert(`오류: ${d.error}`)
+    if (res.ok) {
+      setPaid(prev => [...prev, m.id])
+    } else if (d.error === 'payroll_limit_reached') {
+      alert(`이번 단계 급여 한도에 도달했어요. (${d.paid}/${d.max}일)`)
+    } else {
+      alert(`오류: ${d.error}`)
+    }
   }
 
   return (
@@ -51,6 +57,9 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
 
       <div className="bg-blue-50 rounded-2xl px-4 py-3 text-sm text-blue-700 mb-2">
         💡 업무일지를 확인한 다음 급여를 지급해요 · 하루에 한 번만 줄 수 있어요
+        {stageMax !== undefined && (
+          <span className="ml-2 font-bold">· 이번 단계 최대 {stageMax}일</span>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -60,14 +69,16 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
           const isConfirmed = confirmed.has(m.id) || done
           const log = latestLogMap?.[m.id]
           const name = m.nickname ?? `${m.number}번`
+          const stagePaid = stagePaidCountMap[m.id] ?? 0
+          const limitReached = stageMax !== undefined && stagePaid >= stageMax
 
           return (
             <div key={m.id} className={`bg-white rounded-3xl shadow-sm overflow-hidden border-2 transition-colors
-              ${done ? 'border-green-200' : isConfirmed ? 'border-blue-200' : 'border-gray-100'}`}>
+              ${done ? 'border-green-200' : limitReached ? 'border-red-100' : isConfirmed ? 'border-blue-200' : 'border-gray-100'}`}>
 
               {/* 헤더 */}
               <div className={`flex items-center justify-between px-5 py-4
-                ${done ? 'bg-green-50' : isConfirmed ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                ${done ? 'bg-green-50' : limitReached ? 'bg-red-50' : isConfirmed ? 'bg-blue-50' : 'bg-gray-50'}`}>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{m.role === 'ceo' ? '👑' : '🛠️'}</span>
                   <div>
@@ -75,9 +86,20 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
                     <div className="text-xs text-gray-400">{wage.toLocaleString()}원</div>
                   </div>
                 </div>
-                {done && (
-                  <span className="text-green-600 font-bold text-sm">✓ 지급 완료</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {stageMax !== undefined && (
+                    <span className={`text-xs font-bold rounded-full px-2.5 py-1
+                      ${limitReached ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                      {stagePaid}/{stageMax}일
+                    </span>
+                  )}
+                  {done && !limitReached && (
+                    <span className="text-green-600 font-bold text-sm">✓ 오늘 완료</span>
+                  )}
+                  {limitReached && (
+                    <span className="text-red-500 font-bold text-sm">🚫 한도 도달</span>
+                  )}
+                </div>
               </div>
 
               {/* 업무일지 */}
@@ -100,7 +122,7 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
               </div>
 
               {/* 확인 → 지급 흐름 */}
-              {!done && (
+              {!done && !limitReached && (
                 <div className="px-5 pb-4">
                   {!isConfirmed ? (
                     <button onClick={() => confirm(m.id)}
@@ -113,6 +135,14 @@ export default function PayrollList({ stage, members, paidToday, notCeo, latestL
                       {busy === m.id ? '지급 중...' : `💵 ${wage.toLocaleString()}원 지급하기`}
                     </button>
                   )}
+                </div>
+              )}
+
+              {limitReached && (
+                <div className="px-5 pb-4">
+                  <div className="bg-red-50 border border-red-200 rounded-2xl py-3 text-center text-sm text-red-500 font-bold">
+                    이번 단계 급여 한도({stageMax}일)에 도달했어요
+                  </div>
                 </div>
               )}
             </div>

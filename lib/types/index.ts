@@ -14,7 +14,7 @@ export const STAGE_SHORT: Record<Stage, string> = {
 }
 
 export const STAGE_SESSIONS: Record<Stage, string> = {
-  0: '1차시', 1: '2~4차시', 2: '5~8차시', 3: '9~11차시', 4: '12~15차시',
+  0: '1차시', 1: '2~4차시', 2: '4차시', 3: '2차시', 4: '2차시',
 }
 
 export const STAGE_THEME: Record<Stage, string> = {
