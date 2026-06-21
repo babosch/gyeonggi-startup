@@ -17,12 +17,21 @@ export default async function SellPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: Stage }
 
   if ((me.role !== 'ceo' && me.role !== 'staff') || !me.company_id) {
-    return <SellBooth stage={cls.stage} notSeller products={[]} companyName="" />
+    return <SellBooth stage={cls.stage} companyId="" companyName="" products={[]} notSeller />
   }
 
-  const { data: company } = await supabase.from('companies').select('display_name').eq('id', me.company_id).single()
+  const { data: company } = await supabase
+    .from('companies').select('id, display_name').eq('id', me.company_id).single()
   const { data: products } = await supabase
-    .from('products').select('id, name, price, stock, sold').eq('company_id', me.company_id).order('created_at')
+    .from('products').select('id, name, price, stock, sold')
+    .eq('company_id', me.company_id).order('created_at')
 
-  return <SellBooth stage={cls.stage} products={products ?? []} companyName={company?.display_name ?? ''} />
+  return (
+    <SellBooth
+      stage={cls.stage}
+      companyId={company?.id ?? ''}
+      companyName={company?.display_name ?? ''}
+      products={products ?? []}
+    />
+  )
 }

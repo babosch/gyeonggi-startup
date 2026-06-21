@@ -1,0 +1,32 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { activityLocked } from '@/lib/guard'
+import ActivityLocked from '@/components/ActivityLocked'
+import BuyView from './BuyView'
+
+export default async function BuyPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  if (await activityLocked('card')) return <ActivityLocked activityKey="card" />
+
+  const { data: me } = await supabase
+    .from('users').select('number, nickname, company_id, class_id, classes(code)').eq('id', user.id).single()
+  if (!me) redirect('/home')
+
+  const { data: acct } = await supabase
+    .from('accounts').select('balance')
+    .eq('owner_type', 'user').eq('owner_id', user.id).maybeSingle()
+
+  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { code: string }
+
+  return (
+    <BuyView
+      buyerId={user.id}
+      myCompanyId={me.company_id ?? null}
+      balance={acct?.balance ?? 0}
+      classCode={cls.code}
+      studentNumber={me.number}
+    />
+  )
+}

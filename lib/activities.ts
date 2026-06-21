@@ -25,8 +25,8 @@ export const ACTIVITIES: Activity[] = [
   { key: 'payroll',     label: '급여 지급',   emoji: '💵', hint: '직원에게 월급',      href: '/payroll',     roles: ['ceo'], stage: 2 },
   { key: 'inspection',  label: '시찰 보고서', emoji: '📋', hint: '기업 둘러보기',      href: '/inspection',  roles: ['officer'], stage: 2 },
   { key: 'exchange',    label: '교류',        emoji: '🤝', hint: '협력 기록',          href: '/exchange',    roles: ['ceo', 'officer'], stage: 3 },
-  { key: 'sell',        label: '판매(수금)',  emoji: '📱', hint: 'QR로 팔기',          href: '/sell',        roles: ['ceo', 'staff'], stage: 4 },
-  { key: 'card',        label: '내 카드',     emoji: '💳', hint: '물건 살 때',         href: '/card',        roles: ['ceo', 'staff'], stage: 4 },
+  { key: 'sell',        label: '판매(수금)',  emoji: '📱', hint: 'QR 보여주기',        href: '/sell',        roles: ['ceo', 'staff'], stage: 4 },
+  { key: 'card',        label: '내 카드',     emoji: '💳', hint: '잔액 확인 · 결제',  href: '/card',        roles: ['ceo', 'staff', 'officer'], stage: 4 },
   { key: 'trade-report',label: '이상 거래 보고', emoji: '🚨', hint: '이상한 거래 신고', href: '/trade-report', roles: ['officer'], stage: 4 },
   { key: 'wordcloud',   label: '워드 클라우드', emoji: '☁️', hint: '단어 입력하기',    href: '/wordcloud',   roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 0 },
 ]

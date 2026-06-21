@@ -36,6 +36,14 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">반별 학생 계정 일괄 생성</p>
           </div>
         </Link>
+        <Link href="/admin/monitor"
+          className="bg-green-600 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-green-700 transition-colors">
+          <span className="text-2xl">📡</span>
+          <div>
+            <p className="font-bold text-white text-lg">종합 모니터링</p>
+            <p className="text-sm text-green-100">학생 관리 · 채용 · 거래 · 잔액 수정</p>
+          </div>
+        </Link>
         <Link href="/admin/plans"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">📝</span>
