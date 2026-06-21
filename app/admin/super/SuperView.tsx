@@ -78,7 +78,8 @@ export default function SuperView({ classRows, orphanAccounts }: {
       <div className="max-w-3xl mx-auto">
         <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm mb-4">← 관리자 홈</button>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">🛡️ 슈퍼어드민</h1>
-        <p className="text-gray-500 text-sm mb-6">잘못 등록된 시장·계정을 정리해요</p>
+        <p className="text-gray-500 text-sm mb-1">잘못 등록된 시장·계정을 정리해요</p>
+        <p className="text-xs text-red-400 font-medium mb-6">⚠️ 이 메뉴는 개발자만 접근할 수 있습니다. 임의로 조작하지 마세요.</p>
 
         {/* 반 코드 복구 */}
         <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 shadow-sm mb-4">
