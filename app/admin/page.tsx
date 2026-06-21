@@ -76,6 +76,22 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">반 전체 진행·시찰·경보</p>
           </div>
         </Link>
+        <Link href="/admin/trade-reports"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">🚨</span>
+          <div>
+            <p className="font-bold text-gray-800">이상 거래 보고서</p>
+            <p className="text-sm text-gray-400">공무원이 신고한 이상 거래</p>
+          </div>
+        </Link>
+        <Link href="/wordcloud"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">☁️</span>
+          <div>
+            <p className="font-bold text-gray-800">워드 클라우드</p>
+            <p className="text-sm text-gray-400">학생 단어 모니터링·관리</p>
+          </div>
+        </Link>
         {superAdmin && (
           <Link href="/admin/super"
             className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow border-2 border-gray-200">

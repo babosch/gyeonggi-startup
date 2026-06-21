@@ -27,6 +27,8 @@ export const ACTIVITIES: Activity[] = [
   { key: 'exchange',    label: '교류',        emoji: '🤝', hint: '협력 기록',          href: '/exchange',    roles: ['ceo', 'officer'], stage: 3 },
   { key: 'sell',        label: '판매(수금)',  emoji: '📱', hint: 'QR로 팔기',          href: '/sell',        roles: ['ceo', 'staff'], stage: 4 },
   { key: 'card',        label: '내 카드',     emoji: '💳', hint: '물건 살 때',         href: '/card',        roles: ['ceo', 'staff'], stage: 4 },
+  { key: 'trade-report',label: '이상 거래 보고', emoji: '🚨', hint: '이상한 거래 신고', href: '/trade-report', roles: ['officer'], stage: 4 },
+  { key: 'wordcloud',   label: '워드 클라우드', emoji: '☁️', hint: '단어 입력하기',    href: '/wordcloud',   roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 0 },
 ]
 
 // 단계 진입 시 보드에 자동으로 추가할 활동들 (그 단계에 새로 열리는 활동)
