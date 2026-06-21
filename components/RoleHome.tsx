@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import HomeHeader from './HomeHeader'
 import StageBanner from './StageBanner'
-import TaskCard from './TaskCard'
 import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
@@ -89,18 +88,17 @@ export default function RoleHome(props: Props) {
 
 // 학생 홈: 교사가 켠 활동(openActivities)만, 교사가 짠 순서대로 부각.
 function RoleTasks({ role, openActivities, color }: { role: Role; openActivities: string[]; color: string }) {
-  const grid = 'grid grid-cols-2 sm:grid-cols-3 gap-3'
   const tasks = visibleActivities(openActivities, role)
   const theme = cityTheme(color)
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* 지금 할 일 — 교사가 연 순서대로 크게 */}
+    <div className="flex flex-col gap-4">
+      {/* 지금 할 일 */}
       {tasks.length > 0 ? (
         <div>
           <div className="text-sm font-bold text-gray-500 mb-2 px-1">📌 지금 할 일</div>
-          <div className="flex flex-col gap-3">
-            {tasks.map(t => <BigTask key={t.key} task={t} theme={theme} />)}
+          <div className="grid grid-cols-3 gap-3">
+            {tasks.map(t => <SquareTask key={t.key} task={t} theme={theme} active />)}
           </div>
         </div>
       ) : (
@@ -113,28 +111,32 @@ function RoleTasks({ role, openActivities, color }: { role: Role; openActivities
       {/* 항상 열린 활동 */}
       <div>
         <div className="text-sm font-bold text-gray-500 mb-2 px-1">🌟 언제든지 해요</div>
-        <div className={grid}>
-          <TaskCard emoji="✏️" label="쪽지시험" hint="얼마나 알까?" always currentStage={0} href="/quiz" />
-          <TaskCard emoji="💭" label="성찰" hint="오늘 배운 것" always currentStage={0} href="/reflect" />
+        <div className="grid grid-cols-3 gap-3">
+          <SquareTask task={{ key: 'quiz', label: '쪽지시험', emoji: '✏️', hint: '얼마나 알까?', href: '/quiz', roles: [], stage: 0 }} theme={theme} />
+          <SquareTask task={{ key: 'reflect', label: '성찰', emoji: '💭', hint: '오늘 배운 것', href: '/reflect', roles: [], stage: 0 }} theme={theme} />
         </div>
       </div>
     </div>
   )
 }
 
-// 지금 할 일 — 큼직한 가로 카드 (도시 컬러로 부각)
-function BigTask({ task, theme }: { task: Activity; theme: CityTheme }) {
+// 정사각형 카드 (그리드용)
+function SquareTask({ task, theme, active }: { task: Activity; theme: CityTheme; active?: boolean }) {
   const router = useRouter()
   return (
     <button onClick={() => router.push(task.href)}
-      className={`${theme.soft} ${theme.border} border-2 rounded-3xl p-5 flex items-center gap-4
-        w-full text-left active:scale-[0.98] transition-transform hover:shadow-sm`}>
-      <span className="text-4xl">{task.emoji}</span>
-      <div className="flex-1">
-        <div className={`text-xl font-bold ${theme.accent}`}>{task.label}</div>
-        {task.hint && <div className={`text-sm ${theme.accent} opacity-70`}>{task.hint}</div>}
+      className={`${active ? `${theme.soft} ${theme.border} border-2` : 'bg-white border-2 border-gray-100'}
+        rounded-3xl p-4 flex flex-col items-center justify-center gap-2 text-center
+        aspect-square active:scale-[0.96] transition-transform hover:shadow-sm`}>
+      <span className="text-4xl leading-none">{task.emoji}</span>
+      <div className={`text-sm font-bold leading-tight ${active ? theme.accent : 'text-gray-700'}`}>
+        {task.label}
       </div>
-      <span className={`text-2xl ${theme.accent}`}>→</span>
+      {task.hint && (
+        <div className={`text-xs leading-tight ${active ? `${theme.accent} opacity-60` : 'text-gray-400'}`}>
+          {task.hint}
+        </div>
+      )}
     </button>
   )
 }
