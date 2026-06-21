@@ -19,18 +19,32 @@ export default async function HirePage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: Stage }
 
   if (me.role !== 'ceo' || !me.company_id) {
-    return <HireList stage={cls.stage} notCeo applicants={[]} staff={[]} maxStaff={MAX_STAFF_PER_COMPANY} />
+    return <HireList stage={cls.stage} notCeo applications={[]} staff={[]} maxStaff={MAX_STAFF_PER_COMPANY} />
   }
 
-  const { data: applicants } = await supabase
-    .from('users').select('id, number, nickname')
-    .eq('class_id', me.class_id).eq('role', 'applicant').order('number')
+  // 이 회사에 지원한 지원서 목록 (지원자 정보 포함)
+  const { data: applications } = await supabase
+    .from('job_applications')
+    .select('id, applicant_id, motivation, status, users(number, nickname)')
+    .eq('company_id', me.company_id)
+    .order('created_at')
 
   const { data: staff } = await supabase
     .from('users').select('id, number, nickname')
     .eq('company_id', me.company_id).eq('role', 'staff').order('number')
 
   return (
-    <HireList stage={cls.stage} applicants={applicants ?? []} staff={staff ?? []} maxStaff={MAX_STAFF_PER_COMPANY} />
+    <HireList
+      stage={cls.stage}
+      applications={(applications ?? []).map(a => ({
+        id: a.id,
+        applicantId: a.applicant_id,
+        motivation: a.motivation,
+        status: a.status,
+        user: Array.isArray(a.users) ? a.users[0] : a.users,
+      }))}
+      staff={staff ?? []}
+      maxStaff={MAX_STAFF_PER_COMPANY}
+    />
   )
 }

@@ -2,31 +2,56 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MAX_COMPANIES_PER_CLASS } from '@/lib/constants'
+import { MAX_COMPANIES_PER_CLASS, GRANT_AMOUNT } from '@/lib/constants'
 
+interface SalesItem { name: string; qty: number; price: number }
 interface Plan {
   id: string
   user_id: string
   content: {
-    companyName?: string; whatToSell?: string; target?: string
-    useSpecialty?: boolean; specialtyDetail?: string; reason?: string
+    companyName?: string
+    // 신 포맷
+    salesItems?: SalesItem[]
+    // 구 포맷 호환
+    whatToSell?: string
+    products?: { name: string }[]
     items?: { name: string; qty: number; price: number }[]
+    target?: string
+    useSpecialty?: boolean
+    specialtyDetail?: string
+    reason?: string
   }
   reserve_amount: number
   status: string
   users: { number: number; nickname: string | null } | { number: number; nickname: string | null }[]
 }
 
-export default function PlanReview({ plans, selectedCount }: { plans: Plan[]; selectedCount: number }) {
+function expectedRevenue(c: Plan['content']): number {
+  if (c.salesItems?.length) {
+    return c.salesItems.reduce((s, it) => s + (it.qty || 0) * (it.price || 0), 0)
+  }
+  // 구 포맷(items = 재료구입 합계)는 매출 아님 → 0
+  return 0
+}
+
+export default function PlanReview({ plans, selectedCount }: {
+  plans: Plan[]
+  selectedCount: number
+}) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [count, setCount] = useState(selectedCount)
+  // 각 계획서별 추가금 (0 = 미지급, 10000~20000)
+  const [bonuses, setBonuses] = useState<Record<string, number>>(
+    Object.fromEntries(plans.map(p => [p.id, 0]))
+  )
 
-  async function act(planId: string, action: 'select' | 'cancel', grantBonus: boolean) {
+  async function act(planId: string, action: 'select' | 'cancel') {
     setBusy(planId)
+    const bonusAmount = action === 'select' ? (bonuses[planId] ?? 0) : 0
     const res = await fetch('/api/admin/select-plan', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, action, grantBonus }),
+      body: JSON.stringify({ planId, action, bonusAmount }),
     })
     const data = await res.json()
     setBusy(null)
@@ -49,6 +74,11 @@ export default function PlanReview({ plans, selectedCount }: { plans: Plan[]; se
           </span>
         </div>
 
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 text-sm text-amber-800">
+          💡 추가금은 특산품 연계 여부와 무관하게 <b>0원 ~ 20,000원</b> 범위에서 자유롭게 지급할 수 있어요.<br />
+          선정 버튼을 누르면 기본 지원금({GRANT_AMOUNT.toLocaleString()}원) + 추가금이 함께 지급됩니다.
+        </div>
+
         {plans.length === 0 && (
           <div className="bg-white rounded-3xl p-10 text-center text-gray-400">
             아직 제출된 계획서가 없어요.
@@ -60,45 +90,111 @@ export default function PlanReview({ plans, selectedCount }: { plans: Plan[]; se
             const u = Array.isArray(p.users) ? p.users[0] : p.users
             const c = p.content
             const isSelected = p.status === 'selected'
-            const itemTotal = (c.items ?? []).reduce((s, it) => s + it.qty * it.price, 0)
+            const rev = expectedRevenue(c)
+            const bonus = bonuses[p.id] ?? 0
+            const totalGrant = GRANT_AMOUNT + bonus
+
             return (
               <div key={p.id} className={`bg-white rounded-3xl p-6 shadow-sm border-2
                 ${isSelected ? 'border-green-300' : 'border-transparent'}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-lg font-bold text-gray-800">{c.companyName ?? '(이름 없음)'}</span>
-                    {c.useSpecialty && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⭐ 특산품</span>}
-                    {isSelected && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">선정됨</span>}
+                    {c.useSpecialty && (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⭐ 특산품</span>
+                    )}
+                    {isSelected && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">선정됨</span>
+                    )}
                   </div>
                   <span className="text-sm text-gray-400">{u?.nickname ?? `${u?.number}번`}</span>
                 </div>
 
                 <div className="text-sm text-gray-600 space-y-1 mb-4">
-                  <p>🎨 <b>무엇:</b> {c.whatToSell}</p>
-                  <p>🙋 <b>대상:</b> {c.target}</p>
-                  {c.useSpecialty && c.specialtyDetail && <p>⭐ <b>특산품 활용:</b> {c.specialtyDetail}</p>}
-                  <p>💪 <b>이유:</b> {c.reason}</p>
-                  <p>🧾 <b>구입 예정:</b> {itemTotal.toLocaleString()}원 · 예비비 {p.reserve_amount.toLocaleString()}원</p>
+                  <p>🙋 <b>판매 대상:</b> {c.target ?? '-'}</p>
+                  {c.useSpecialty && c.specialtyDetail && (
+                    <p>⭐ <b>특산품 활용:</b> {c.specialtyDetail}</p>
+                  )}
+                  <p>💡 <b>필요한 이유:</b> {c.reason ?? '-'}</p>
+
+                  {/* 판매 계획 표 */}
+                  {c.salesItems && c.salesItems.length > 0 && (
+                    <div className="mt-2">
+                      <p className="font-bold text-gray-700 mb-1">📊 판매 계획</p>
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="text-left py-1 px-2 border border-gray-200">물건 이름</th>
+                            <th className="text-center py-1 px-2 border border-gray-200">예상 갯수</th>
+                            <th className="text-center py-1 px-2 border border-gray-200">판매 단가</th>
+                            <th className="text-right py-1 px-2 border border-gray-200">소계</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {c.salesItems.map((it, i) => (
+                            <tr key={i}>
+                              <td className="py-1 px-2 border border-gray-200">{it.name}</td>
+                              <td className="text-center py-1 px-2 border border-gray-200">{it.qty}개</td>
+                              <td className="text-center py-1 px-2 border border-gray-200">{it.price.toLocaleString()}원</td>
+                              <td className="text-right py-1 px-2 border border-gray-200 font-medium">
+                                {(it.qty * it.price).toLocaleString()}원
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className="text-right text-sm font-bold text-blue-600 mt-1">
+                        총 예상 매출: {rev.toLocaleString()}원
+                      </p>
+                    </div>
+                  )}
+                  {/* 구 포맷 fallback */}
+                  {!c.salesItems && c.whatToSell && (
+                    <p>🎨 <b>무엇:</b> {c.whatToSell}</p>
+                  )}
                 </div>
 
+                {/* 추가금 슬라이더 (미선정 상태만) */}
+                {!isSelected && (
+                  <div className="mb-4 bg-gray-50 rounded-2xl p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">추가금 지급</span>
+                      <span className={`text-sm font-bold ${bonus > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                        {bonus > 0 ? `+${bonus.toLocaleString()}원` : '미지급'}
+                      </span>
+                    </div>
+                    <input type="range" min={0} max={20000} step={1000}
+                      value={bonus}
+                      onChange={e => setBonuses({ ...bonuses, [p.id]: +e.target.value })}
+                      className="w-full" />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>0원</span>
+                      <span>10,000원</span>
+                      <span>20,000원</span>
+                    </div>
+                    {bonus > 0 && (
+                      <div className="mt-2 text-center text-sm font-medium text-green-700 bg-green-50 rounded-xl py-2">
+                        선정 시 총 지원금: {totalGrant.toLocaleString()}원
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {isSelected ? (
-                  <button onClick={() => act(p.id, 'cancel', false)} disabled={busy === p.id}
+                  <button onClick={() => act(p.id, 'cancel')} disabled={busy === p.id}
                     className="w-full py-3 rounded-xl border-2 border-red-200 text-red-500 font-medium disabled:opacity-50">
                     {busy === p.id ? '...' : '선정 취소'}
                   </button>
                 ) : (
-                  <div className="flex gap-2">
-                    <button onClick={() => act(p.id, 'select', false)} disabled={busy === p.id || count >= MAX_COMPANIES_PER_CLASS}
-                      className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold disabled:opacity-40">
-                      선정
-                    </button>
-                    {c.useSpecialty && (
-                      <button onClick={() => act(p.id, 'select', true)} disabled={busy === p.id || count >= MAX_COMPANIES_PER_CLASS}
-                        className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold disabled:opacity-40">
-                        선정 +보너스
-                      </button>
-                    )}
-                  </div>
+                  <button onClick={() => act(p.id, 'select')}
+                    disabled={busy === p.id || count >= MAX_COMPANIES_PER_CLASS}
+                    className={`w-full py-3 rounded-xl font-bold disabled:opacity-40 text-white
+                      ${bonus > 0 ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                    {busy === p.id ? '...'
+                      : bonus > 0
+                        ? `선정 + 추가금 ${bonus.toLocaleString()}원 지급`
+                        : '선정'}
+                  </button>
                 )}
               </div>
             )

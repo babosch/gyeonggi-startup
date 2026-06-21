@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { data: mayor } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
   if (mayor?.role !== 'mayor') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  const { planId, action, grantBonus } = await req.json() // action: 'select' | 'cancel'
+  const { planId, action, bonusAmount = 0 } = await req.json() // action: 'select' | 'cancel'
   const admin = createAdminClient()
 
   const { data: plan } = await admin.from('business_plans')
@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
       { onConflict: 'owner_type,owner_id' })
 
     // 지원금 지급 (멱등 — grant_given 플래그 + 멱등키)
-    const amount = GRANT_AMOUNT + (grantBonus ? SPECIALTY_BONUS : 0)
+    const safeBonus = Math.min(20_000, Math.max(0, Math.round(bonusAmount / 1000) * 1000))
+    const amount = GRANT_AMOUNT + safeBonus
     const result = await transfer({
       admin, fromType: 'gov', fromId: null, toType: 'company', toId: company.id,
       amount, type: 'grant', memo: '창업 지원금',

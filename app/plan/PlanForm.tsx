@@ -8,28 +8,42 @@ import FeedbackBanner from '@/components/FeedbackBanner'
 import { GRANT_AMOUNT } from '@/lib/constants'
 import type { Stage } from '@/lib/types'
 
-interface ProductDef { name: string; materials: string; method: string }
-interface PlanItem { name: string; qty: number; price: number }
+// 판매 계획 항목
+interface SalesItem { name: string; qty: number; price: number }
+
 interface PlanContent {
   companyName: string
-  products: ProductDef[]
+  salesItems: SalesItem[]    // 판매 물건 이름 / 판매 예상 갯수 / 판매 단가
   target: string
   useSpecialty: boolean
   specialtyDetail: string
   reason: string
-  items: PlanItem[]
+  // 구 포맷 호환
+  whatToSell?: string
+  products?: { name: string; materials?: string; method?: string }[]
+  items?: { name: string; qty: number; price: number }[]
 }
 
 interface ExistingPlan {
   id: string
-  content: PlanContent & { whatToSell?: string }
+  content: PlanContent
   reserve_amount: number
   status: string
   version: number
   feedback?: string | null
 }
 
-const DEFAULT_PRODUCT: ProductDef = { name: '', materials: '', method: '' }
+function migrateLegacy(c: PlanContent): SalesItem[] {
+  if (c.salesItems?.length) return c.salesItems
+  // 구 포맷(items = 재료 구입) → 판매 계획으로 변환 시도
+  if (c.items?.length) {
+    return c.items.map(it => ({ name: it.name, qty: it.qty, price: it.price }))
+  }
+  if (c.whatToSell) {
+    return [{ name: c.whatToSell, qty: 1, price: 0 }]
+  }
+  return [{ name: '', qty: 0, price: 0 }]
+}
 
 export default function PlanForm({ role, cityName, stage, existing }: {
   role: string; cityName: string; stage: Stage; existing: ExistingPlan | null
@@ -39,46 +53,37 @@ export default function PlanForm({ role, cityName, stage, existing }: {
   const canEdit = !selected && (existing?.version ?? 0) === 0
 
   const c = existing?.content
-
-  // 이전 데이터 호환 (whatToSell 문자열 → products 배열)
-  const initProducts: ProductDef[] = c?.products?.length
-    ? c.products
-    : c?.whatToSell
-      ? [{ name: c.whatToSell, materials: '', method: '' }]
-      : [{ ...DEFAULT_PRODUCT }]
+  const initSales = c ? migrateLegacy(c) : [{ name: '', qty: 0, price: 0 }]
 
   const [companyName, setCompanyName]     = useState(c?.companyName ?? '')
-  const [products, setProducts]           = useState<ProductDef[]>(initProducts)
+  const [salesItems, setSalesItems]       = useState<SalesItem[]>(initSales)
   const [target, setTarget]               = useState(c?.target ?? '')
   const [useSpecialty, setUseSpecialty]   = useState(c?.useSpecialty ?? false)
   const [specialtyDetail, setSpecialtyDetail] = useState(c?.specialtyDetail ?? '')
   const [reason, setReason]               = useState(c?.reason ?? '')
-  const [items, setItems]                 = useState<PlanItem[]>(c?.items ?? [{ name: '', qty: 1, price: 0 }])
-  const [reserve, setReserve]             = useState(existing?.reserve_amount ?? 20000)
   const [saving, setSaving]               = useState(false)
   const [showConcept, setShowConcept]     = useState(false)
 
-  const itemTotal    = items.reduce((s, it) => s + it.qty * it.price, 0)
-  const plannedSpend = GRANT_AMOUNT - reserve
+  const expectedRevenue = salesItems.reduce((s, it) => s + (it.qty || 0) * (it.price || 0), 0)
 
-  function updateProduct(i: number, patch: Partial<ProductDef>) {
-    setProducts(products.map((p, idx) => idx === i ? { ...p, ...patch } : p))
+  function updateItem(i: number, patch: Partial<SalesItem>) {
+    setSalesItems(salesItems.map((it, idx) => idx === i ? { ...it, ...patch } : it))
   }
-  function addProduct() { if (products.length < 6) setProducts([...products, { ...DEFAULT_PRODUCT }]) }
-  function removeProduct(i: number) { if (products.length > 1) setProducts(products.filter((_, idx) => idx !== i)) }
-
-  function updateItem(i: number, patch: Partial<PlanItem>) {
-    setItems(items.map((it, idx) => idx === i ? { ...it, ...patch } : it))
+  function addItem() {
+    if (salesItems.length < 6) setSalesItems([...salesItems, { name: '', qty: 0, price: 0 }])
   }
-  function addItem() { if (items.length < 8) setItems([...items, { name: '', qty: 1, price: 0 }]) }
-  function removeItem(i: number) { setItems(items.filter((_, idx) => idx !== i)) }
+  function removeItem(i: number) {
+    if (salesItems.length > 1) setSalesItems(salesItems.filter((_, idx) => idx !== i))
+  }
 
   async function submit() {
     setSaving(true)
-    const content: PlanContent = { companyName, products, target, useSpecialty, specialtyDetail, reason, items }
+    const content: Omit<PlanContent, 'whatToSell' | 'products' | 'items'> = {
+      companyName, salesItems, target, useSpecialty, specialtyDetail, reason,
+    }
     const res = await fetch('/api/plan/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, reserve, planId: existing?.id, version: existing?.version ?? 0 }),
+      body: JSON.stringify({ content, reserve: 0, planId: existing?.id, version: existing?.version ?? 0 }),
     })
     setSaving(false)
     if (res.ok) {
@@ -112,12 +117,13 @@ export default function PlanForm({ role, cityName, stage, existing }: {
           <Field label="🏢 회사 이름" value={companyName} onChange={setCompanyName} disabled={!canEdit} max={20} />
           <Field label="🙋 누구에게 팔까요?" value={target} onChange={setTarget} disabled={!canEdit} max={40} placeholder="예: 같은 반 친구들" />
 
-          {/* 특산품 활용 */}
           <div className={`rounded-2xl p-4 border-2 ${useSpecialty ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={useSpecialty} disabled={!canEdit}
                 onChange={e => setUseSpecialty(e.target.checked)} className="w-5 h-5" />
-              <span className="font-medium text-gray-700">⭐ 우리 도시({cityName}) 특산품을 활용해요 <span className="text-amber-600 text-sm">(보너스!)</span></span>
+              <span className="font-medium text-gray-700">
+                ⭐ {cityName} 특산품을 활용해요 <span className="text-amber-600 text-sm">(보너스!)</span>
+              </span>
             </label>
             {useSpecialty && (
               <input value={specialtyDetail} onChange={e => setSpecialtyDetail(e.target.value)} disabled={!canEdit}
@@ -127,68 +133,64 @@ export default function PlanForm({ role, cityName, stage, existing }: {
           </div>
         </div>
 
-        {/* 만들 물건 */}
+        {/* 판매 계획 (예상 매출) */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <div className="font-bold text-gray-800 mb-1">🎨 만들 물건</div>
-          <p className="text-xs text-gray-400 mb-3">어떤 물건을 만들 건가요? 재료와 생산 방법도 적어보세요.</p>
-          <div className="flex flex-col gap-4">
-            {products.map((p, i) => (
-              <div key={i} className="border-2 border-gray-100 rounded-2xl p-4 flex flex-col gap-2.5 relative">
-                {canEdit && products.length > 1 && (
-                  <button onClick={() => removeProduct(i)}
-                    className="absolute top-3 right-3 text-gray-300 hover:text-red-400 text-lg transition-colors">✕</button>
-                )}
-                <input value={p.name} onChange={e => updateProduct(i, { name: e.target.value })} disabled={!canEdit}
-                  placeholder="물건 이름 (예: 도자기 머그컵)"
-                  maxLength={30}
-                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                <input value={p.materials} onChange={e => updateProduct(i, { materials: e.target.value })} disabled={!canEdit}
-                  placeholder="어떤 재료로 만드나요? (예: 흙, 유약)"
-                  maxLength={40}
-                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                <input value={p.method} onChange={e => updateProduct(i, { method: e.target.value })} disabled={!canEdit}
-                  placeholder="어떻게 생산하나요? (예: 손으로 빚어서 가마에 구움)"
-                  maxLength={50}
-                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
-              </div>
-            ))}
-          </div>
-          {canEdit && products.length < 6 && (
-            <button onClick={addProduct} className="mt-3 text-blue-500 text-sm font-medium">+ 물건 추가</button>
-          )}
-        </div>
+          <div className="font-bold text-gray-800 mb-1">📊 판매 계획</div>
+          <p className="text-xs text-gray-400 mb-3">
+            어떤 물건을 몇 개, 얼마에 팔 건가요? 예상 매출을 계산해 봐요.
+          </p>
 
-        {/* 물건 생산에 필요한 재료 구입 */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <div className="font-bold text-gray-800 mb-1">🧾 물건 생산에 필요한 재료</div>
-          <p className="text-xs text-gray-400 mb-1">아이스크림몰에서 재료를 구입해요.</p>
-          <p className="text-xs text-gray-400 mb-3">물건 이름은 아이스크림몰에 있는 것 그대로 입력하세요.</p>
+          {/* 열 헤더 */}
           <div className="grid grid-cols-12 gap-2 mb-2 px-1">
-            <span className="col-span-5 text-xs text-gray-500 font-medium">물건 이름</span>
-            <span className="col-span-3 text-xs text-gray-500 font-medium text-center">필요한 수량</span>
-            <span className="col-span-3 text-xs text-gray-500 font-medium text-center">1개당 금액</span>
+            <span className="col-span-5 text-xs font-medium text-gray-500">판매 물건 이름</span>
+            <span className="col-span-3 text-xs font-medium text-gray-500 text-center">판매 예상 갯수</span>
+            <span className="col-span-3 text-xs font-medium text-gray-500 text-center">판매 단가(원)</span>
           </div>
+
           <div className="flex flex-col gap-2">
-            {items.map((it, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                <input value={it.name} onChange={e => updateItem(i, { name: e.target.value })} disabled={!canEdit}
-                  placeholder="물건 이름" className="col-span-5 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                <input type="number" value={it.qty || ''} onChange={e => updateItem(i, { qty: +e.target.value })} disabled={!canEdit}
-                  placeholder="개" min={1} className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                <input type="number" value={it.price || ''} onChange={e => updateItem(i, { price: +e.target.value })} disabled={!canEdit}
-                  placeholder="원" min={0} className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
-                {canEdit && items.length > 1 && (
-                  <button onClick={() => removeItem(i)} className="col-span-1 text-gray-300 hover:text-red-400 transition-colors">✕</button>
-                )}
-              </div>
-            ))}
+            {salesItems.map((it, i) => {
+              const sub = (it.qty || 0) * (it.price || 0)
+              return (
+                <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                  <input value={it.name} onChange={e => updateItem(i, { name: e.target.value })}
+                    disabled={!canEdit} placeholder="물건 이름" maxLength={20}
+                    className="col-span-5 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                  <input type="number" value={it.qty || ''} min={0} onChange={e => updateItem(i, { qty: +e.target.value })}
+                    disabled={!canEdit} placeholder="개"
+                    className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                  <input type="number" value={it.price || ''} min={0} onChange={e => updateItem(i, { price: +e.target.value })}
+                    disabled={!canEdit} placeholder="원"
+                    className="col-span-3 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center focus:border-blue-400 outline-none disabled:bg-gray-50" />
+                  {canEdit && salesItems.length > 1 && (
+                    <button onClick={() => removeItem(i)} className="col-span-1 text-gray-300 hover:text-red-400 transition-colors text-lg">✕</button>
+                  )}
+                  {sub > 0 && (
+                    <div className="col-span-12 text-right text-xs text-gray-400 pr-8">
+                      {it.name && `예상 매출: ${sub.toLocaleString()}원`}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-          {canEdit && items.length < 8 && (
-            <button onClick={addItem} className="mt-3 text-blue-500 text-sm font-medium">+ 재료 추가</button>
+
+          {canEdit && salesItems.length < 6 && (
+            <button onClick={addItem} className="mt-3 text-blue-500 text-sm font-medium">+ 물건 추가</button>
           )}
-          <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between font-bold text-gray-800">
-            <span>합계</span><span>{itemTotal.toLocaleString()}원</span>
+
+          <div className="mt-4 pt-3 border-t-2 border-blue-100 flex justify-between items-center">
+            <span className="text-sm font-bold text-gray-700">총 예상 매출</span>
+            <span className="text-xl font-bold text-blue-600">{expectedRevenue.toLocaleString()}원</span>
           </div>
+
+          {expectedRevenue > 0 && (
+            <div className={`mt-2 rounded-xl p-3 text-sm font-medium text-center
+              ${expectedRevenue >= GRANT_AMOUNT ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+              {expectedRevenue >= GRANT_AMOUNT
+                ? `🎉 투자금(${GRANT_AMOUNT.toLocaleString()}원)보다 많이 벌 수 있어요!`
+                : `💡 투자금(${GRANT_AMOUNT.toLocaleString()}원)의 ${Math.round(expectedRevenue / GRANT_AMOUNT * 100)}%를 벌 계획이에요`}
+            </div>
+          )}
         </div>
 
         {/* 이 도시에 필요한 이유 */}
@@ -200,26 +202,14 @@ export default function PlanForm({ role, cityName, stage, existing }: {
             className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50" />
         </div>
 
-        {/* 예비비 */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <div className="font-bold text-gray-800 mb-1">🐷 예비비 (남겨둘 돈)</div>
-          <p className="text-xs text-gray-400 mb-4">갑자기 필요할 때를 대비해 남겨둬요</p>
-          <input type="range" min={0} max={GRANT_AMOUNT} step={5000} value={reserve} disabled={!canEdit}
-            onChange={e => setReserve(+e.target.value)} className="w-full" />
-          <div className="flex justify-between mt-2 text-sm">
-            <span className="text-gray-500">예비비 <b className="text-gray-800">{reserve.toLocaleString()}원</b></span>
-            <span className="text-gray-500">쓸 수 있는 돈 <b className="text-blue-600">{plannedSpend.toLocaleString()}원</b></span>
-          </div>
-        </div>
-
         {canEdit ? (
-          <button onClick={submit} disabled={saving || !companyName || !products[0].name || !reason}
+          <button onClick={submit} disabled={saving || !companyName || !salesItems[0].name || !reason}
             className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
             {saving ? '제출 중...' : existing ? '계획서 수정 제출' : '시장님께 제출하기'}
           </button>
         ) : (
           <p className="text-center text-gray-400 text-sm">
-            {selected ? '선정 완료' : '제출했어요! 시장님의 선정을 기다려요'}
+            {selected ? '선정 완료 🎉' : '제출했어요! 시장님의 선정을 기다려요'}
           </p>
         )}
       </div>
@@ -236,13 +226,16 @@ export default function PlanForm({ role, cityName, stage, existing }: {
 }
 
 function Field({ label, value, onChange, disabled, max, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; disabled: boolean; max: number; placeholder?: string
+  label: string; value: string; onChange: (v: string) => void
+  disabled: boolean; max: number; placeholder?: string
 }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} disabled={disabled} maxLength={max} placeholder={placeholder}
-        className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-base focus:border-blue-400 outline-none disabled:bg-gray-50 disabled:text-gray-500" />
+      <input value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
+        maxLength={max} placeholder={placeholder}
+        className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-base
+          focus:border-blue-400 outline-none disabled:bg-gray-50 disabled:text-gray-500" />
     </div>
   )
 }

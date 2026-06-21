@@ -15,8 +15,9 @@ export interface Activity {
 export const ACTIVITIES: Activity[] = [
   { key: 'explore',     label: '도시 탐구',   emoji: '🗺️', hint: '우리 도시 알아보기', href: '/explore',     roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 0 },
   { key: 'plan',        label: '사업계획서',  emoji: '📝', hint: '창업 아이디어 내기', href: '/plan',        roles: ['applicant', 'ceo'], stage: 1 },
+  { key: 'apply',       label: '취업 지원',   emoji: '💼', hint: '일하고 싶은 회사에 지원',   href: '/apply',       roles: ['applicant'], stage: 1 },
   { key: 'company',     label: '회사 관리',   emoji: '🏭', hint: '회사·상품 등록',     href: '/company',     roles: ['ceo'], stage: 1 },
-  { key: 'hire',        label: '직원 채용',   emoji: '👥', hint: '함께할 친구 뽑기',   href: '/hire',        roles: ['ceo'], stage: 1 },
+  { key: 'hire',        label: '직원 채용',   emoji: '👥', hint: '지원서 검토 · 채용', href: '/hire',        roles: ['ceo'], stage: 1 },
   { key: 'requisition', label: '품의서',      emoji: '🧾', hint: '물건 사기',          href: '/requisition', roles: ['ceo'], stage: 1 },
   { key: 'ledger',      label: '거래 장부',   emoji: '📖', hint: '돈 흐름 보기',       href: '/ledger',      roles: ['officer'], stage: 1 },
   { key: 'facilities',  label: '시설',        emoji: '🏪', hint: '공용 시설',          href: '/facilities',  roles: ['ceo', 'officer'], stage: 1 },

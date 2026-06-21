@@ -18,7 +18,7 @@ export default async function CompanyPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: Stage }
 
   if (me.role !== 'ceo' || !me.company_id) {
-    return <CompanyManager stage={cls.stage} company={null} products={[]} notCeo />
+    return <CompanyManager stage={cls.stage} company={null} products={[]} stats={null} notCeo />
   }
 
   const { data: company } = await supabase
@@ -26,5 +26,40 @@ export default async function CompanyPage() {
   const { data: products } = await supabase
     .from('products').select('*').eq('company_id', me.company_id).order('created_at')
 
-  return <CompanyManager stage={cls.stage} company={company} products={products ?? []} />
+  // 회사 계좌 ID 조회
+  const { data: companyAcct } = await supabase
+    .from('accounts').select('id')
+    .eq('owner_type', 'company').eq('owner_id', me.company_id).maybeSingle()
+
+  let revenue = 0
+  let grantTotal = 0
+  if (companyAcct?.id) {
+    // 매출 (purchase: 고객이 회사에 결제)
+    const { data: sales } = await supabase
+      .from('transactions').select('amount')
+      .eq('to_account_id', companyAcct.id).eq('type', 'purchase').eq('voided', false)
+    revenue = (sales ?? []).reduce((s, t) => s + (t.amount ?? 0), 0)
+
+    // 지원금
+    const { data: grants } = await supabase
+      .from('transactions').select('amount')
+      .eq('to_account_id', companyAcct.id).eq('type', 'grant').eq('voided', false)
+    grantTotal = (grants ?? []).reduce((s, g) => s + (g.amount ?? 0), 0)
+  }
+
+  // 재료비: 승인된 품의서 합계
+  const { data: reqs } = await supabase
+    .from('requisitions').select('total')
+    .eq('company_id', me.company_id).eq('status', 'approved')
+  const materialCost = (reqs ?? []).reduce((s, r) => s + (r.total ?? 0), 0)
+
+  const stats = {
+    balance: company?.balance ?? 0,
+    grantTotal,
+    materialCost,
+    revenue,
+    profit: revenue - materialCost,
+  }
+
+  return <CompanyManager stage={cls.stage} company={company} products={products ?? []} stats={stats} />
 }

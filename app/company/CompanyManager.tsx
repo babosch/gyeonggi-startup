@@ -10,9 +10,12 @@ const ICONS = ['🏭', '🍪', '✏️', '🎨', '🧸', '👕', '📚', '🌸',
 
 interface Company { id: string; display_name: string; icon: string; balance: number }
 interface Product { id: string; name: string; stock: number; sold: number; price: number }
+interface Stats {
+  balance: number; grantTotal: number; materialCost: number; revenue: number; profit: number
+}
 
-export default function CompanyManager({ stage, company, products: initial, notCeo }: {
-  stage: Stage; company: Company | null; products: Product[]; notCeo?: boolean
+export default function CompanyManager({ stage, company, products: initial, stats, notCeo }: {
+  stage: Stage; company: Company | null; products: Product[]; stats: Stats | null; notCeo?: boolean
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -65,6 +68,25 @@ export default function CompanyManager({ stage, company, products: initial, notC
   return (
     <PageShell title="회사 관리" emoji="🏭">
       <div className="flex flex-col gap-4">
+        {/* §5 운영 현황 대시보드 */}
+        {stats && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm">
+            <div className="font-bold text-gray-800 mb-3">📊 우리 회사 운영 현황</div>
+            <div className="grid grid-cols-2 gap-3">
+              <StatBox label="현재 잔액" value={stats.balance} color="blue" />
+              <StatBox label="총 지원금" value={stats.grantTotal} color="green" />
+              <StatBox label="재료비 지출" value={stats.materialCost} color="amber" negative />
+              <StatBox label="총 매출" value={stats.revenue} color="purple" />
+            </div>
+            <div className={`mt-3 rounded-2xl p-4 text-center border-2
+              ${stats.profit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="text-xs font-medium text-gray-500 mb-1">이익 (매출 - 재료비)</div>
+              <div className={`text-2xl font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}원
+              </div>
+            </div>
+          </div>
+        )}
         {/* 회사 기본 정보 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="font-bold text-gray-800 mb-3">회사 정보</div>
@@ -125,5 +147,22 @@ export default function CompanyManager({ stage, company, products: initial, notC
         </div>
       </div>
     </PageShell>
+  )
+}
+
+function StatBox({ label, value, color, negative }: {
+  label: string; value: number; color: string; negative?: boolean
+}) {
+  const colors: Record<string, string> = {
+    blue: 'bg-blue-50 text-blue-600', green: 'bg-green-50 text-green-600',
+    amber: 'bg-amber-50 text-amber-600', purple: 'bg-purple-50 text-purple-600',
+  }
+  return (
+    <div className={`rounded-2xl p-3 text-center ${colors[color] ?? 'bg-gray-50 text-gray-600'}`}>
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className="text-lg font-bold">
+        {negative && value > 0 ? '-' : ''}{value.toLocaleString()}원
+      </div>
+    </div>
   )
 }
