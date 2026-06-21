@@ -1,7 +1,17 @@
-export const APP_VERSION = 'v1.2.4'
+export const APP_VERSION = 'v1.2.5'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.2.5',
+    date: '2026-06-22',
+    items: [
+      '공무원 메뉴(시찰·시설·거래장부 등) 창업 단계부터 상시 표시',
+      'CEO 회사관리·업무일지·급여·내카드 상시 표시',
+      '직원 업무일지·내카드 상시 표시',
+      '단계 변경 시 해당 단계 기본 활동으로 자동 교체',
+    ],
+  },
   {
     version: 'v1.2.4',
     date: '2026-06-22',

@@ -40,11 +40,12 @@ export const ACTIVITIES: Activity[] = [
 ]
 
 // ─── 역할별 상시 활동 ─────────────────────────────────────────────────────
-// 교사가 열지 않아도, 해당 역할 + activity.stage <= 현재 단계이면 항상 보임.
+// 교사가 열지 않아도 창업(1단계) 이상이면 해당 역할에게 항상 보임.
 // 교사는 ActivityBoard에서 추가로 제어 가능.
 export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
-  ceo:     ['company'],                                     // CEO: 회사관리 항상
-  officer: ['ledger', 'facilities', 'inspection', 'exchange', 'trade-report'], // 공무원 업무 항상
+  ceo:     ['company', 'worklog', 'payroll', 'card'],
+  staff:   ['worklog', 'card'],
+  officer: ['ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
 }
 
 // ─── 단계 기본 활동 ──────────────────────────────────────────────────────
@@ -82,11 +83,11 @@ export function visibleActivities(openKeys: string[], role: Role, stage?: Stage)
 
   if (stage === undefined) return teacherOpened
 
-  // 상시 활동: 해당 역할 + 현재 단계 이하인 것
+  // 상시 활동: 창업(1단계) 이상이면 역할에 맞는 메뉴 항상 보임 (교사 설정 불필요)
   const alwaysOnKeys = ALWAYS_ON_BY_ROLE[role] ?? []
   const alwaysOn = alwaysOnKeys
     .map(k => ACTIVITY_BY_KEY[k])
-    .filter((a): a is Activity => !!a && a.stage <= stage && a.roles.includes(role))
+    .filter((a): a is Activity => !!a && stage >= 1 && a.roles.includes(role))
 
   // 교사 설정 순서 유지, 상시 활동 중 중복 제외 후 뒤에 추가
   const seen = new Set(teacherOpened.map(a => a.key))
