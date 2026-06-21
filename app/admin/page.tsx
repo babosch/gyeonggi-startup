@@ -60,6 +60,14 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">지원자를 공무원으로</p>
           </div>
         </Link>
+        <Link href="/admin/officer-payroll"
+          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <span className="text-2xl">🏛️</span>
+          <div>
+            <p className="font-bold text-gray-800">공무원 급여 지급</p>
+            <p className="text-sm text-gray-400">업무일지 확인 후 공무원 급여</p>
+          </div>
+        </Link>
         <Link href="/admin/requisitions"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">🧾</span>
