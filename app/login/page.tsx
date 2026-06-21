@@ -142,8 +142,8 @@ export default function LoginPage() {
 
   // ── 반 확인 ──────────────────────────────────
   if (step === 'confirm') {
-    // 시흥시 = 선생님 테스트 반
-    if (selectedClass!.name === '시흥시') return (
+    // 시흥시(테스트반) = 선생님 전용 안내
+    if (selectedClass!.code === '3643410') return (
       <Wrap>
         <button onClick={() => setStep('class')} className="text-gray-400 text-sm mb-8 block">
           ← 반 다시 선택
@@ -227,16 +227,12 @@ export default function LoginPage() {
   // ── PIN 입력 ─────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-      <button onClick={() => { setStep('number'); setPin(''); setError('') }}
-        className="text-gray-400 text-sm mb-6 w-full max-w-md">
-        ← 번호 다시 선택
-      </button>
       <div className="bg-white rounded-3xl shadow-sm p-10 w-full max-w-md flex flex-col items-center">
         <div className="flex items-center gap-3 mb-2">
           <span className={`px-4 py-2 rounded-full text-white font-bold ${CITY_COLORS[selectedClass!.color]}`}>
             {selectedClass!.name}
           </span>
-          <span className="text-gray-500 font-medium">{selectedNumber}번</span>
+          <span className="text-gray-700 font-bold text-xl">{selectedNumber}번</span>
         </div>
         <p className="text-gray-700 font-semibold text-xl mb-8 mt-4">PIN 4자리를 입력하세요</p>
 
@@ -266,6 +262,17 @@ export default function LoginPage() {
               </button>
             )
           })}
+        </div>
+
+        <div className="flex gap-3 mt-8 w-full">
+          <button onClick={() => { setStep('number'); setPin(''); setError('') }}
+            className="flex-1 h-14 rounded-2xl border-2 border-gray-200 text-gray-600 font-bold text-base active:scale-95 transition-all">
+            ← 번호 다시 선택
+          </button>
+          <button onClick={() => { setStep('class'); setSelectedClass(null); setSelectedNumber(null); setPin(''); setError('') }}
+            className="flex-1 h-14 rounded-2xl border-2 border-gray-200 text-gray-400 font-bold text-base active:scale-95 transition-all">
+            처음으로
+          </button>
         </div>
       </div>
     </div>
