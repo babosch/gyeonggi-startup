@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ACTIVITIES, ACTIVITY_BY_KEY, allActivitiesForStage } from '@/lib/activities'
+import { ACTIVITIES, ACTIVITY_BY_KEY, allActivitiesForStage, allActivitiesUpToStage } from '@/lib/activities'
 import { ROLE_INFO, STAGE_SHORT, type Role, type Stage } from '@/lib/types'
 
 export default function ActivityBoard({ classId, open: openProp, stage }: {
@@ -13,10 +13,10 @@ export default function ActivityBoard({ classId, open: openProp, stage }: {
 
   useEffect(() => { setOpen(openProp) }, [openProp])
 
-  // 처음 열릴 때 open이 비어있으면 현재 단계 활동 자동 추가
+  // 처음 열릴 때 open이 비어있으면 0~현재 단계 활동 자동 추가
   useEffect(() => {
     if (openProp.length === 0) {
-      const defaults = allActivitiesForStage(stage)
+      const defaults = allActivitiesUpToStage(stage)
       if (defaults.length > 0) persist(defaults)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,8 +42,7 @@ export default function ActivityBoard({ classId, open: openProp, stage }: {
   }
 
   async function resetToStage() {
-    const defaults = allActivitiesForStage(stage)
-    persist(defaults)
+    persist(allActivitiesUpToStage(stage))
   }
 
   return (

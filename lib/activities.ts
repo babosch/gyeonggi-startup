@@ -67,9 +67,14 @@ export function mergeStageActivities(current: string[], stage: Stage): string[] 
   return next
 }
 
-// 특정 단계의 모든 활동 (교사가 "이 단계 전체 열기" 할 때 사용)
+// 특정 단계의 모든 활동
 export function allActivitiesForStage(stage: Stage): string[] {
   return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
+}
+
+// 0단계부터 현재 단계까지 누적 활동 (초기화·복원용)
+export function allActivitiesUpToStage(stage: Stage): string[] {
+  return ACTIVITIES.filter(a => a.stage <= stage).map(a => a.key)
 }
 
 export const ACTIVITY_BY_KEY: Record<string, Activity> =
