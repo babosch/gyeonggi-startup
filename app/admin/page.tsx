@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isSuperAdmin } from '@/lib/superadmin'
+import { APP_VERSION, BUILD_DATE, CHANGELOG } from '@/lib/version'
 import Link from 'next/link'
 
 export default async function AdminPage() {
@@ -56,6 +57,39 @@ export default async function AdminPage() {
               </div>
             </Link>
           )}
+        </div>
+
+        {/* 버전 정보 */}
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-bold text-gray-700">앱 버전 정보</span>
+            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+              {APP_VERSION}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">최종 업데이트: {BUILD_DATE}</p>
+
+          <div className="flex flex-col gap-4">
+            {CHANGELOG.map((entry) => (
+              <div key={entry.version}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs font-bold text-gray-600">{entry.version}</span>
+                  <span className="text-xs text-gray-400">{entry.date}</span>
+                  {entry.version === APP_VERSION && (
+                    <span className="text-xs text-green-600 font-bold">● 현재</span>
+                  )}
+                </div>
+                <ul className="flex flex-col gap-1">
+                  {entry.items.map((item, i) => (
+                    <li key={i} className="text-xs text-gray-500 flex gap-1.5">
+                      <span className="text-gray-300 shrink-0">–</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
