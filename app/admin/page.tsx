@@ -92,12 +92,12 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-400">공무원이 신고한 이상 거래</p>
           </div>
         </Link>
-        <Link href="/wordcloud"
+        <Link href="/admin/citycard"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <span className="text-2xl">☁️</span>
+          <span className="text-2xl">🏙️</span>
           <div>
-            <p className="font-bold text-gray-800">워드 클라우드</p>
-            <p className="text-sm text-gray-400">학생 단어 모니터링·관리</p>
+            <p className="font-bold text-gray-800">도시 대표 카드</p>
+            <p className="text-sm text-gray-400">탐구 결과 워드클라우드 · 묶기 · 카드 만들기</p>
           </div>
         </Link>
         {superAdmin && (
