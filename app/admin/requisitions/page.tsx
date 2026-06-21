@@ -15,7 +15,7 @@ export default async function AdminReqPage() {
 
   const { data: reqs } = await supabase
     .from('requisitions')
-    .select('id, company_id, items, dropped_items, total, status, created_at, companies(display_name)')
+    .select('id, company_id, items, dropped_items, total, status, created_at, companies(display_name, icon, users(number, nickname, role))')
     .in('company_id', ids.length ? ids : ['none'])
     .order('created_at', { ascending: false })
 

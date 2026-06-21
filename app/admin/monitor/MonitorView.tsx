@@ -228,6 +228,7 @@ export default function MonitorView({
   const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [voidBusy, setVoidBusy] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [presenceFilter, setPresenceFilter] = useState<'all' | 'green' | 'red' | 'gray'>('all')
 
   // 실시간으로 업데이트되는 상태
   const [students, setStudents] = useState<Student[]>(initialStudents)
@@ -318,9 +319,21 @@ export default function MonitorView({
     }
   }, [classId])
 
-  const filteredStudents = students.filter(s =>
-    !searchQuery || `${s.number}번 ${s.nickname ?? ''}`.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const presenceStatus = (id: string): 'green' | 'red' | 'gray' => {
+    const p = presence[id]
+    if (!p) return 'gray'
+    return p.hidden ? 'red' : 'green'
+  }
+
+  const filteredStudents = students.filter(s => {
+    const matchSearch = !searchQuery || `${s.number}번 ${s.nickname ?? ''}`.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchPresence = presenceFilter === 'all' || presenceStatus(s.id) === presenceFilter
+    return matchSearch && matchPresence
+  })
+
+  const greenCount2 = students.filter(s => presenceStatus(s.id) === 'green').length
+  const redCount2 = students.filter(s => presenceStatus(s.id) === 'red').length
+  const grayCount2 = students.filter(s => presenceStatus(s.id) === 'gray').length
 
   const pendingApps = applications.filter(a => a.status === 'pending')
   const roleCounts = students.reduce<Record<string, number>>((acc, s) => {
@@ -388,7 +401,7 @@ export default function MonitorView({
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto p-4 flex flex-col gap-3">
+      <div className="max-w-6xl mx-auto p-4 flex flex-col gap-3">
 
         {/* ── 학생 탭 ── */}
         {tab === 'students' && (
@@ -404,11 +417,22 @@ export default function MonitorView({
               ))}
             </div>
 
-            {/* 접속 현황 범례 */}
-            <div className="bg-white rounded-2xl px-4 py-2.5 flex items-center gap-4 text-xs text-gray-500 shadow-sm">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> 접속 중 (이 사이트)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> 다른 화면 사용 중</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" /> 미접속</span>
+            {/* 접속 상태 필터 */}
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { key: 'all',   label: '전체',      count: students.length, dot: null },
+                { key: 'green', label: '접속 중',   count: greenCount2,     dot: 'bg-green-500' },
+                { key: 'red',   label: '다른 화면', count: redCount2,       dot: 'bg-red-500' },
+                { key: 'gray',  label: '미접속',    count: grayCount2,      dot: 'bg-gray-300' },
+              ] as const).map(f => (
+                <button key={f.key} onClick={() => setPresenceFilter(f.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border-2 transition-all
+                    ${presenceFilter === f.key ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                  {f.dot && <span className={`w-2 h-2 rounded-full ${f.dot} inline-block`} />}
+                  {f.label}
+                  <span className={`text-xs font-bold ${presenceFilter === f.key ? 'text-blue-100' : 'text-gray-400'}`}>{f.count}</span>
+                </button>
+              ))}
             </div>
 
             {/* 검색 */}
@@ -416,70 +440,68 @@ export default function MonitorView({
               placeholder="🔍 번호나 닉네임으로 검색..."
               className="w-full bg-white border-2 border-gray-200 rounded-2xl px-4 py-3 focus:border-blue-400 outline-none" />
 
-            {/* 학생 목록 — 역할/회사/접속상태 한눈에 */}
-            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-              {filteredStudents.map((s, i) => {
+            {/* 학생 그리드 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {filteredStudents.map(s => {
                 const pInfo = presence[s.id]
                 const name = s.nickname ?? `${s.number}번`
                 const quiz = quizCounts[s.id] ?? {}
                 const quizDone = Object.keys(quiz).length
                 const reflectN = reflectCounts[s.id] ?? 0
                 const worklogN = worklogCounts[s.id] ?? 0
+                const pColor = !pInfo ? 'bg-gray-300' : pInfo.hidden ? 'bg-red-500' : 'bg-green-500'
                 return (
-                  <div key={s.id}
-                    className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
-                    {/* 번호 + 접속 dot */}
-                    <div className="relative shrink-0">
-                      <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
-                        {s.number}
+                  <div key={s.id} className="bg-white rounded-2xl p-3 shadow-sm flex flex-col gap-1.5">
+                    {/* 번호 + 이름 + dot */}
+                    <div className="flex items-center gap-2">
+                      <div className="relative shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                          {s.number}
+                        </div>
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${pColor}`} />
                       </div>
-                      <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white
-                        ${!pInfo ? 'bg-gray-300' : pInfo.hidden ? 'bg-red-500' : 'bg-green-500'}`} />
+                      <span className="font-semibold text-gray-800 text-sm truncate">{name}</span>
                     </div>
 
-                    {/* 이름 + 역할 + 회사 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-gray-800 text-sm">{name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${ROLE_COLOR[s.role] ?? 'bg-gray-100 text-gray-500'}`}>
-                          {ROLE_EMOJI[s.role]} {ROLE_LABEL[s.role] ?? s.role}
-                        </span>
-                      </div>
-                      <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
-                        {s.companyName && (
-                          <span className="text-blue-600 font-medium truncate max-w-[120px]">🏭 {s.companyName}</span>
-                        )}
-                        {s.role === 'officer' && (
-                          <span className="text-purple-600 font-medium">🏛️ 공무원</span>
-                        )}
-                        <span className="text-gray-400">
-                          잔액 {s.balance.toLocaleString()}원
-                        </span>
-                      </div>
-                      {/* 학습 미니 현황 */}
-                      <div className="text-xs mt-0.5 flex items-center gap-2 text-gray-400">
-                        <span title="쪽지시험">✏️ {quizDone}/3</span>
-                        <span title="성찰">💭 {reflectN}</span>
-                        <span title="업무일지">📝 {worklogN}</span>
-                        {pInfo && !pInfo.hidden && (
-                          <span className="text-green-600 truncate max-w-[100px]" title={`현재: ${pInfo.page}`}>
-                            📍 {pInfo.page}
-                          </span>
-                        )}
-                      </div>
+                    {/* 역할 배지 */}
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold w-fit ${ROLE_COLOR[s.role] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {ROLE_EMOJI[s.role]} {ROLE_LABEL[s.role] ?? s.role}
+                    </span>
+
+                    {/* 회사 */}
+                    {s.companyName && (
+                      <span className="text-xs text-blue-600 font-medium truncate">🏭 {s.companyName.replace(/^.\s*/, '')}</span>
+                    )}
+
+                    {/* 잔액 */}
+                    <span className="text-xs text-gray-400">{s.balance.toLocaleString()}원</span>
+
+                    {/* 학습 현황 */}
+                    <div className="flex items-center gap-2 text-xs text-gray-400 border-t border-gray-100 pt-1.5 mt-0.5">
+                      <span title="쪽지시험">✏️ {quizDone}</span>
+                      <span title="성찰">💭 {reflectN}</span>
+                      <span title="업무일지">📝 {worklogN}</span>
                     </div>
 
-                    <div className="flex gap-1.5 shrink-0">
-                      <button onClick={() => setEditStudent(s)}
-                        className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-xl font-medium hover:bg-blue-100 transition-colors">
-                        수정
-                      </button>
-                    </div>
+                    {/* 현재 페이지 (접속 중일 때) */}
+                    {pInfo && !pInfo.hidden && (
+                      <span className="text-xs text-green-600 truncate">📍 {pInfo.page}</span>
+                    )}
+                    {pInfo?.hidden && (
+                      <span className="text-xs text-red-400 truncate">⚠ {pInfo.page}</span>
+                    )}
+
+                    <button onClick={() => setEditStudent(s)}
+                      className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-medium hover:bg-blue-100 transition-colors mt-auto">
+                      수정
+                    </button>
                   </div>
                 )
               })}
               {filteredStudents.length === 0 && (
-                <div className="py-10 text-center text-gray-400 text-sm">검색 결과가 없어요</div>
+                <div className="col-span-full py-10 text-center text-gray-400 text-sm bg-white rounded-2xl">
+                  {presenceFilter !== 'all' ? '해당하는 학생이 없어요' : '검색 결과가 없어요'}
+                </div>
               )}
             </div>
           </>
@@ -575,20 +597,20 @@ export default function MonitorView({
 
         {/* ── 회사 탭 ── */}
         {tab === 'companies' && (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {companies.length === 0 && (
-              <div className="bg-white rounded-3xl p-10 text-center text-gray-400">아직 선정된 회사가 없어요.</div>
+              <div className="col-span-full bg-white rounded-3xl p-10 text-center text-gray-400">아직 선정된 회사가 없어요.</div>
             )}
             {companies.map(c => {
               const ceoStudent = students.find(s => s.companyId === c.id && s.role === 'ceo')
               const staffStudents = students.filter(s => s.companyId === c.id && s.role === 'staff')
               return (
-                <div key={c.id} className="bg-white rounded-3xl p-5 shadow-sm">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="font-bold text-gray-800 text-lg">{c.name}</div>
-                      <div className="text-sm text-gray-500 mt-0.5">
-                        👑 CEO {c.ceo}
+                <div key={c.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-gray-800">{c.name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                        👑 {c.ceo}
                         {ceoStudent && <OnlineDot info={presence[ceoStudent.id]} />}
                       </div>
                       {staffStudents.length > 0 && (
@@ -602,8 +624,8 @@ export default function MonitorView({
                         </div>
                       )}
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-blue-600 text-lg">{c.balance.toLocaleString()}원</div>
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-blue-600">{c.balance.toLocaleString()}원</div>
                       <div className="text-xs text-gray-400">잔액</div>
                     </div>
                   </div>

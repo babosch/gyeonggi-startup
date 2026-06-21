@@ -202,7 +202,6 @@ const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: 
 
 const ADMIN_CARDS = [
   { emoji: '📡', label: '종합 모니터링',   desc: '학생 관리·채용·거래·잔액',      href: '/admin/monitor' },
-  { emoji: '👤', label: '학생별 현황',     desc: '개인 업무일지·거래·활동 기록',   href: '/admin/monitor' },
   { emoji: '⭐', label: '사업체 선정',     desc: '계획서 심사·창업가 선정',        href: '/admin/plans' },
   { emoji: '🧾', label: '품의서 결재',     desc: '물품 구입 승인',                 href: '/admin/requisitions' },
   { emoji: '🗺️', label: '도시 대표 카드', desc: '탐구 결과 워드클라우드·카드',     href: '/admin/citycard' },

@@ -8,13 +8,13 @@ import ConceptPopup from '@/components/ConceptPopup'
 import FeedbackBanner from '@/components/FeedbackBanner'
 import type { Stage } from '@/lib/types'
 
-// 경기도 지도용 도시 정의
+// 경기도 지도용 도시 정의 (위치 실제 지리 기반으로 재조정)
 const MAP_CITIES = [
-  { name: '파주시',  cx: 118, cy: 68,  rx: 95, ry: 50, light: '#bbf7d0', active: '#22c55e', stroke: '#86efac', textColor: '#14532d' },
-  { name: '고양시',  cx: 195, cy: 148, rx: 82, ry: 48, light: '#fbcfe8', active: '#ec4899', stroke: '#f9a8d4', textColor: '#831843' },
-  { name: '부천시',  cx: 93,  cy: 208, rx: 72, ry: 46, light: '#ddd6fe', active: '#a855f7', stroke: '#c4b5fd', textColor: '#4c1d95' },
-  { name: '수원시',  cx: 222, cy: 268, rx: 92, ry: 48, light: '#fde68a', active: '#f59e0b', stroke: '#fcd34d', textColor: '#78350f' },
-  { name: '이천시',  cx: 370, cy: 262, rx: 78, ry: 48, light: '#bfdbfe', active: '#3b82f6', stroke: '#93c5fd', textColor: '#1e3a8a' },
+  { name: '파주시',  cx: 100, cy: 72,  rx: 72, ry: 34, light: '#bbf7d0', active: '#22c55e', stroke: '#86efac', textColor: '#14532d' },
+  { name: '고양시',  cx: 185, cy: 152, rx: 65, ry: 33, light: '#fbcfe8', active: '#ec4899', stroke: '#f9a8d4', textColor: '#831843' },
+  { name: '부천시',  cx: 85,  cy: 228, rx: 58, ry: 30, light: '#ddd6fe', active: '#a855f7', stroke: '#c4b5fd', textColor: '#4c1d95' },
+  { name: '수원시',  cx: 218, cy: 290, rx: 68, ry: 32, light: '#fde68a', active: '#f59e0b', stroke: '#fcd34d', textColor: '#78350f' },
+  { name: '이천시',  cx: 375, cy: 270, rx: 66, ry: 34, light: '#bfdbfe', active: '#3b82f6', stroke: '#93c5fd', textColor: '#1e3a8a' },
 ]
 
 function padArr(arr: string[], min: number): string[] {
@@ -140,9 +140,9 @@ export default function ExploreForm({
                     fill="#dcfce7" stroke="#86efac" strokeWidth="2" />
 
                   {/* 서울 */}
-                  <ellipse cx="216" cy="190" rx="50" ry="40" fill="#9ca3af" />
-                  <text x="216" y="187" textAnchor="middle" fontSize="13" fontWeight="bold" fill="white">서울</text>
-                  <text x="216" y="204" textAnchor="middle" fontSize="10" fill="#e5e7eb">(서울특별시)</text>
+                  <ellipse cx="218" cy="210" rx="42" ry="28" fill="#6b7280" />
+                  <text x="218" y="206" textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">서울</text>
+                  <text x="218" y="220" textAnchor="middle" fontSize="9" fill="#e5e7eb">특별시</text>
 
                   {/* 5개 도시 클릭 영역 */}
                   {MAP_CITIES.map(c => {
