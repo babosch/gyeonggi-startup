@@ -106,7 +106,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'reset_all_students') {
-    // 학생 데이터 전체 초기화 — 교사(mayor) 계정은 보존
+    // 학생 users 행 수집 (mayor 제외)
+    const { data: studentRows } = await admin.from('users').select('id').neq('role', 'mayor')
+    const studentIds = (studentRows ?? []).map(r => r.id)
+
+    // 관련 데이터 삭제
     const tables = [
       'transactions', 'accounts',
       'exchange_logs', 'exchange_matches', 'exchange_cards', 'exchanges',
@@ -119,6 +123,9 @@ export async function POST(req: NextRequest) {
     for (const table of tables) {
       await admin.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
     }
+
+    // users 테이블에서 학생 행 삭제 (역할 정보 제거)
+    await admin.from('users').delete().neq('role', 'mayor')
 
     // 학생 auth 계정 삭제 (mayor- 이메일 제외)
     const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 })
