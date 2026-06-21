@@ -14,6 +14,25 @@ export default function SuperView({ classRows, orphanAccounts }: {
   const [busy, setBusy] = useState<string | null>(null)
   const [rows, setRows] = useState(classRows)
   const [orphans, setOrphans] = useState(orphanAccounts)
+  const [resetDone, setResetDone] = useState(false)
+
+  async function resetAllStudents() {
+    if (!confirm('⚠️ 모든 반의 학생 데이터를 전체 초기화할까요?\n\n삭제되는 것: 학생 계정·역할·회사·잔액·거래·품의서·업무일지 등\n유지되는 것: 교사(시장) 계정, 반 목록\n\n되돌릴 수 없어요. 계속할까요?')) return
+    if (!confirm('정말요? 한 번 더 확인합니다. 전체 학생 데이터가 삭제됩니다.')) return
+    setBusy('reset')
+    const res = await fetch('/api/admin/super', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_all_students' }),
+    })
+    const d = await res.json()
+    setBusy(null)
+    if (res.ok) {
+      setResetDone(true)
+      alert(`초기화 완료! 학생 계정 ${d.deleted}개가 삭제됐어요. 모든 반이 0단계로 초기화됐습니다.`)
+    } else {
+      alert('초기화에 실패했어요: ' + (d.error ?? '알 수 없는 오류'))
+    }
+  }
 
   async function removeMayor(classId: string, name: string) {
     if (!confirm(`${name}의 시장을 해제할까요? (학생·회사 데이터는 그대로 남아요)`)) return
@@ -48,6 +67,22 @@ export default function SuperView({ classRows, orphanAccounts }: {
         <button onClick={() => router.push('/admin')} className="text-gray-400 text-sm mb-4">← 관리자 홈</button>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">🛡️ 슈퍼어드민</h1>
         <p className="text-gray-500 text-sm mb-6">잘못 등록된 시장·계정을 정리해요</p>
+
+        {/* 학생 데이터 전체 초기화 */}
+        <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-6 shadow-sm mb-4">
+          <div className="font-bold text-red-700 mb-1">⚠️ 학생 데이터 전체 초기화</div>
+          <p className="text-sm text-red-500 mb-4">모든 반의 학생 계정·역할·회사·잔액·거래 내역을 삭제하고 0단계로 되돌려요. 교사 계정은 유지됩니다. <strong>되돌릴 수 없어요.</strong></p>
+          {resetDone ? (
+            <div className="bg-green-100 text-green-700 rounded-2xl py-3 text-center font-bold text-sm">
+              ✅ 초기화 완료 — 학생들이 새로 로그인하면 깨끗하게 시작해요
+            </div>
+          ) : (
+            <button onClick={resetAllStudents} disabled={busy === 'reset'}
+              className="w-full bg-red-500 text-white rounded-2xl py-3 font-bold text-base disabled:opacity-40 active:scale-95 transition-transform">
+              {busy === 'reset' ? '초기화 중... (잠시 기다려주세요)' : '🗑️ 전체 초기화 실행'}
+            </button>
+          )}
+        </div>
 
         {/* 반별 시장 현황 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm mb-4">

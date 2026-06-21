@@ -19,6 +19,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  if (action === 'reset_all_students') {
+    // 학생 데이터 전체 초기화 — 교사(mayor) 계정은 보존
+    const tables = [
+      'transactions', 'accounts',
+      'exchange_logs', 'exchange_matches', 'exchange_cards', 'exchanges',
+      'inspection_reports', 'officer_alerts', 'trade_reports',
+      'requisitions', 'job_applications', 'business_plans', 'city_research',
+      'activity_logs', 'reflections', 'concept_responses',
+      'wordcloud_words', 'word_merges', 'teacher_notes', 'facility_uses',
+      'products', 'companies',
+    ]
+    for (const table of tables) {
+      await admin.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    }
+
+    // 학생 auth 계정 삭제 (mayor- 이메일 제외)
+    const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const students = (authList?.users ?? []).filter(u => u.email?.includes('classroom.local') && !u.email?.startsWith('mayor-'))
+    for (const u of students) {
+      await admin.auth.admin.deleteUser(u.id)
+    }
+
+    // 모든 반 0단계로 초기화
+    await admin.from('classes').update({ stage: 0 }).neq('id', '00000000-0000-0000-0000-000000000000')
+
+    return NextResponse.json({ ok: true, deleted: students.length })
+  }
+
   if (action === 'delete_account') {
     // 교사 auth 계정 + users 행 삭제 (학생 계정은 보호 — classroom.local 제외)
     const { data: au } = await admin.auth.admin.getUserById(userId)
