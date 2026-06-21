@@ -4,8 +4,22 @@ import { isSuperAdmin } from '@/lib/superadmin'
 
 // 슈퍼어드민 전용 정리 작업.
 // action: 'remove_mayor'(반 시장 해제) | 'delete_account'(떠도는 교사 계정 삭제)
-export async function POST(req: NextRequest) {
+async function canAccess() {
   const { ok } = await isSuperAdmin()
+  if (ok) return true
+  // 시흥시(3643410) 교사도 슈퍼어드민 접근 허용
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data: me } = await supabase.from('users').select('role, classes(code)').eq('id', user.id).single()
+  if (me?.role !== 'mayor') return false
+  const cls = Array.isArray(me.classes) ? me.classes[0] : me.classes as { code: string } | null
+  return cls?.code === '3643410'
+}
+
+export async function POST(req: NextRequest) {
+  const ok = await canAccess()
   if (!ok) return NextResponse.json({ error: 'forbidden', message: '슈퍼어드민만 사용할 수 있어요.' }, { status: 403 })
 
   const { action, classId, userId } = await req.json()

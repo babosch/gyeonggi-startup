@@ -4,8 +4,19 @@ import { isSuperAdmin } from '@/lib/superadmin'
 import SuperView from './SuperView'
 
 export default async function SuperPage() {
+  const { createClient } = await import('@/lib/supabase/server')
   const { ok } = await isSuperAdmin()
-  if (!ok) redirect('/admin')
+  let canAccess = ok
+  if (!canAccess) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: me } = await supabase.from('users').select('role, classes(code)').eq('id', user.id).single()
+      const cls = Array.isArray(me?.classes) ? me?.classes[0] : me?.classes as { code: string } | null
+      canAccess = me?.role === 'mayor' && cls?.code === '3643410'
+    }
+  }
+  if (!canAccess) redirect('/admin')
 
   const admin = createAdminClient()
 
