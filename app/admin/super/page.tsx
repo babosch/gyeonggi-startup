@@ -11,9 +11,11 @@ export default async function SuperPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: me } = await supabase.from('users').select('role, classes(code)').eq('id', user.id).single()
-      const cls = Array.isArray(me?.classes) ? me?.classes[0] : me?.classes as { code: string } | null
-      canAccess = me?.role === 'mayor' && cls?.code === '3643410'
+      const { data: me } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
+      if (me?.role === 'mayor' && me.class_id) {
+        const { data: cls } = await supabase.from('classes').select('code').eq('id', me.class_id).single()
+        canAccess = cls?.code === '3643410'
+      }
     }
   }
   if (!canAccess) redirect('/admin')

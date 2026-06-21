@@ -13,11 +13,7 @@ export default async function AdminPage() {
     .from('users').select('role, classes(name)').eq('id', user.id).single()
   if (!me || me.role !== 'mayor') redirect('/admin/setup')
 
-  const { ok: superAdmin } = await isSuperAdmin()
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string } | null
-
-  // 시흥시(테스트 반) 교사도 슈퍼어드민 접근 허용 — 이메일로 직접 판별
-  const canSuper = superAdmin || user.email === 'mayor-3643410@classroom.local'
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -50,16 +46,14 @@ export default async function AdminPage() {
             </div>
           </Link>
 
-          {canSuper && (
-            <Link href="/admin/super"
-              className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow border-2 border-gray-200 mt-2">
-              <span className="text-2xl">🛡️</span>
-              <div>
-                <p className="font-bold text-gray-800">슈퍼어드민</p>
-                <p className="text-sm text-gray-400">시장·계정 정리 (전체 관리)</p>
-              </div>
-            </Link>
-          )}
+          <Link href="/admin/super"
+            className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow border-2 border-gray-200 mt-2">
+            <span className="text-2xl">🛡️</span>
+            <div>
+              <p className="font-bold text-gray-800">슈퍼어드민</p>
+              <p className="text-sm text-gray-400">시장·계정 정리 (전체 관리)</p>
+            </div>
+          </Link>
         </div>
 
         {/* 버전 정보 */}

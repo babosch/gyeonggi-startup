@@ -1,7 +1,17 @@
-export const APP_VERSION = 'v1.2.0'
+export const APP_VERSION = 'v1.2.1'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.2.1',
+    date: '2026-06-22',
+    items: [
+      '교사 학급비번 로그인 오류 수정 (반 코드 DB 불일치)',
+      '슈퍼어드민 반 코드 복구 기능 추가',
+      '학생 데이터 전체 초기화 버튼 추가 (슈퍼어드민)',
+      '내 카드 화면 개인 QR 코드 제거',
+    ],
+  },
   {
     version: 'v1.2.0',
     date: '2026-06-22',
