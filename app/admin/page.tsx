@@ -20,6 +20,14 @@ export default async function AdminPage() {
       <h1 className="text-xl font-bold text-gray-800 mb-1">관리자 홈</h1>
       <p className="text-gray-500 text-sm mb-8">{cls?.name ?? ''} 시장</p>
       <div className="flex flex-col gap-3">
+        <Link href="/home"
+          className="bg-blue-600 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-blue-700 transition-colors">
+          <span className="text-2xl">🏫</span>
+          <div>
+            <p className="font-bold text-white text-lg">교사 홈 (수업 제어)</p>
+            <p className="text-sm text-blue-100">단계 전환 · 활동 열기 · 멈춤 · 학생 결과물</p>
+          </div>
+        </Link>
         <Link href="/admin/setup"
           className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
           <span className="text-2xl">👥</span>
@@ -66,14 +74,6 @@ export default async function AdminPage() {
           <div>
             <p className="font-bold text-gray-800">현황 보드</p>
             <p className="text-sm text-gray-400">반 전체 진행·시찰·경보</p>
-          </div>
-        </Link>
-        <Link href="/home"
-          className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <span className="text-2xl">🏫</span>
-          <div>
-            <p className="font-bold text-gray-800">단계 제어</p>
-            <p className="text-sm text-gray-400">수업 단계 실시간 통제</p>
           </div>
         </Link>
         {superAdmin && (

@@ -126,6 +126,12 @@ export default function AdminSetupPage() {
               첫 로그인 시 PIN을 변경해야 합니다.
             </div>
           )}
+          {mayorDone && (
+            <button onClick={() => router.push('/home')}
+              className="mt-5 w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-md hover:bg-blue-700 transition-colors">
+              🏫 교사 홈으로 → 수업 시작
+            </button>
+          )}
         </div>
       )}
     </div>
