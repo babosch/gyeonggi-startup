@@ -97,6 +97,10 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
           <div className="text-2xl font-bold text-blue-700">{balance.toLocaleString()}원</div>
         </div>
 
+        <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl px-4 py-3 text-sm text-amber-700">
+          💡 <b>재료비는 10만원(100,000원)까지</b> 쓸 수 있어요. 선생님이 추가로 준 돈은 <b>예비비</b>로 남겨둬요.
+        </div>
+
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="font-bold text-gray-800 mb-1">🛒 재료 구입 목록</div>
           <p className="text-xs text-gray-400 mb-3">

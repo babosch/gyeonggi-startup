@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.4.1'
+export const APP_VERSION = 'v1.4.2'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.2',
+    date: '2026-06-22',
+    items: [
+      '채용 지원 — 불합격 시 같은 회사에 동기를 고쳐 다시 지원 가능',
+      '품의서 — 재료비 10만원 한도 안내 문구 추가',
+    ],
+  },
   {
     version: 'v1.4.1',
     date: '2026-06-22',

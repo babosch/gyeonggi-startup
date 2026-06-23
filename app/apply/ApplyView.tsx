@@ -71,7 +71,7 @@ export default function ApplyView({ companies, myApps }: {
         {/* 불합격 후 재지원 안내 */}
         {myApps.some(a => a.status === 'rejected') && !hired && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl px-4 py-3 text-sm text-orange-700 font-medium">
-            🔄 불합격된 회사가 있어요. 다른 회사에 지원해 보세요!
+            🔄 불합격된 회사에 지원 동기를 고쳐 다시 지원하거나, 다른 회사에 지원해 보세요!
           </div>
         )}
 
@@ -84,15 +84,19 @@ export default function ApplyView({ companies, myApps }: {
             {companies.map(c => {
               const myApp = appMap[c.id]
               const isSelected = selected === c.id
-              // 불합격된 회사는 클릭 불가, 대기중/채용된 회사도 클릭 불가, 미지원은 지원 가능
-              const canApply = !myApp
+              // 미지원 또는 불합격 회사는 지원 가능. 검토 중·채용된 회사는 클릭 불가.
+              const canApply = !myApp || myApp.status === 'rejected'
 
               return (
                 <div key={c.id}
-                  onClick={() => canApply && setSelected(isSelected ? null : c.id)}
+                  onClick={() => {
+                    if (!canApply) return
+                    if (isSelected) { setSelected(null); setMotivation('') }
+                    else { setSelected(c.id); setMotivation(myApp?.status === 'rejected' ? myApp.motivation : '') }
+                  }}
                   className={`bg-white rounded-3xl p-5 shadow-sm border-2 transition-all
                     ${isSelected ? 'border-blue-400 bg-blue-50 cursor-pointer'
-                    : myApp?.status === 'rejected' ? 'border-gray-100 opacity-60 cursor-not-allowed'
+                    : myApp?.status === 'rejected' ? 'border-red-100 hover:border-red-300 cursor-pointer'
                     : myApp ? 'border-gray-100 cursor-default'
                     : 'border-transparent hover:border-gray-200 cursor-pointer'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -120,8 +124,13 @@ export default function ApplyView({ companies, myApps }: {
                     </div>
                   )}
 
-                  {isSelected && !myApp && (
+                  {isSelected && canApply && (
                     <div className="mt-4 border-t border-blue-200 pt-4" onClick={e => e.stopPropagation()}>
+                      {myApp?.status === 'rejected' && (
+                        <div className="mb-2 text-xs text-red-500 font-medium">
+                          🔄 지원 동기를 고쳐서 다시 지원해요. 제출하면 '검토 중'으로 바뀌어요.
+                        </div>
+                      )}
                       <label className="block text-sm font-medium text-blue-700 mb-1.5">
                         ✍️ 지원 동기 <span className="text-gray-400">(내가 어떻게 기여할 수 있는지 써요)</span>
                       </label>
@@ -131,7 +140,7 @@ export default function ApplyView({ companies, myApps }: {
                         className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-800 text-sm focus:border-blue-400 outline-none resize-none" />
                       <button onClick={apply} disabled={busy || !motivation.trim()}
                         className="mt-2 w-full bg-blue-500 text-white rounded-xl py-3 font-bold disabled:opacity-40">
-                        {busy ? '제출 중...' : '지원하기'}
+                        {busy ? '제출 중...' : myApp?.status === 'rejected' ? '다시 지원하기' : '지원하기'}
                       </button>
                     </div>
                   )}
