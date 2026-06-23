@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.4.0'
+export const APP_VERSION = 'v1.4.1'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.1',
+    date: '2026-06-22',
+    items: [
+      '사업계획서 — "선정 이유" 안내 문구 강화 + 작성 예시(placeholder) 추가',
+    ],
+  },
   {
     version: 'v1.4.0',
     date: '2026-06-22',

@@ -238,11 +238,13 @@ export default function PlanForm({ role, cityName, stage, existing }: {
 
         {/* 이 도시에 필요한 이유 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <label className="block text-sm font-medium text-gray-600 mb-1.5">
-            💡 우리 회사가 이 도시에 필요한 이유
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">
+            💡 우리 회사가 이 도시에 필요한 이유를, 우리 회사가 선정되어야 하는 이유를 구체적으로 작성해주세요
+            <span className="text-red-500"> (가장 중요)</span>
           </label>
-          <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={3} maxLength={120}
-            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50" />
+          <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={5} maxLength={400}
+            placeholder="이 회사를 만든 이유, 이 회사는 어떤 재료를 이용해서 어떤 제품을 만들고 그게 이 도시에 주는 영향을 구체적으로 작성해주세요"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50 placeholder:text-gray-400" />
         </div>
 
         {canEdit ? (
