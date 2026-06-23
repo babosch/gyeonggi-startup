@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.3.1'
+export const APP_VERSION = 'v1.4.0'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.0',
+    date: '2026-06-22',
+    items: [
+      '서류 워크플로 정식 릴리스 — 반려·임시저장·회수 + 시장 공통사항/학생 공지',
+      '전체 기능 검토 및 프로덕션 빌드 검증 완료',
+    ],
+  },
   {
     version: 'v1.3.1',
     date: '2026-06-22',
