@@ -65,7 +65,11 @@ export default function HireList({ stage, applications: initApps, staff: initial
     } else {
       const d = await res.json()
       if (d.error === 'full') alert('직원이 다 찼어요 (최대 4명)')
-      else if (d.error === 'already_hired') alert('이미 다른 회사에 채용된 학생이에요!')
+      else if (d.error === 'already_hired') {
+        alert('이미 다른 회사에 채용된 학생이에요! 목록에서 빼낼게요.')
+        // 다른 회사에 채용된 지원자 → 이 화면 대기 목록에서 제거
+        setApps(prev => prev.map(a => a.id === appId ? { ...a, status: 'taken' } : a))
+      }
       else alert(`오류: ${d.error}`)
     }
   }

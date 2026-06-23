@@ -36,6 +36,23 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
+export async function PATCH(req: NextRequest) {
+  const mayor = await getMayor()
+  if (!mayor) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+
+  const { id, visibleToStudents } = await req.json()
+  if (!id || typeof visibleToStudents !== 'boolean') {
+    return NextResponse.json({ error: 'invalid' }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+  // 작성자 본인 글만 공개 설정 변경 가능
+  const { error } = await admin.from('shared_notices')
+    .update({ visible_to_students: visibleToStudents }).eq('id', id).eq('author_id', mayor.id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: NextRequest) {
   const mayor = await getMayor()
   if (!mayor) return NextResponse.json({ error: 'forbidden' }, { status: 403 })

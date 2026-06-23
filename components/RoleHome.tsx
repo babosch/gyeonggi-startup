@@ -5,6 +5,7 @@ import { useStage } from '@/lib/useStage'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import HomeHeader from './HomeHeader'
+import NoticeBanner from './NoticeBanner'
 import StageBanner from './StageBanner'
 import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
@@ -29,6 +30,7 @@ interface Props {
   openActivities: string[]
   fairMode: boolean
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
+  notices: { id: string; title: string; body: string; created_at: string }[]
 }
 
 export default function RoleHome(props: Props) {
@@ -58,6 +60,8 @@ export default function RoleHome(props: Props) {
           balanceLabel={isMayor ? undefined : props.balanceLabel}
           balance={isMayor ? undefined : props.balance}
         />
+
+        <NoticeBanner notices={props.notices} />
 
         {isMayor ? (
           <MayorHome

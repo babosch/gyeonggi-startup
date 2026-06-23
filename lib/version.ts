@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.3.0'
+export const APP_VERSION = 'v1.3.1'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.3.1',
+    date: '2026-06-22',
+    items: [
+      '공통사항 학생 공개 기능 — 글마다 학생 홈 공지배너 노출 토글',
+      '채용 화면 개선 — 다른 회사에 채용된 지원자 자동 제거',
+    ],
+  },
   {
     version: 'v1.3.0',
     date: '2026-06-22',
