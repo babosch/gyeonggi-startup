@@ -21,9 +21,18 @@ export default async function RequisitionPage() {
   }
 
   const { data: company } = await supabase.from('companies').select('balance').eq('id', me.company_id).single()
-  const { data: past } = await supabase
-    .from('requisitions').select('items, dropped_items, total, status, created_at')
-    .eq('company_id', me.company_id).order('created_at', { ascending: false }).limit(5)
 
-  return <RequisitionForm stage={cls.stage} balance={company?.balance ?? 0} past={past ?? []} />
+  // 임시저장(draft) 1건 — 폼에 불러와 이어 작성
+  const { data: draft } = await supabase
+    .from('requisitions').select('id, items, dropped_items, status')
+    .eq('company_id', me.company_id).eq('status', 'draft')
+    .order('created_at', { ascending: false }).limit(1).maybeSingle()
+
+  // 제출 내역 (draft 제외)
+  const { data: past } = await supabase
+    .from('requisitions').select('id, items, dropped_items, total, status, feedback, created_at')
+    .eq('company_id', me.company_id).neq('status', 'draft')
+    .order('created_at', { ascending: false }).limit(5)
+
+  return <RequisitionForm stage={cls.stage} balance={company?.balance ?? 0} past={past ?? []} draft={draft ?? null} />
 }

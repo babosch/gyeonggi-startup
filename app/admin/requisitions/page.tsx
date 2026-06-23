@@ -17,6 +17,7 @@ export default async function AdminReqPage() {
     .from('requisitions')
     .select('id, company_id, items, dropped_items, total, status, created_at, companies(display_name, icon, users(number, nickname, role))')
     .in('company_id', ids.length ? ids : ['none'])
+    .neq('status', 'draft')   // 임시저장은 결재 목록에 안 보임
     .order('created_at', { ascending: false })
 
   return <ReqReview reqs={reqs ?? []} />

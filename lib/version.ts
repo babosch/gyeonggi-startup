@@ -1,7 +1,19 @@
-export const APP_VERSION = 'v1.2.5'
+export const APP_VERSION = 'v1.3.0'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.3.0',
+    date: '2026-06-22',
+    items: [
+      '사업계획서 반려(수정 요청) 기능 — 교사 반려+사유 → 학생 수정 후 재제출',
+      '사업계획서·품의서 임시저장 — 제출 전 중간 저장·이어쓰기',
+      '제출 후 회수 — 교사 심사 전이면 학생이 제출 취소해 수정 가능',
+      '품의서 반려 사유 표시',
+      '직원 필수 채용(4명) 안내 강화',
+      '시장 공통사항 공유 게시판 추가 (교사 전용)',
+    ],
+  },
   {
     version: 'v1.2.5',
     date: '2026-06-22',

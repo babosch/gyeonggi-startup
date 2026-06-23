@@ -46,6 +46,15 @@ export default async function AdminPage() {
             </div>
           </Link>
 
+          <Link href="/admin/notices"
+            className="bg-amber-500 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-amber-600 transition-colors">
+            <span className="text-2xl">📢</span>
+            <div>
+              <p className="font-bold text-white text-lg">시장 공통사항</p>
+              <p className="text-sm text-amber-100">시장들이 협의한 공통 규칙 공유</p>
+            </div>
+          </Link>
+
           <Link href="/admin/super"
             className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow border-2 border-gray-200 mt-2">
             <span className="text-2xl">🛡️</span>
