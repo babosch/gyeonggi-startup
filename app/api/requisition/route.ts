@@ -37,9 +37,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid_target' }, { status: 400 })
     }
     if (existing.status !== 'draft') return NextResponse.json({ error: 'not_editable' }, { status: 400 })
-    const { error } = await supabase.from('requisitions')
-      .update({ ...payload, feedback: asDraft ? undefined : null }).eq('id', reqId)
+    const { data: updated, error } = await supabase.from('requisitions')
+      .update({ ...payload, feedback: asDraft ? undefined : null }).eq('id', reqId).select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    // RLS 등으로 0건 수정 시 조용한 실패 방지
+    if (!updated || updated.length === 0) return NextResponse.json({ error: 'update_blocked' }, { status: 403 })
   } else {
     const { error } = await supabase.from('requisitions').insert(payload)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

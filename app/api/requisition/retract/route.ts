@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
   // 결재 대기(submitted)만 회수 가능
   if (existing.status !== 'submitted') return NextResponse.json({ error: 'not_retractable' }, { status: 400 })
 
-  const { error } = await supabase.from('requisitions').update({ status: 'draft' }).eq('id', reqId)
+  const { data: updated, error } = await supabase.from('requisitions')
+    .update({ status: 'draft' }).eq('id', reqId).select('id')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!updated || updated.length === 0) return NextResponse.json({ error: 'update_blocked' }, { status: 403 })
   return NextResponse.json({ ok: true })
 }

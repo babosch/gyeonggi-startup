@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.4.4'
+export const APP_VERSION = 'v1.4.5'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.5',
+    date: '2026-06-24',
+    items: [
+      '품의서 제출이 교사 화면에 안 뜨던 버그 수정 — 임시저장 후 제출 시 권한(RLS) 차단 해결',
+      '품의서 제출/회수 실패 시 조용히 넘어가지 않고 오류 표시',
+    ],
+  },
   {
     version: 'v1.4.4',
     date: '2026-06-24',
