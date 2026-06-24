@@ -42,9 +42,10 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     // RLS 등으로 0건 수정 시 조용한 실패 방지
     if (!updated || updated.length === 0) return NextResponse.json({ error: 'update_blocked' }, { status: 403 })
+    return NextResponse.json({ ok: true, id: reqId })
   } else {
-    const { error } = await supabase.from('requisitions').insert(payload)
+    const { data: inserted, error } = await supabase.from('requisitions').insert(payload).select('id').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, id: inserted?.id })
   }
-  return NextResponse.json({ ok: true })
 }

@@ -32,7 +32,7 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
 
   const [items, setItems] = useState<Item[]>(initItems)
   const [dropped, setDropped] = useState<{ name: string; reason: string }[]>(initDropped)
-  const [reqId] = useState<string | null>(draft?.id ?? null)
+  const [reqId, setReqId] = useState<string | null>(draft?.id ?? null)
   const [saving, setSaving] = useState(false)
   const [busyRetract, setBusyRetract] = useState<string | null>(null)
   const [showConcept, setShowConcept] = useState(false)
@@ -61,15 +61,16 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: validItems, dropped: validDropped, total, reqId, asDraft }),
     })
+    const d = await res.json().catch(() => ({}))
     setSaving(false)
     if (!res.ok) {
-      const d = await res.json().catch(() => ({}))
       alert(d.error === 'over_balance' ? '잔액이 부족해요!' : `오류: ${d.error}`)
       return
     }
     if (asDraft) {
+      // 저장된 draft id를 기억 → 다음 임시저장은 새로 만들지 않고 같은 행을 수정 (중복 draft 방지)
+      if (d.id) setReqId(d.id)
       alert('임시저장했어요. 나중에 이어서 작성할 수 있어요.')
-      router.refresh()
     } else {
       setShowConcept(true)
     }

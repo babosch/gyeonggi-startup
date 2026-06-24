@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.4.5'
+export const APP_VERSION = 'v1.4.6'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.6',
+    date: '2026-06-24',
+    items: [
+      '품의서 임시저장 중복 생성 버그 수정 — 저장한 임시저장을 다시 누르면 같은 건을 수정',
+    ],
+  },
   {
     version: 'v1.4.5',
     date: '2026-06-24',
