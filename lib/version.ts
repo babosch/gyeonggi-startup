@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.4.3'
-export const BUILD_DATE = '2026-06-22'
+export const APP_VERSION = 'v1.4.4'
+export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.4',
+    date: '2026-06-24',
+    items: [
+      '품의서 재료 항목 최대 8개 → 15개로 확대',
+      '제출 버튼 비활성화 이유 명확히 표시 (잔액 초과·금액 미입력 안내)',
+    ],
+  },
   {
     version: 'v1.4.3',
     date: '2026-06-22',

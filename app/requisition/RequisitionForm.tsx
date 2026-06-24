@@ -153,7 +153,7 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
             })}
           </div>
 
-          {items.length < 8 && (
+          {items.length < 15 && (
             <button onClick={() => setItems([...items, { name: '', qty: 1, price: 0, purpose: '', link: '' }])}
               className="mt-3 text-blue-500 text-sm font-medium">+ 재료 추가</button>
           )}
@@ -202,10 +202,20 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
           </div>
         )}
 
+        {over && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium text-center">
+            ⚠️ 합계({total.toLocaleString()}원)가 회사 잔액({balance.toLocaleString()}원)을 넘어서 제출할 수 없어요.<br />
+            금액을 줄이거나 항목을 빼주세요.
+          </div>
+        )}
+
         <div className="flex flex-col gap-2">
           <button onClick={() => submit(false)} disabled={saving || over || total === 0}
             className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
-            {saving ? '저장 중...' : '시장님께 품의서 제출'}
+            {saving ? '저장 중...'
+              : over ? '잔액 초과 — 금액을 줄여주세요'
+              : total === 0 ? '갯수·금액을 입력해주세요'
+              : '시장님께 품의서 제출'}
           </button>
           <button onClick={() => submit(true)} disabled={saving || items.every(it => !it.name)}
             className="border-2 border-gray-200 text-gray-600 rounded-2xl py-3 font-medium disabled:opacity-40 active:scale-95 transition-transform">
