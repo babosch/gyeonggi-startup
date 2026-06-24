@@ -36,6 +36,7 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
   const [saving, setSaving] = useState(false)
   const [busyRetract, setBusyRetract] = useState<string | null>(null)
   const [showConcept, setShowConcept] = useState(false)
+  const [editingRejected, setEditingRejected] = useState(false)
 
   if (notCeo) return (
     <PageShell title="품의서" emoji="🧾">
@@ -76,6 +77,19 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
     }
   }
 
+  // 반려된 품의서 내용을 폼에 불러와 수정 후 새로 제출 (반려본은 기록으로 남음)
+  function loadForEdit(p: Past) {
+    const its = (p.items ?? []).map(it => ({
+      name: it.name, qty: it.qty, price: it.price,
+      purpose: (it as Item).purpose ?? '', link: (it as Item).link ?? '',
+    }))
+    setItems(its.length ? its : [{ name: '', qty: 1, price: 0, purpose: '', link: '' }])
+    setDropped(p.dropped_items?.length ? p.dropped_items : [{ name: '', reason: '' }])
+    setReqId(null)            // 새 품의서로 제출 (반려본은 건드리지 않음)
+    setEditingRejected(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   async function retract(id: string) {
     setBusyRetract(id)
     const res = await fetch('/api/requisition/retract', {
@@ -93,6 +107,12 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
   return (
     <PageShell title="품의서" emoji="🧾">
       <div className="flex flex-col gap-4">
+        {editingRejected && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium text-center">
+            ✏️ 반려된 품의서를 불러왔어요. 고친 뒤 다시 제출하면 새 품의서로 올라가요.
+          </div>
+        )}
+
         <div className="bg-blue-50 rounded-2xl p-4 text-center">
           <span className="text-sm text-blue-600">회사 잔액</span>
           <div className="text-2xl font-bold text-blue-700">{balance.toLocaleString()}원</div>
@@ -244,6 +264,12 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
                     <div className="mt-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600">
                       반려 사유: {p.feedback}
                     </div>
+                  )}
+                  {p.status === 'rejected' && (
+                    <button onClick={() => loadForEdit(p)}
+                      className="mt-2 text-blue-600 border-2 border-blue-200 rounded-xl px-3 py-1.5 text-xs font-bold active:scale-95 transition-transform">
+                      ✏️ 이 내용으로 다시 작성
+                    </button>
                   )}
                   {p.status === 'submitted' && (
                     <button onClick={() => retract(p.id)} disabled={busyRetract === p.id}

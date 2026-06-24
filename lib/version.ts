@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.4.6'
+export const APP_VERSION = 'v1.4.7'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.7',
+    date: '2026-06-24',
+    items: [
+      '품의서 반려 시 "이 내용으로 다시 작성" 추가 — 반려된 내용을 불러와 고쳐서 재제출',
+    ],
+  },
   {
     version: 'v1.4.6',
     date: '2026-06-24',
