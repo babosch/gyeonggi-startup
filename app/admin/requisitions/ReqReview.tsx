@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface ReqItem { name: string; qty: number; price: number; purpose?: string }
+interface ReqItem { name: string; qty: number; price: number; purpose?: string; link?: string }
 interface DroppedItem { name: string; reason: string }
 interface CompanyUser { number: number; nickname: string | null; role: string }
 interface ReqCompany { display_name: string; icon?: string | null; users?: CompanyUser | CompanyUser[] | null }
@@ -24,6 +24,14 @@ function timeAgo(iso: string): string {
   if (min < 1) return '방금 전'
   if (min < 60) return `${min}분 전`
   return `${Math.floor(min / 60)}시간 전`
+}
+
+// http/https 링크만 허용 (javascript: 등 차단)
+function safeUrl(raw?: string): string | null {
+  if (!raw) return null
+  const url = raw.trim()
+  if (/^https?:\/\/.+/i.test(url)) return url
+  return null
 }
 
 export default function ReqReview({ reqs }: { reqs: Req[] }) {
@@ -130,6 +138,12 @@ export default function ReqReview({ reqs }: { reqs: Req[] }) {
                               </div>
                               {it.purpose && (
                                 <div className="text-xs text-blue-600 mt-0.5">→ {it.purpose}</div>
+                              )}
+                              {safeUrl(it.link) && (
+                                <a href={safeUrl(it.link)!} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-2.5 py-1 transition-colors">
+                                  🔗 구매링크 열기
+                                </a>
                               )}
                             </div>
                           ))}

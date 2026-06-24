@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.4.2'
+export const APP_VERSION = 'v1.4.3'
 export const BUILD_DATE = '2026-06-22'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.4.3',
+    date: '2026-06-22',
+    items: [
+      '품의서 — 재료 항목마다 구매 링크 입력 칸 추가',
+      '교사 결재 화면에서 구매 링크 바로 클릭해 사이트 열기',
+    ],
+  },
   {
     version: 'v1.4.2',
     date: '2026-06-22',

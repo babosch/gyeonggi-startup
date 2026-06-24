@@ -6,10 +6,10 @@ import PageShell from '@/components/PageShell'
 import ConceptPopup from '@/components/ConceptPopup'
 import type { Stage } from '@/lib/types'
 
-interface Item { name: string; qty: number; price: number; purpose: string }
+interface Item { name: string; qty: number; price: number; purpose: string; link: string }
 interface Past {
   id: string
-  items: (Item | { name: string; qty: number; price: number })[]
+  items: (Item | { name: string; qty: number; price: number; link?: string })[]
   dropped_items: { name: string; reason: string }[]
   total: number
   status: string
@@ -17,7 +17,7 @@ interface Past {
 }
 interface Draft {
   id: string
-  items: (Item | { name: string; qty: number; price: number })[]
+  items: (Item | { name: string; qty: number; price: number; link?: string })[]
   dropped_items: { name: string; reason: string }[]
 }
 
@@ -26,8 +26,8 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
 }) {
   const router = useRouter()
   const initItems: Item[] = draft?.items?.length
-    ? draft.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, purpose: (it as Item).purpose ?? '' }))
-    : [{ name: '', qty: 1, price: 0, purpose: '' }]
+    ? draft.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, purpose: (it as Item).purpose ?? '', link: (it as Item).link ?? '' }))
+    : [{ name: '', qty: 1, price: 0, purpose: '', link: '' }]
   const initDropped = draft?.dropped_items?.length ? draft.dropped_items : [{ name: '', reason: '' }]
 
   const [items, setItems] = useState<Item[]>(initItems)
@@ -138,6 +138,13 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
                         className="col-span-1 text-gray-300 hover:text-red-400 transition-colors text-lg">✕</button>
                     )}
                   </div>
+                  {/* 구매 링크 (선택) */}
+                  <div className="flex items-center gap-2 pl-1">
+                    <span className="text-sm shrink-0">🔗</span>
+                    <input value={it.link} onChange={e => up(i, { link: e.target.value })}
+                      placeholder="구매 링크 붙여넣기 (선택) — 예: https://..." maxLength={500}
+                      className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
+                  </div>
                   {sub > 0 && (
                     <div className="text-right text-xs text-gray-400 pr-8">소계 {sub.toLocaleString()}원</div>
                   )}
@@ -147,7 +154,7 @@ export default function RequisitionForm({ stage, balance, past, draft, notCeo }:
           </div>
 
           {items.length < 8 && (
-            <button onClick={() => setItems([...items, { name: '', qty: 1, price: 0, purpose: '' }])}
+            <button onClick={() => setItems([...items, { name: '', qty: 1, price: 0, purpose: '', link: '' }])}
               className="mt-3 text-blue-500 text-sm font-medium">+ 재료 추가</button>
           )}
 
