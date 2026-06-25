@@ -1,7 +1,17 @@
-export const APP_VERSION = 'v1.4.7'
+export const APP_VERSION = 'v1.5.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.5.0',
+    date: '2026-06-24',
+    items: [
+      '업무일지 승인·반려 체계 — 지급자가 "승인하고 지급" 또는 "반려(사유)"',
+      '반려된 업무일지는 학생이 수정해 재제출 가능',
+      '업무일지 하루 최대 2건, 각 일지를 승인해야 그 건 급여 지급',
+      '지급된 업무일지는 반려 불가(잠금)',
+    ],
+  },
   {
     version: 'v1.4.7',
     date: '2026-06-24',

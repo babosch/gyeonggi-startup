@@ -45,25 +45,27 @@ export default async function OfficerPayrollPage() {
 
   const paidToday = officerIds.filter(id => todayPaidMap[id] >= PAYROLL_DAILY_MAX)
 
-  // 오늘 업무일지
+  // 오늘 업무일지 (상태 포함)
   const { data: logs } = officerIds.length > 0
     ? await supabase.from('activity_logs')
-        .select('user_id, payload, created_at')
+        .select('id, user_id, payload, status, feedback, created_at')
         .in('user_id', officerIds).eq('action', 'worklog')
         .gte('created_at', todayStart)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
     : { data: [] }
 
-  const latestLogMap: Record<string, { text: string; created_at: string }> = {}
+  const worklogsMap: Record<string, { id: string; text: string; status: string; feedback: string | null; created_at: string }[]> = {}
   for (const log of logs ?? []) {
-    if (!latestLogMap[log.user_id]) {
-      latestLogMap[log.user_id] = { text: log.payload?.text ?? '', created_at: log.created_at }
-    }
+    ;(worklogsMap[log.user_id] ??= []).push({
+      id: log.id, text: (log.payload as { text?: string })?.text ?? '',
+      status: (log.status as string) ?? 'submitted',
+      feedback: (log.feedback as string | null) ?? null, created_at: log.created_at,
+    })
   }
 
   const officerData = (officers ?? []).map(o => ({
     id: o.id, number: o.number, nickname: o.nickname,
-    worklog: latestLogMap[o.id] ?? null,
+    worklogs: worklogsMap[o.id] ?? [],
   }))
 
   return (

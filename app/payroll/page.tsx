@@ -53,19 +53,21 @@ export default async function PayrollPage() {
 
   const paidToday = memberIds.filter(id => todayPaidMap[id] >= PAYROLL_DAILY_MAX)
 
-  // 각 직원의 오늘 업무일지
+  // 각 멤버의 오늘 업무일지 (상태 포함)
   const { data: logs } = memberIds.length > 0
-    ? await supabase.from('activity_logs').select('user_id, payload, created_at')
+    ? await supabase.from('activity_logs').select('id, user_id, payload, status, feedback, created_at')
         .in('user_id', memberIds).eq('action', 'worklog')
         .gte('created_at', todayStart)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
     : { data: [] }
 
-  const latestLogMap: Record<string, { text: string; created_at: string }> = {}
+  const worklogsMap: Record<string, { id: string; text: string; status: string; feedback: string | null; created_at: string }[]> = {}
   for (const log of logs ?? []) {
-    if (!latestLogMap[log.user_id]) {
-      latestLogMap[log.user_id] = { text: log.payload?.text ?? '', created_at: log.created_at }
-    }
+    ;(worklogsMap[log.user_id] ??= []).push({
+      id: log.id, text: (log.payload as { text?: string })?.text ?? '',
+      status: (log.status as string) ?? 'submitted',
+      feedback: (log.feedback as string | null) ?? null, created_at: log.created_at,
+    })
   }
 
   return (
@@ -73,7 +75,7 @@ export default async function PayrollPage() {
       stage={cls.stage}
       members={members ?? []}
       paidToday={paidToday}
-      latestLogMap={latestLogMap}
+      worklogsMap={worklogsMap}
       totalPaidMap={totalPaidMap}
       todayPaidMap={todayPaidMap}
       totalMax={PAYROLL_TOTAL_MAX}

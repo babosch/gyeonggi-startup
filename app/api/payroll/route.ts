@@ -22,8 +22,17 @@ export async function POST(req: NextRequest) {
     .from('users').select('role, company_id, class_id').eq('id', user.id).single()
   if (ceo?.role !== 'ceo' || !ceo.company_id) return NextResponse.json({ error: 'not_ceo' }, { status: 403 })
 
-  const { targetId } = await req.json()
+  const { worklogId } = await req.json()
+  if (!worklogId) return NextResponse.json({ error: 'missing_worklog' }, { status: 400 })
   const admin = createAdminClient()
+
+  // 0. 업무일지 검증 — 이 일지를 '승인하고 지급'한다 (제출 상태만, 지급/반려된 건 불가)
+  const { data: wl } = await admin.from('activity_logs')
+    .select('id, user_id, action, status').eq('id', worklogId).single()
+  if (!wl || wl.action !== 'worklog') return NextResponse.json({ error: 'invalid_worklog' }, { status: 400 })
+  if (wl.status === 'paid') return NextResponse.json({ error: 'already_paid' }, { status: 400 })
+  if (wl.status === 'rejected') return NextResponse.json({ error: 'worklog_rejected' }, { status: 400 })
+  const targetId = wl.user_id
 
   // 대상 검증 (같은 회사 직원 또는 CEO 본인)
   const { data: target } = await admin
@@ -33,19 +42,6 @@ export async function POST(req: NextRequest) {
   }
 
   const today = todayKST()
-  const todayStart = todayStartUTC()
-
-  // 1. 오늘 업무일지 확인
-  const { count: worklogCount } = await admin
-    .from('activity_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', targetId)
-    .eq('action', 'worklog')
-    .gte('created_at', todayStart)
-
-  if ((worklogCount ?? 0) === 0) {
-    return NextResponse.json({ error: 'no_worklog_today' }, { status: 400 })
-  }
 
   // 2. 전체 지급 횟수 확인
   const { count: totalCount } = await admin
@@ -86,15 +82,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. 지급
+  // 5. 지급 (업무일지 1건당 1회 — 멱등키에 worklogId 사용)
   const slot = (todayCount ?? 0) + 1
   const wage = target.role === 'ceo' ? WAGE.ceo : WAGE.staff
   const result = await transfer({
     admin, fromType: 'gov', fromId: null, toType: 'user', toId: targetId,
     amount: wage, type: 'payroll', memo: `${today} 급여 (${slot}차)`,
-    idempotencyKey: `payroll:${targetId}:${today}:${slot}`,
+    idempotencyKey: `payroll:${targetId}:${today}:${worklogId}`,
   })
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+
+  // 6. 업무일지 지급완료 처리 (잠금 — 반려 불가)
+  await admin.from('activity_logs').update({ status: 'paid' }).eq('id', worklogId)
 
   return NextResponse.json({ ok: true, wage, total: (totalCount ?? 0) + 1, todaySlot: slot })
 }
