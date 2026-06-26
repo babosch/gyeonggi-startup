@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.5.0'
+export const APP_VERSION = 'v1.5.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.5.1',
+    date: '2026-06-24',
+    items: [
+      '학생 핀번호 초기화 실패 버그 수정 — 50명 넘는 계정 조회 누락(페이지네이션) 해결',
+    ],
+  },
   {
     version: 'v1.5.0',
     date: '2026-06-24',

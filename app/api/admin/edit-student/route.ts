@@ -54,7 +54,8 @@ export async function PATCH(req: NextRequest) {
         .from('classes').select('code').eq('id', student.class_id).single()
       const email = `${cls!.code.toLowerCase()}-${student.number}@classroom.local`
       // Supabase admin auth: update user password by email
-      const { data: authUser } = await admin.auth.admin.listUsers()
+      // perPage 기본값(50)이면 전체 반 학생(약 150명) 중 일부가 누락되므로 1000으로 조회
+      const { data: authUser } = await admin.auth.admin.listUsers({ perPage: 1000 })
       const target = authUser.users.find(u => u.email === email)
       if (!target) return NextResponse.json({ error: 'auth_user_not_found' }, { status: 404 })
       await admin.auth.admin.updateUserById(target.id, { password: pinToPassword(newPin) })
