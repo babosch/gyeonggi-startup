@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.6.0'
+export const APP_VERSION = 'v1.6.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.6.1',
+    date: '2026-06-24',
+    items: [
+      '시설 신청·승인 기능 검증 완료 (회사명 표시·권한·과금 흐름 확인)',
+    ],
+  },
   {
     version: 'v1.6.0',
     date: '2026-06-24',
