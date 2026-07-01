@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { activityLocked } from '@/lib/guard'
 import ActivityLocked from '@/components/ActivityLocked'
 import FacilitiesView from './FacilitiesView'
+import { getClassFacilityUses } from '@/lib/facilityUses'
 import type { Stage } from '@/lib/types'
 
 export default async function FacilitiesPage() {
@@ -32,10 +33,18 @@ export default async function FacilitiesPage() {
     cityBalance = a?.balance ?? 0
   }
 
+  // 시설 사용 신청 목록 — 공무원은 반 전체, CEO는 내 회사
+  let uses: Awaited<ReturnType<typeof getClassFacilityUses>> = []
+  if (me.role === 'officer') {
+    uses = await getClassFacilityUses(supabase, me.class_id!)
+  } else if (me.role === 'ceo' && me.company_id) {
+    uses = await getClassFacilityUses(supabase, me.class_id!, me.company_id)
+  }
+
   return (
     <FacilitiesView
       stage={cls.stage} role={me.role} facilities={facilities ?? []}
-      companyBalance={companyBalance} cityBalance={cityBalance}
+      companyBalance={companyBalance} cityBalance={cityBalance} uses={uses}
     />
   )
 }

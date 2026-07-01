@@ -1,7 +1,18 @@
-export const APP_VERSION = 'v1.5.1'
+export const APP_VERSION = 'v1.6.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.6.0',
+    date: '2026-06-24',
+    items: [
+      '시설 사용 신청·승인 체계 — CEO가 신청 → 공무원·시장이 승인/반려',
+      '승인 시점에 회사 잔액에서 차감 (반려는 차감 없음)',
+      '공무원·시장 화면에 회사별 신청 목록 + 승인/반려 버튼',
+      'CEO 화면에 내 신청 내역(승인여부·차감액·반려사유) 표시',
+      '관리자 홈·교사 대시보드에 "시설 신청 결재" 추가',
+    ],
+  },
   {
     version: 'v1.5.1',
     date: '2026-06-24',

@@ -46,6 +46,15 @@ export default async function AdminPage() {
             </div>
           </Link>
 
+          <Link href="/admin/facilities"
+            className="bg-teal-600 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-teal-700 transition-colors">
+            <span className="text-2xl">🏪</span>
+            <div>
+              <p className="font-bold text-white text-lg">시설 신청 결재</p>
+              <p className="text-sm text-teal-100">회사들의 시설 사용 신청 승인·반려</p>
+            </div>
+          </Link>
+
           <Link href="/admin/notices"
             className="bg-amber-500 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-amber-600 transition-colors">
             <span className="text-2xl">📢</span>
