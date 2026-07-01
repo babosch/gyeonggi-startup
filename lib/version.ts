@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.6.2'
+export const APP_VERSION = 'v1.7.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.7.0',
+    date: '2026-06-24',
+    items: [
+      '지원금 추가 지급 기능 — 시장이 회사에 지원금을 추가로 지급 (교사 홈·관리자 홈에 메뉴)',
+    ],
+  },
   {
     version: 'v1.6.2',
     date: '2026-06-24',

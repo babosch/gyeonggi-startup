@@ -55,6 +55,15 @@ export default async function AdminPage() {
             </div>
           </Link>
 
+          <Link href="/admin/grant"
+            className="bg-green-600 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-green-700 transition-colors">
+            <span className="text-2xl">💰</span>
+            <div>
+              <p className="font-bold text-white text-lg">지원금 추가 지급</p>
+              <p className="text-sm text-green-100">회사에 지원금을 추가로 지급</p>
+            </div>
+          </Link>
+
           <Link href="/admin/notices"
             className="bg-amber-500 rounded-2xl shadow-sm p-5 flex items-center gap-4 hover:bg-amber-600 transition-colors">
             <span className="text-2xl">📢</span>
