@@ -50,7 +50,7 @@ export default function FacilitiesView({ stage, role, facilities: initial, compa
           <div className="text-2xl font-bold text-blue-700">{cityBalance.toLocaleString()}원</div>
         </div>
         <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <div className="font-bold text-gray-800 mb-3">시설 목록 <span className="text-sm text-gray-400">({facilities.length}/8)</span></div>
+          <div className="font-bold text-gray-800 mb-3">시설 목록 <span className="text-sm text-gray-400">({facilities.length}/30)</span></div>
           <div className="flex flex-col gap-2 mb-4">
             {facilities.map(f => (
               <div key={f.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
@@ -62,7 +62,7 @@ export default function FacilitiesView({ stage, role, facilities: initial, compa
               </div>
             ))}
           </div>
-          {facilities.length < 8 && (
+          {facilities.length < 30 && (
             <div className="flex gap-2 border-t border-gray-100 pt-3">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="시설 이름" maxLength={15}
                 className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />

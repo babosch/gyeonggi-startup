@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.6.1'
+export const APP_VERSION = 'v1.6.2'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.6.2',
+    date: '2026-06-24',
+    items: [
+      '시설 등록 개수 한도 8개 → 30개로 확대',
+    ],
+  },
   {
     version: 'v1.6.1',
     date: '2026-06-24',
