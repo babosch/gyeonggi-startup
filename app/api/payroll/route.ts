@@ -11,16 +11,17 @@ function todayStartUTC() {
   return new Date(todayKST() + 'T00:00:00+09:00').toISOString()
 }
 
-// CEO가 직원(또는 본인)에게 급여를 지급한다.
-// 한도: 전체 6회 / 하루 2회 / 30분 쿨다운 / 오늘 업무일지 필수
+// CEO가 직원(또는 본인)에게 급여를 지급한다. CEO 부재 시 시장이 대신 지급할 수 있다.
+// 한도: 전체 6회 / 하루 2회 / 30분 쿨다운 / 업무일지 승인 필수
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { data: ceo } = await supabase
+  const { data: caller } = await supabase
     .from('users').select('role, company_id, class_id').eq('id', user.id).single()
-  if (ceo?.role !== 'ceo' || !ceo.company_id) return NextResponse.json({ error: 'not_ceo' }, { status: 403 })
+  if (!caller || !['ceo', 'mayor'].includes(caller.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  if (caller.role === 'ceo' && !caller.company_id) return NextResponse.json({ error: 'not_ceo' }, { status: 403 })
 
   const { worklogId } = await req.json()
   if (!worklogId) return NextResponse.json({ error: 'missing_worklog' }, { status: 400 })
@@ -34,10 +35,13 @@ export async function POST(req: NextRequest) {
   if (wl.status === 'rejected') return NextResponse.json({ error: 'worklog_rejected' }, { status: 400 })
   const targetId = wl.user_id
 
-  // 대상 검증 (같은 회사 직원 또는 CEO 본인)
+  // 대상 검증 — CEO는 자기 회사, 시장은 자기 반 아무 회사의 직원
   const { data: target } = await admin
-    .from('users').select('id, role, company_id').eq('id', targetId).single()
-  if (!target || target.company_id !== ceo.company_id) {
+    .from('users').select('id, role, company_id, class_id').eq('id', targetId).single()
+  const allowed = caller.role === 'mayor'
+    ? !!target && target.class_id === caller.class_id && !!target.company_id
+    : !!target && target.company_id === caller.company_id
+  if (!target || !allowed) {
     return NextResponse.json({ error: 'invalid_target' }, { status: 400 })
   }
 

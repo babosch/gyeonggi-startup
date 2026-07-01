@@ -1,7 +1,16 @@
-export const APP_VERSION = 'v1.7.0'
+export const APP_VERSION = 'v1.8.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.8.0',
+    date: '2026-06-24',
+    items: [
+      'CEO 부재 시 시장이 대신 급여 지급 — 모든 회사 직원 업무일지 승인·지급 가능',
+      '교사 홈에 "급여 지급(교사)" 메뉴 추가',
+      '직원 업무일지 반려도 시장이 가능하게 확장',
+    ],
+  },
   {
     version: 'v1.7.0',
     date: '2026-06-24',

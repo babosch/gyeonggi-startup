@@ -28,10 +28,11 @@ export async function POST(req: NextRequest) {
     .from('users').select('role, company_id, class_id').eq('id', wl.user_id).single()
   if (!author) return NextResponse.json({ error: 'invalid_target' }, { status: 400 })
 
-  // 권한: 공무원 일지는 같은 반 교사, 그 외(직원·CEO)는 같은 회사 CEO
+  // 권한: 공무원 일지는 같은 반 교사, 그 외(직원·CEO)는 같은 회사 CEO 또는 같은 반 교사(CEO 부재 대비)
   const allowed = author.role === 'officer'
     ? caller.role === 'mayor' && caller.class_id === author.class_id
-    : caller.role === 'ceo' && !!caller.company_id && caller.company_id === author.company_id
+    : (caller.role === 'ceo' && !!caller.company_id && caller.company_id === author.company_id)
+      || (caller.role === 'mayor' && caller.class_id === author.class_id)
   if (!allowed) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
   const { error } = await admin.from('activity_logs')
