@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.8.0'
+export const APP_VERSION = 'v1.8.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.8.1',
+    date: '2026-06-24',
+    items: [
+      '시설 신청 승인 취소(환불) 기능 — 잘못 승인한 건을 취소하면 회사에 금액 환불 + 다시 대기 상태로',
+    ],
+  },
   {
     version: 'v1.8.0',
     date: '2026-06-24',

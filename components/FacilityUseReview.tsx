@@ -25,7 +25,8 @@ export default function FacilityUseReview({ uses: initial }: { uses: FacilityUse
   const [rejectOpen, setRejectOpen] = useState<string | null>(null)
   const [rejectText, setRejectText] = useState('')
 
-  async function act(id: string, action: 'approve' | 'reject', feedback?: string) {
+  async function act(id: string, action: 'approve' | 'reject' | 'cancel', feedback?: string) {
+    if (action === 'cancel' && !confirm('이 승인을 취소하고 회사에 금액을 돌려줄까요?')) return
     setBusy(id)
     const res = await fetch('/api/admin/approve-facility-use', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -34,12 +35,15 @@ export default function FacilityUseReview({ uses: initial }: { uses: FacilityUse
     const d = await res.json()
     setBusy(null)
     if (res.ok) {
-      setUses(prev => prev.map(u => u.id === id ? { ...u, status: action === 'approve' ? 'approved' : 'rejected', feedback: feedback ?? u.feedback } : u))
+      const nextStatus = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending'
+      setUses(prev => prev.map(u => u.id === id ? { ...u, status: nextStatus, feedback: action === 'reject' ? (feedback ?? u.feedback) : null } : u))
       setRejectOpen(null)
       setRejectText('')
       router.refresh()
+    } else if (d.error === '잔액이 부족합니다.') {
+      alert(action === 'cancel' ? '시청 잔액이 부족해 환불할 수 없어요' : '회사 잔액이 부족해 승인할 수 없어요')
     } else {
-      alert(d.error === '잔액이 부족합니다.' ? '회사 잔액이 부족해 승인할 수 없어요' : `오류: ${d.error}`)
+      alert(`오류: ${d.error}`)
     }
   }
 
@@ -80,6 +84,15 @@ export default function FacilityUseReview({ uses: initial }: { uses: FacilityUse
                       </div>
                     )}
                   </div>
+
+                  {u.status === 'approved' && (
+                    <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+                      <button onClick={() => act(u.id, 'cancel')} disabled={busy === u.id}
+                        className="w-full border-2 border-orange-200 text-orange-600 rounded-xl py-2.5 font-bold text-sm disabled:opacity-40 active:scale-95 transition-transform">
+                        {busy === u.id ? '...' : '↩️ 승인 취소 (환불)'}
+                      </button>
+                    </div>
+                  )}
 
                   {u.status === 'pending' && (
                     <div className="px-5 pb-4 border-t border-gray-100 pt-3">

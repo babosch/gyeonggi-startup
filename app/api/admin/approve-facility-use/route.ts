@@ -3,9 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { transfer, syncCompanyBalance } from '@/lib/ledger'
 
-// 공무원·시장이 시설 사용 신청을 승인/반려한다.
+// 공무원·시장이 시설 사용 신청을 승인/반려/취소한다.
 //  - 승인: 승인 시점 시설 가격으로 회사 계좌 → 시청 계좌 과금(멱등) + status=approved
 //  - 반려: 과금 없이 status=rejected + 사유
+//  - 취소: 잘못 승인한 건을 환불(시청 → 회사) + status=pending 으로 되돌림
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -17,11 +18,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
 
-  const { facilityUseId, action, feedback } = await req.json() // action: 'approve' | 'reject'
+  const { facilityUseId, action, feedback } = await req.json() // action: 'approve' | 'reject' | 'cancel'
   const admin = createAdminClient()
 
   const { data: fu } = await admin.from('facility_uses')
-    .select('id, facility_id, company_id, quantity, status').eq('id', facilityUseId).single()
+    .select('id, facility_id, company_id, quantity, total_amount, status').eq('id', facilityUseId).single()
   if (!fu) return NextResponse.json({ error: 'not_found' }, { status: 404 })
 
   const { data: facility } = await admin.from('facilities')
@@ -54,6 +55,23 @@ export async function POST(req: NextRequest) {
       .update({ status: 'approved', total_amount: total }).eq('id', facilityUseId)
     await syncCompanyBalance(admin, fu.company_id)
     return NextResponse.json({ ok: true, total })
+  }
+
+  if (action === 'cancel') {
+    // 잘못 승인한 건 취소 → 환불(시청 → 회사) + 다시 대기 상태로
+    if (fu.status !== 'approved') return NextResponse.json({ error: 'not_approved' }, { status: 400 })
+    const refund = fu.total_amount
+    if (Number.isInteger(refund) && refund > 0) {
+      const result = await transfer({
+        admin, fromType: 'city', fromId: facility.class_id, toType: 'company', toId: fu.company_id,
+        amount: refund, type: 'refund', memo: `${facility.name} 승인 취소 환불`,
+        facilityId: fu.facility_id, idempotencyKey: `facility-use-refund:${fu.id}`,
+      })
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+    await admin.from('facility_uses').update({ status: 'pending' }).eq('id', facilityUseId)
+    await syncCompanyBalance(admin, fu.company_id)
+    return NextResponse.json({ ok: true })
   }
 
   return NextResponse.json({ error: 'bad_action' }, { status: 400 })
