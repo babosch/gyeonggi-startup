@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { activityLocked } from '@/lib/guard'
 import ActivityLocked from '@/components/ActivityLocked'
 import WorklogForm from './WorklogForm'
+import { inquiryForStage, KEYWORD_DEFS } from '@/lib/inquiry'
 import type { Stage } from '@/lib/types'
 
 function todayStartUTC() {
@@ -41,5 +42,38 @@ export default async function WorklogPage() {
     created_at: t.created_at as string,
   }))
 
-  return <WorklogForm stage={cls.stage} role={me.role} today={todayLogs} firstEver={(everCount ?? 0) === 0} />
+  // 탐구 질문 게이트 — 생산(2단계) 이상. 그 단계 응답 수로 질문 순환, 오늘 답했으면 통과.
+  const stage = cls.stage
+  let inquiry: null | {
+    id: string; question: string
+    keywords: { word: string; def: string; required: boolean }[]
+  } = null
+  let inquiryAnswered = true
+  if (stage >= 2) {
+    const { count: stageAnsweredAll } = await supabase
+      .from('reflections').select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('stage', stage).not('concept_key', 'is', null)
+    const { count: stageAnsweredToday } = await supabase
+      .from('reflections').select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('stage', stage).not('concept_key', 'is', null)
+      .gte('created_at', todayStartUTC())
+    const q = inquiryForStage(stage, stageAnsweredAll ?? 0)
+    if (q) {
+      inquiry = {
+        id: q.id, question: q.question,
+        keywords: [
+          { word: q.required, def: KEYWORD_DEFS[q.required] ?? '', required: true },
+          ...q.recommended.map(w => ({ word: w, def: KEYWORD_DEFS[w] ?? '', required: false })),
+        ],
+      }
+      inquiryAnswered = (stageAnsweredToday ?? 0) > 0
+    }
+  }
+
+  return (
+    <WorklogForm
+      stage={cls.stage} role={me.role} today={todayLogs} firstEver={(everCount ?? 0) === 0}
+      inquiry={inquiry} inquiryAnswered={inquiryAnswered}
+    />
+  )
 }

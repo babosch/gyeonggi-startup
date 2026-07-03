@@ -1,7 +1,16 @@
-export const APP_VERSION = 'v1.8.2'
+export const APP_VERSION = 'v1.9.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.9.0',
+    date: '2026-06-24',
+    items: [
+      '업무일지 전 개념 탐구 질문 추가 (생산 단계부터) — 답해야 업무일지 작성 가능',
+      '핵심 낱말 뜻 표시 + 눌러서 넣기, 필수 낱말 포함해야 제출',
+      '단계별 질문 순환, 하루 1회(단계마다) — 성찰을 개념 학습과 연계',
+    ],
+  },
   {
     version: 'v1.8.2',
     date: '2026-06-24',

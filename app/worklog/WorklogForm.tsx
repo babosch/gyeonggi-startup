@@ -1,28 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import PageShell from '@/components/PageShell'
 import ConceptPopup from '@/components/ConceptPopup'
+import { includesKeyword } from '@/lib/inquiry'
 import type { Stage } from '@/lib/types'
 
 interface Worklog { id: string; text: string; status: string; feedback: string | null; created_at: string }
+interface Inquiry { id: string; question: string; keywords: { word: string; def: string; required: boolean }[] }
 
 const DAILY_MAX = 2
 
-export default function WorklogForm({ stage, role, today, firstEver }: {
+export default function WorklogForm({ stage, role, today, firstEver, inquiry, inquiryAnswered }: {
   stage: Stage; role: string; today: Worklog[]; firstEver: boolean
+  inquiry: Inquiry | null; inquiryAnswered: boolean
 }) {
   const router = useRouter()
   const [text, setText] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [showConcept, setShowConcept] = useState(false)
+  const [inquiryDone, setInquiryDone] = useState(inquiryAnswered)
 
   if (role !== 'staff' && role !== 'ceo' && role !== 'officer') {
     return <PageShell title="업무일지" emoji="📒">
       <div className="bg-white rounded-3xl p-8 text-center text-gray-500">직원·CEO·공무원만 사용해요.</div>
     </PageShell>
+  }
+
+  // ── 탐구 질문 게이트 — 답해야 업무일지 작성 가능 ──
+  if (inquiry && !inquiryDone) {
+    return <InquiryGate inquiry={inquiry} onDone={() => setInquiryDone(true)} />
   }
 
   const canWriteNew = today.length < DAILY_MAX
@@ -141,6 +150,98 @@ export default function WorklogForm({ stage, role, today, firstEver }: {
           explanation="필요한 것을 만들어 내는 활동을 생산이라고 해요. 만든 물건을 쓰거나 사는 것은 소비예요."
           onClose={() => { setShowConcept(false); router.push('/home') }} />
       )}
+    </PageShell>
+  )
+}
+
+// ── 탐구 질문 게이트 ──
+function InquiryGate({ inquiry, onDone }: { inquiry: Inquiry; onDone: () => void }) {
+  const [answer, setAnswer] = useState('')
+  const [saving, setSaving] = useState(false)
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  const required = inquiry.keywords.find(k => k.required)
+  const canSubmit = !!answer.trim() && !!required && includesKeyword(answer, required.word)
+
+  function insertWord(word: string) {
+    const el = ref.current
+    if (!el) { setAnswer(a => (a ? a + ' ' : '') + word); return }
+    const start = el.selectionStart ?? answer.length
+    const end = el.selectionEnd ?? answer.length
+    const next = answer.slice(0, start) + word + answer.slice(end)
+    setAnswer(next)
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + word.length
+      el.setSelectionRange(pos, pos)
+    })
+  }
+
+  async function submit() {
+    setSaving(true)
+    const res = await fetch('/api/inquiry', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inquiryId: inquiry.id, answer }),
+    })
+    const d = await res.json().catch(() => ({}))
+    setSaving(false)
+    if (res.ok) onDone()
+    else if (d.error === 'keyword_missing') alert(`'${d.required}' 낱말을 넣어 답해 주세요.`)
+    else alert(`오류: ${d.error}`)
+  }
+
+  return (
+    <PageShell title="오늘의 탐구 질문" emoji="💭">
+      <div className="flex flex-col gap-4">
+        <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl px-4 py-3 text-sm text-blue-700 text-center">
+          질문에 답하면 오늘 업무일지를 쓸 수 있어요
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="text-xs text-gray-400 mb-1">오늘의 탐구 질문</div>
+          <div className="text-lg font-bold text-gray-800 leading-relaxed">{inquiry.question}</div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="text-sm font-bold text-gray-700 mb-3">
+            이 낱말을 넣어 답해요 <span className="text-gray-400 font-normal">· 눌러서 넣기</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {inquiry.keywords.map(k => {
+              const inAnswer = includesKeyword(answer, k.word)
+              return (
+                <button key={k.word} onClick={() => insertWord(k.word)}
+                  className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left border-2 transition-colors
+                    ${inAnswer ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100 hover:border-blue-200'}`}>
+                  <span className="min-w-0">
+                    <span className={`font-bold ${inAnswer ? 'text-green-700' : 'text-gray-800'}`}>{k.word}</span>
+                    {!k.required && <span className="text-xs text-gray-400 ml-1">(추천)</span>}
+                    <span className={`text-sm ml-2 ${inAnswer ? 'text-green-700' : 'text-gray-500'}`}>{k.def}</span>
+                  </span>
+                  <span className={`shrink-0 text-sm font-bold ${inAnswer ? 'text-green-600' : 'text-blue-500'}`}>
+                    {inAnswer ? '✓ 넣음' : '＋ 넣기'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <label className="block text-sm font-bold text-gray-700 mb-2">내 답</label>
+          <textarea ref={ref} value={answer} onChange={e => setAnswer(e.target.value)} rows={4} maxLength={300}
+            placeholder="낱말을 넣어 내 생각을 써요"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-base focus:border-blue-400 outline-none resize-none" />
+          {required && !includesKeyword(answer, required.word) && answer.trim() !== '' && (
+            <p className="text-xs text-amber-600 mt-2">‘{required.word}’ 낱말을 넣어야 완성돼요</p>
+          )}
+        </div>
+
+        <button onClick={submit} disabled={saving || !canSubmit}
+          className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
+          {saving ? '...' : '답하고 업무일지 쓰기'}
+        </button>
+      </div>
     </PageShell>
   )
 }
