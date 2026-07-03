@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.8.1'
+export const APP_VERSION = 'v1.8.2'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.8.2',
+    date: '2026-06-24',
+    items: [
+      '교사 홈에 "시찰 보고서" 전용 메뉴 추가 — 공무원 시찰 보고서를 한 화면에서 열람',
+    ],
+  },
   {
     version: 'v1.8.1',
     date: '2026-06-24',
