@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.9.0'
+export const APP_VERSION = 'v1.9.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.9.1',
+    date: '2026-06-24',
+    items: [
+      '시설 신청 결재 화면에서 시장도 시설을 직접 등록·삭제 가능',
+    ],
+  },
   {
     version: 'v1.9.0',
     date: '2026-06-24',
