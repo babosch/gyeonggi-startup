@@ -60,7 +60,7 @@ export default function FacilityManager({ initial }: { initial: Facility[] }) {
 
       {facilities.length < 30 && (
         <div className="flex gap-2 border-t border-gray-100 pt-3">
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="시설 이름" maxLength={15}
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="시설 이름" maxLength={40}
             className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 outline-none" />
           <input value={unit} onChange={e => setUnit(e.target.value)} placeholder="단위" maxLength={4}
             className="w-14 border-2 border-gray-200 rounded-xl px-2 py-2 text-sm text-center" />

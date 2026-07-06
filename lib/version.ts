@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.9.1'
+export const APP_VERSION = 'v1.9.2'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.9.2',
+    date: '2026-06-24',
+    items: [
+      '시설 이름 글자 수 제한 15자 → 40자로 완화',
+    ],
+  },
   {
     version: 'v1.9.1',
     date: '2026-06-24',

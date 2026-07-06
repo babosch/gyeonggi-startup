@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { data, error } = await admin.from('facilities').insert({
     class_id: mayor.classId,
-    name: name.toString().slice(0, 15).trim(),
+    name: name.toString().slice(0, 40).trim(),
     unit: (unit ?? '회').toString().slice(0, 4) || '회',
     price,
     created_by: mayor.id,
