@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.10.1'
+export const APP_VERSION = 'v1.11.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.0',
+    date: '2026-06-24',
+    items: [
+      '안정 체크포인트 — 회사 통장·탐구 질문 응답·시설 결재·급여 기능 정리',
+    ],
+  },
   {
     version: 'v1.10.1',
     date: '2026-06-24',
