@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.1'
+export const APP_VERSION = 'v1.11.2'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.2',
+    date: '2026-06-24',
+    items: [
+      '탐구 질문 반려 시 "내 카드" 잠금 — 다시 답해 반려가 풀리면 자동 활성화',
+    ],
+  },
   {
     version: 'v1.11.1',
     date: '2026-06-24',
