@@ -26,7 +26,6 @@ export default async function OfficerPayrollPage() {
 
   const officerIds = (officers ?? []).map(o => o.id)
   const today = todayKST()
-  const todayStart = todayStartUTC()
 
   // 전체·오늘 지급 횟수
   const totalPaidMap: Record<string, number> = {}
@@ -45,13 +44,13 @@ export default async function OfficerPayrollPage() {
 
   const paidToday = officerIds.filter(id => todayPaidMap[id] >= PAYROLL_DAILY_MAX)
 
-  // 오늘 업무일지 (상태 포함)
+  // 업무일지 (오늘뿐 아니라 지난 일지까지 — 미지급분 지급 가능하게). 최신순.
   const { data: logs } = officerIds.length > 0
     ? await supabase.from('activity_logs')
         .select('id, user_id, payload, status, feedback, created_at')
         .in('user_id', officerIds).eq('action', 'worklog')
-        .gte('created_at', todayStart)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(100)
     : { data: [] }
 
   const worklogsMap: Record<string, { id: string; text: string; status: string; feedback: string | null; created_at: string }[]> = {}

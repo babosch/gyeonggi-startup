@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.9.2'
+export const APP_VERSION = 'v1.9.3'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.9.3',
+    date: '2026-06-24',
+    items: [
+      '공무원 급여 화면에 지난 날짜 업무일지도 표시 — 미지급분 지급 가능 (일지마다 날짜 표시)',
+    ],
+  },
   {
     version: 'v1.9.2',
     date: '2026-06-24',

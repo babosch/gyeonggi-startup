@@ -127,6 +127,9 @@ export default function OfficerPayrollView({
 
                   {myLogs.map(w => (
                     <div key={w.id} className="border-2 border-gray-100 rounded-2xl p-4">
+                      <div className="text-xs text-gray-400 mb-1">
+                        {new Date(w.created_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
                       <p className="text-sm text-gray-800 leading-relaxed mb-2">{w.text}</p>
 
                       {w.status === 'paid' && (
