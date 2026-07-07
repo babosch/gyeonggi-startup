@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.9.3'
+export const APP_VERSION = 'v1.9.4'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.9.4',
+    date: '2026-06-24',
+    items: [
+      '공무원 급여 하루 지급 한도 2회 → 3회로 완화 (직원·CEO는 2회 유지)',
+    ],
+  },
   {
     version: 'v1.9.3',
     date: '2026-06-24',

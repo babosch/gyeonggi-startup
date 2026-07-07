@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import OfficerPayrollView from './OfficerPayrollView'
-import { PAYROLL_TOTAL_MAX, PAYROLL_DAILY_MAX } from '@/lib/constants'
+import { PAYROLL_TOTAL_MAX, OFFICER_PAYROLL_DAILY_MAX } from '@/lib/constants'
 
 function todayKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -42,7 +42,7 @@ export default async function OfficerPayrollPage() {
     todayPaidMap[id] = todayCnt ?? 0
   }
 
-  const paidToday = officerIds.filter(id => todayPaidMap[id] >= PAYROLL_DAILY_MAX)
+  const paidToday = officerIds.filter(id => todayPaidMap[id] >= OFFICER_PAYROLL_DAILY_MAX)
 
   // 업무일지 (오늘뿐 아니라 지난 일지까지 — 미지급분 지급 가능하게). 최신순.
   const { data: logs } = officerIds.length > 0
@@ -74,7 +74,7 @@ export default async function OfficerPayrollPage() {
       totalPaidMap={totalPaidMap}
       todayPaidMap={todayPaidMap}
       totalMax={PAYROLL_TOTAL_MAX}
-      dailyMax={PAYROLL_DAILY_MAX}
+      dailyMax={OFFICER_PAYROLL_DAILY_MAX}
     />
   )
 }

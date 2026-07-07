@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { transfer } from '@/lib/ledger'
-import { WAGE, PAYROLL_TOTAL_MAX, PAYROLL_DAILY_MAX, PAYROLL_COOLDOWN_MIN } from '@/lib/constants'
+import { WAGE, PAYROLL_TOTAL_MAX, OFFICER_PAYROLL_DAILY_MAX, PAYROLL_COOLDOWN_MIN } from '@/lib/constants'
 
 function todayKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .like('idempotency_key', `payroll:${targetId}:${today}:%`)
 
-  if ((todayCount ?? 0) >= PAYROLL_DAILY_MAX) {
-    return NextResponse.json({ error: 'daily_limit_reached', paid: todayCount, max: PAYROLL_DAILY_MAX }, { status: 400 })
+  if ((todayCount ?? 0) >= OFFICER_PAYROLL_DAILY_MAX) {
+    return NextResponse.json({ error: 'daily_limit_reached', paid: todayCount, max: OFFICER_PAYROLL_DAILY_MAX }, { status: 400 })
   }
 
   // 4. 30분 쿨다운 확인
