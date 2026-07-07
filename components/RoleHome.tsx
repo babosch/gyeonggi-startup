@@ -212,6 +212,7 @@ const ADMIN_CARDS = [
   { emoji: '💰', label: '지원금 추가 지급', desc: '회사에 지원금 추가로 주기',        href: '/admin/grant' },
   { emoji: '💵', label: '급여 지급(교사)',  desc: 'CEO 부재 시 직원 급여 대신 지급',   href: '/admin/payroll' },
   { emoji: '📝', label: '시찰 보고서',      desc: '공무원이 올린 기업 시찰 보고서',    href: '/admin/inspections' },
+  { emoji: '🔍', label: '탐구 질문 응답',    desc: '개념별로 학생 탐구 답 모아보기',    href: '/admin/inquiries' },
   { emoji: '🗺️', label: '도시 대표 카드', desc: '탐구 결과 워드클라우드·카드',     href: '/admin/citycard' },
   { emoji: '🚨', label: '이상 거래 보고', desc: '공무원 신고 거래 검토',           href: '/admin/trade-reports' },
   { emoji: '📊', label: '평가 현황',       desc: '개념 응답·제출물 확인',          href: '/admin/submissions' },

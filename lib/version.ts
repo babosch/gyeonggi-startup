@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.10.0'
+export const APP_VERSION = 'v1.10.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.10.1',
+    date: '2026-06-24',
+    items: [
+      '교사 홈에 "탐구 질문 응답" 화면 추가 — 학생 탐구 답을 개념·질문별로 모아보고 피드백',
+    ],
+  },
   {
     version: 'v1.10.0',
     date: '2026-06-24',
