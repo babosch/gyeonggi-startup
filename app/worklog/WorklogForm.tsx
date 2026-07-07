@@ -12,9 +12,9 @@ interface Inquiry { id: string; question: string; keywords: { word: string; def:
 
 const DAILY_MAX = 2
 
-export default function WorklogForm({ stage, role, today, firstEver, inquiry, inquiryAnswered }: {
+export default function WorklogForm({ stage, role, today, firstEver, inquiry, inquiryAnswered, rejectionReason }: {
   stage: Stage; role: string; today: Worklog[]; firstEver: boolean
-  inquiry: Inquiry | null; inquiryAnswered: boolean
+  inquiry: Inquiry | null; inquiryAnswered: boolean; rejectionReason?: string | null
 }) {
   const router = useRouter()
   const [text, setText] = useState('')
@@ -31,7 +31,7 @@ export default function WorklogForm({ stage, role, today, firstEver, inquiry, in
 
   // ── 탐구 질문 게이트 — 답해야 업무일지 작성 가능 ──
   if (inquiry && !inquiryDone) {
-    return <InquiryGate inquiry={inquiry} onDone={() => setInquiryDone(true)} />
+    return <InquiryGate inquiry={inquiry} rejectionReason={rejectionReason ?? null} onDone={() => setInquiryDone(true)} />
   }
 
   const canWriteNew = today.length < DAILY_MAX
@@ -155,7 +155,7 @@ export default function WorklogForm({ stage, role, today, firstEver, inquiry, in
 }
 
 // ── 탐구 질문 게이트 ──
-function InquiryGate({ inquiry, onDone }: { inquiry: Inquiry; onDone: () => void }) {
+function InquiryGate({ inquiry, rejectionReason, onDone }: { inquiry: Inquiry; rejectionReason: string | null; onDone: () => void }) {
   const [answer, setAnswer] = useState('')
   const [saving, setSaving] = useState(false)
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -193,9 +193,16 @@ function InquiryGate({ inquiry, onDone }: { inquiry: Inquiry; onDone: () => void
   return (
     <PageShell title="오늘의 탐구 질문" emoji="💭">
       <div className="flex flex-col gap-4">
-        <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl px-4 py-3 text-sm text-blue-700 text-center">
-          질문에 답하면 오늘 업무일지를 쓸 수 있어요
-        </div>
+        {rejectionReason ? (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600">
+            <div className="font-bold mb-0.5">✗ 지난 답이 반려됐어요 — 다시 써주세요</div>
+            <div>사유: {rejectionReason}</div>
+          </div>
+        ) : (
+          <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl px-4 py-3 text-sm text-blue-700 text-center">
+            질문에 답하면 오늘 업무일지를 쓸 수 있어요
+          </div>
+        )}
 
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="text-xs text-gray-400 mb-1">오늘의 탐구 질문</div>

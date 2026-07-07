@@ -42,22 +42,27 @@ export default async function WorklogPage() {
     created_at: t.created_at as string,
   }))
 
-  // 탐구 질문 게이트 — 생산(2단계) 이상. 그 단계 응답 수로 질문 순환, 오늘 답했으면 통과.
+  // 탐구 질문 게이트 — 생산(2단계) 이상.
+  //  - 질문 순환: 반려 안 된 응답 수 기준 (반려된 건 세지 않아 재작성 시 같은 질문)
+  //  - 통과: 오늘 반려 안 된 응답이 있으면 (가장 최근 응답이 오늘·미반려)
+  //  - 반려됨: 마지막 응답이 반려면 같은 질문 + 사유 다시 표시
   const stage = cls.stage
   let inquiry: null | {
     id: string; question: string
     keywords: { word: string; def: string; required: boolean }[]
   } = null
   let inquiryAnswered = true
+  let rejectionReason: string | null = null
   if (stage >= 2) {
-    const { count: stageAnsweredAll } = await supabase
+    const { count: nonRejectedAll } = await supabase
       .from('reflections').select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('stage', stage).not('concept_key', 'is', null).eq('rejected', false)
+    const { data: latest } = await supabase
+      .from('reflections').select('rejected, feedback, created_at')
       .eq('user_id', user.id).eq('stage', stage).not('concept_key', 'is', null)
-    const { count: stageAnsweredToday } = await supabase
-      .from('reflections').select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id).eq('stage', stage).not('concept_key', 'is', null)
-      .gte('created_at', todayStartUTC())
-    const q = inquiryForStage(stage, stageAnsweredAll ?? 0)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+
+    const q = inquiryForStage(stage, nonRejectedAll ?? 0)
     if (q) {
       inquiry = {
         id: q.id, question: q.question,
@@ -66,14 +71,17 @@ export default async function WorklogPage() {
           ...q.recommended.map(w => ({ word: w, def: KEYWORD_DEFS[w] ?? '', required: false })),
         ],
       }
-      inquiryAnswered = (stageAnsweredToday ?? 0) > 0
+      const answeredToday = !!latest && !latest.rejected &&
+        new Date(latest.created_at).getTime() >= new Date(todayStartUTC()).getTime()
+      inquiryAnswered = answeredToday
+      rejectionReason = latest?.rejected ? (latest.feedback ?? '자세히 다시 써주세요') : null
     }
   }
 
   return (
     <WorklogForm
       stage={cls.stage} role={me.role} today={todayLogs} firstEver={(everCount ?? 0) === 0}
-      inquiry={inquiry} inquiryAnswered={inquiryAnswered}
+      inquiry={inquiry} inquiryAnswered={inquiryAnswered} rejectionReason={rejectionReason}
     />
   )
 }

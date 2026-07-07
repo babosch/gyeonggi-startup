@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.0'
+export const APP_VERSION = 'v1.11.1'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.1',
+    date: '2026-06-24',
+    items: [
+      '탐구 질문 응답 반려 기능 — 교사가 반려하면 학생이 같은 질문을 사유와 함께 다시 작성',
+    ],
+  },
   {
     version: 'v1.11.0',
     date: '2026-06-24',

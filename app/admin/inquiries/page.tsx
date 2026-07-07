@@ -22,7 +22,7 @@ export default async function AdminInquiriesPage() {
   // 탐구 질문 응답 = concept_key가 있는 reflections
   const { data: refl } = studentIds.length
     ? await supabase.from('reflections')
-        .select('id, answer, stage, prompt, concept_key, feedback, user_id, created_at')
+        .select('id, answer, stage, prompt, concept_key, feedback, rejected, user_id, created_at')
         .in('user_id', studentIds)
         .not('concept_key', 'is', null)
         .order('created_at', { ascending: false })
@@ -37,6 +37,7 @@ export default async function AdminInquiriesPage() {
     question: (r.prompt as string) ?? '',
     concept: (r.concept_key as string) ?? '',
     feedback: (r.feedback as string | null) ?? null,
+    rejected: !!(r.rejected as boolean),
     createdAt: r.created_at as string,
   }))
 
