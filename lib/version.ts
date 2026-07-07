@@ -1,7 +1,15 @@
-export const APP_VERSION = 'v1.9.4'
+export const APP_VERSION = 'v1.10.0'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.10.0',
+    date: '2026-06-24',
+    items: [
+      '종합 모니터링 회사 카드에 "통장(입출금 내역) 보기" 추가 — 교사가 회사별 자금 흐름 열람',
+      '자산 흐름(통장)에 거래 후 잔액 표시 — 통장처럼 잔액 변화 확인',
+    ],
+  },
   {
     version: 'v1.9.4',
     date: '2026-06-24',

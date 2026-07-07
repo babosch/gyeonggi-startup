@@ -44,10 +44,12 @@ const TYPE_LABEL: Record<string, string> = {
   exchange: '교류', refund: '환불', adjust: '조정',
 }
 
-export default function FlowView({ company, transactions, companyAcctId }: {
+export default function FlowView({ company, transactions, companyAcctId, backHref = '/company', backLabel = '← 회사 관리로' }: {
   company: { id: string; display_name: string; icon: string; balance: number } | null
   transactions: Tx[]
   companyAcctId: string | null
+  backHref?: string
+  backLabel?: string
 }) {
   const router = useRouter()
 
@@ -57,6 +59,15 @@ export default function FlowView({ company, transactions, companyAcctId }: {
   const totalOut = transactions
     .filter(t => t.from_account_id === companyAcctId)
     .reduce((s, t) => s + t.amount, 0)
+
+  // 거래 후 잔액(통장식) — 현재 잔액에서 최신→과거로 거슬러 계산
+  const balanceAfter: Record<string, number> = {}
+  let running = company?.balance ?? 0
+  for (const t of transactions) {
+    balanceAfter[t.id] = running
+    const delta = t.to_account_id === companyAcctId ? t.amount : -t.amount
+    running -= delta
+  }
 
   // 유형별 요약
   const byType: Record<string, { in: number; out: number; count: number }> = {}
@@ -71,8 +82,8 @@ export default function FlowView({ company, transactions, companyAcctId }: {
   return (
     <PageShell title="자산 흐름" emoji="📈">
       <div className="flex flex-col gap-4">
-        <button onClick={() => router.push('/company')} className="text-gray-400 text-sm text-left">
-          ← 회사 관리로
+        <button onClick={() => router.push(backHref)} className="text-gray-400 text-sm text-left">
+          {backLabel}
         </button>
 
         {/* 회사 잔액 요약 */}
@@ -149,6 +160,7 @@ export default function FlowView({ company, transactions, companyAcctId }: {
                           {tx.memo && <span className="truncate">{tx.memo}</span>}
                           <span className="shrink-0">{fmtDate(tx.created_at)}</span>
                         </div>
+                        <div className="text-xs text-gray-500 mt-0.5">잔액 {(balanceAfter[tx.id] ?? 0).toLocaleString()}원</div>
                       </div>
                     </div>
                   )

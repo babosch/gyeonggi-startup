@@ -629,6 +629,10 @@ export default function MonitorView({
                       <div className="text-xs text-gray-400">잔액</div>
                     </div>
                   </div>
+                  <button onClick={() => router.push(`/admin/company/${c.id}/flow`)}
+                    className="w-full mb-2 text-sm font-medium text-blue-600 border-2 border-blue-100 rounded-xl py-2 hover:bg-blue-50 active:scale-95 transition">
+                    📊 통장(입출금 내역) 보기
+                  </button>
                   <CompanyBalanceAdjust companyId={c.id} companyName={c.name} onDone={() => router.refresh()} />
                 </div>
               )
