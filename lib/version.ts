@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.2'
+export const APP_VERSION = 'v1.11.3'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.3',
+    date: '2026-06-24',
+    items: [
+      '탐구 질문 미작성 학생 목록 + "작성 요청" — 요청 시 내 카드 잠금, 답하면 자동 해제',
+    ],
+  },
   {
     version: 'v1.11.2',
     date: '2026-06-24',

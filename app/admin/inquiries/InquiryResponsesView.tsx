@@ -17,7 +17,9 @@ interface Response {
 
 const STAGE_LABEL: Record<number, string> = { 2: '생산', 3: '교류', 4: '판매' }
 
-export default function InquiryResponsesView({ responses }: { responses: Response[] }) {
+export default function InquiryResponsesView({ responses, unanswered = [] }: {
+  responses: Response[]; unanswered?: { id: string; name: string }[]
+}) {
   // 질문(prompt)별로 묶기
   const groups = new Map<string, Response[]>()
   for (const r of responses) {
@@ -37,6 +39,8 @@ export default function InquiryResponsesView({ responses }: { responses: Respons
         <Link href="/home" className="text-gray-400 text-sm mb-4 inline-block">← 교사 홈</Link>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">🔍 탐구 질문 응답</h1>
         <p className="text-sm text-gray-400 mb-5">업무일지 전 학생들이 답한 개념 탐구 질문을 개념별로 모아 봐요.</p>
+
+        <UnansweredSection initial={unanswered} />
 
         {responses.length === 0 ? (
           <div className="bg-white rounded-3xl p-10 text-center text-gray-400">
@@ -63,6 +67,52 @@ export default function InquiryResponsesView({ responses }: { responses: Respons
             })}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function UnansweredSection({ initial }: { initial: { id: string; name: string }[] }) {
+  const [list, setList] = useState(initial)
+  const [busy, setBusy] = useState<string | null>(null)
+
+  async function request(id: string) {
+    setBusy(id)
+    const res = await fetch('/api/admin/inquiry-request', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: id }),
+    })
+    const d = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (res.ok) setList(prev => prev.filter(s => s.id !== id))
+    else if (d.error === 'already_answered') { alert('이미 오늘 답한 학생이에요.'); setList(prev => prev.filter(s => s.id !== id)) }
+    else alert(`오류: ${d.error}`)
+  }
+
+  async function requestAll() {
+    for (const s of [...list]) await request(s.id)
+  }
+
+  if (list.length === 0) return null
+  return (
+    <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-5 mb-5">
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-bold text-amber-800">✍️ 아직 안 쓴 학생 ({list.length}명)</div>
+        <button onClick={requestAll} className="text-xs font-bold text-white bg-amber-500 rounded-full px-3 py-1.5">
+          전체 작성 요청
+        </button>
+      </div>
+      <p className="text-xs text-amber-600 mb-3">작성 요청하면 그 학생의 <b>내 카드가 잠기고</b>, 업무일지에서 질문이 떠요. 답하면 자동으로 풀려요.</p>
+      <div className="flex flex-col gap-2">
+        {list.map(s => (
+          <div key={s.id} className="flex items-center justify-between bg-white rounded-2xl px-4 py-2.5">
+            <span className="font-medium text-gray-700 text-sm">{s.name}</span>
+            <button onClick={() => request(s.id)} disabled={busy === s.id}
+              className="text-xs font-bold text-white bg-blue-500 rounded-xl px-3 py-1.5 disabled:opacity-40 active:scale-95 transition-transform">
+              {busy === s.id ? '...' : '작성 요청 (카드 잠금)'}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   )

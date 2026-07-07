@@ -7,17 +7,34 @@ export default async function AdminInquiriesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
 
-  const { data: me } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
+  const { data: me } = await supabase.from('users').select('role, class_id, classes(stage)').eq('id', user.id).single()
   if (me?.role !== 'mayor') redirect('/admin')
+  const stage = ((Array.isArray(me.classes) ? me.classes[0] : me.classes) as { stage: number } | null)?.stage ?? 0
 
   // 반 학생 (reflections엔 class_id가 없어 user_id로 필터)
   const { data: studentRows } = await supabase
-    .from('users').select('id, number, nickname').eq('class_id', me.class_id)
+    .from('users').select('id, number, nickname, role').eq('class_id', me.class_id)
   const students = studentRows ?? []
   const nameMap: Record<string, string> = Object.fromEntries(
     students.map(s => [s.id, s.nickname ?? `${s.number}번`])
   )
   const studentIds = students.map(s => s.id)
+  const writers = students.filter(s => ['staff', 'ceo', 'officer'].includes(s.role))
+
+  // 오늘 현재 단계 탐구를 안 쓴 학생 (미작성)
+  function todayStartUTC() {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    return new Date(kst + 'T00:00:00+09:00').toISOString()
+  }
+  let unanswered: { id: string; name: string }[] = []
+  if (stage >= 2 && writers.length) {
+    const { data: todayRefl } = await supabase.from('reflections')
+      .select('user_id').in('user_id', writers.map(w => w.id))
+      .eq('stage', stage).not('concept_key', 'is', null).gte('created_at', todayStartUTC())
+    const answeredSet = new Set((todayRefl ?? []).map(r => r.user_id))
+    unanswered = writers.filter(w => !answeredSet.has(w.id))
+      .map(w => ({ id: w.id, name: w.nickname ?? `${w.number}번` }))
+  }
 
   // 탐구 질문 응답 = concept_key가 있는 reflections
   const { data: refl } = studentIds.length
@@ -41,5 +58,5 @@ export default async function AdminInquiriesPage() {
     createdAt: r.created_at as string,
   }))
 
-  return <InquiryResponsesView responses={responses} />
+  return <InquiryResponsesView responses={responses} unanswered={unanswered} />
 }
