@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.5'
+export const APP_VERSION = 'v1.11.6'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.6',
+    date: '2026-06-24',
+    items: [
+      '접속 안정화 — 인증 일시 오류 시 페이지 전체가 죽지 않도록 미들웨어 견고화',
+    ],
+  },
   {
     version: 'v1.11.5',
     date: '2026-06-24',
