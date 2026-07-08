@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.6'
+export const APP_VERSION = 'v1.11.7'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.7',
+    date: '2026-06-24',
+    items: [
+      '네트워크 끊김 대응 — 인터넷 끊기면 안내 배너 표시, 다시 연결되면 자동 새로고침',
+    ],
+  },
   {
     version: 'v1.11.6',
     date: '2026-06-24',
