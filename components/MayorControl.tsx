@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { allActivitiesForStage } from '@/lib/activities'
 import { STAGE_LABELS, STAGE_SHORT, STAGE_SESSIONS, type Stage } from '@/lib/types'
@@ -14,18 +13,16 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
 }) {
   const [saving, setSaving] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
-  const router = useRouter()
 
   async function changeStage(next: Stage) {
     if (next === currentStage) return
     setSaving(true)
     const supabase = createClient()
-    // 새 단계의 모든 활동을 기존 열린 활동에 자동 추가 (누적 방식)
     const toAdd = allActivitiesForStage(next)
     const nextOpen = [...openActivities]
     for (const k of toAdd) if (!nextOpen.includes(k)) nextOpen.push(k)
     await supabase.from('classes').update({ stage: next, open_activities: nextOpen }).eq('id', classId)
-    router.refresh()
+    // 실시간 구독(useStage)이 변경을 받아 화면을 갱신함 — router.refresh() 불필요
     setSaving(false)
   }
 
@@ -33,7 +30,6 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
     setBusy(p ? 'pause' : 'resume')
     const supabase = createClient()
     await supabase.from('classes').update({ paused: p }).eq('id', classId)
-    router.refresh()
     setBusy(null)
   }
 
@@ -41,7 +37,6 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
     setBusy(f ? 'fair-on' : 'fair-off')
     const supabase = createClient()
     await supabase.from('classes').update({ fair_mode: f }).eq('id', classId)
-    router.refresh()
     setBusy(null)
   }
 

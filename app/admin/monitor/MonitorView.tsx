@@ -286,6 +286,7 @@ export default function MonitorView({
       })
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'reflections',
+        filter: `class_id=eq.${classId}`,
       }, (payload) => {
         const { user_id } = payload.new as { user_id: string }
         if (studentIdSet.current.has(user_id)) {
