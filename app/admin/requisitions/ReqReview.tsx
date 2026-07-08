@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface ReqItem { name: string; qty: number; price: number }
+interface ReqItem { name: string; qty: number; price: number; purpose?: string; link?: string }
 interface DroppedItem { name: string; reason: string }
 interface CompanyUser { number: number; nickname: string | null; role: string }
 interface ReqCompany { display_name: string; icon?: string | null; users?: CompanyUser | CompanyUser[] | null }
@@ -26,22 +26,34 @@ function timeAgo(iso: string): string {
   return `${Math.floor(min / 60)}시간 전`
 }
 
+// http/https 링크만 허용 (javascript: 등 차단)
+function safeUrl(raw?: string): string | null {
+  if (!raw) return null
+  const url = raw.trim()
+  if (/^https?:\/\/.+/i.test(url)) return url
+  return null
+}
+
 export default function ReqReview({ reqs }: { reqs: Req[] }) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [states, setStates] = useState<Record<string, string>>(
     Object.fromEntries(reqs.map(r => [r.id, r.status]))
   )
+  const [rejectOpen, setRejectOpen] = useState<string | null>(null)
+  const [rejectText, setRejectText] = useState('')
 
-  async function act(reqId: string, action: 'approve' | 'reject') {
+  async function act(reqId: string, action: 'approve' | 'reject', feedback?: string) {
     setBusy(reqId)
     const res = await fetch('/api/admin/approve-requisition', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reqId, action }),
+      body: JSON.stringify({ reqId, action, feedback }),
     })
     setBusy(null)
     if (res.ok) {
       setStates(s => ({ ...s, [reqId]: action === 'approve' ? 'approved' : 'rejected' }))
+      setRejectOpen(null)
+      setRejectText('')
     } else {
       const d = await res.json()
       alert(d.error === '잔액이 부족합니다.' ? '회사 잔액 부족' : `오류: ${d.error}`)
@@ -116,12 +128,23 @@ export default function ReqReview({ reqs }: { reqs: Req[] }) {
                         <div className="text-xs font-bold text-gray-500 mb-2">📦 구매 항목</div>
                         <div className="space-y-1.5">
                           {items.map((it, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700 font-medium">{it.name}</span>
-                              <div className="flex items-center gap-3 text-gray-500 text-xs">
-                                <span>{it.qty}개 × {it.price.toLocaleString()}원</span>
-                                <span className="font-bold text-gray-700">{(it.qty * it.price).toLocaleString()}원</span>
+                            <div key={i} className="py-1.5 border-b border-gray-50 last:border-0">
+                              <div className="flex items-baseline justify-between text-sm">
+                                <span className="text-gray-800 font-medium">{it.name}</span>
+                                <div className="flex items-center gap-3 text-gray-500 text-xs shrink-0 ml-2">
+                                  <span>{it.qty}개 × {it.price.toLocaleString()}원</span>
+                                  <span className="font-bold text-gray-700">{(it.qty * it.price).toLocaleString()}원</span>
+                                </div>
                               </div>
+                              {it.purpose && (
+                                <div className="text-xs text-blue-600 mt-0.5">→ {it.purpose}</div>
+                              )}
+                              {safeUrl(it.link) && (
+                                <a href={safeUrl(it.link)!} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-2.5 py-1 transition-colors">
+                                  🔗 구매링크 열기
+                                </a>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -145,16 +168,35 @@ export default function ReqReview({ reqs }: { reqs: Req[] }) {
                       {/* 결재 버튼 */}
                       <div className="px-5 py-4 border-t border-gray-100">
                         {st === 'submitted' ? (
-                          <div className="flex gap-2">
-                            <button onClick={() => act(r.id, 'approve')} disabled={busy === r.id}
-                              className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-base disabled:opacity-40 hover:bg-emerald-600 transition-colors">
-                              ✓ 승인
-                            </button>
-                            <button onClick={() => act(r.id, 'reject')} disabled={busy === r.id}
-                              className="px-6 py-3 rounded-xl border-2 border-red-200 text-red-500 font-medium disabled:opacity-40 hover:bg-red-50 transition-colors">
-                              반려
-                            </button>
-                          </div>
+                          rejectOpen === r.id ? (
+                            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex flex-col gap-2">
+                              <label className="text-xs font-bold text-red-600">반려 사유 (학생에게 보여요)</label>
+                              <textarea value={rejectText} onChange={e => setRejectText(e.target.value)}
+                                maxLength={500} rows={2} placeholder="예: 용도를 더 구체적으로 적어주세요"
+                                className="w-full border-2 border-red-200 rounded-lg px-3 py-2 text-sm focus:border-red-400 outline-none resize-none" />
+                              <div className="flex gap-2">
+                                <button onClick={() => act(r.id, 'reject', rejectText.trim())} disabled={busy === r.id || !rejectText.trim()}
+                                  className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-bold text-sm disabled:opacity-40">
+                                  반려하기
+                                </button>
+                                <button onClick={() => { setRejectOpen(null); setRejectText('') }}
+                                  className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 text-gray-500 font-medium text-sm">
+                                  취소
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button onClick={() => act(r.id, 'approve')} disabled={busy === r.id}
+                                className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-base disabled:opacity-40 hover:bg-emerald-600 transition-colors">
+                                ✓ 승인
+                              </button>
+                              <button onClick={() => { setRejectOpen(r.id); setRejectText('') }} disabled={busy === r.id}
+                                className="px-6 py-3 rounded-xl border-2 border-red-200 text-red-500 font-medium disabled:opacity-40 hover:bg-red-50 transition-colors">
+                                반려
+                              </button>
+                            </div>
+                          )
                         ) : (
                           <div className={`text-sm font-bold text-center py-1.5 rounded-xl
                             ${st === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>

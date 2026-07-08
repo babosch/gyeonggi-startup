@@ -45,6 +45,9 @@ export default function PlanReview({ plans, selectedCount }: {
   const [bonuses, setBonuses] = useState<Record<string, number>>(
     Object.fromEntries(plans.map(p => [p.id, 0]))
   )
+  // 반려 사유 입력 열림 + 내용
+  const [rejectOpen, setRejectOpen] = useState<string | null>(null)
+  const [rejectText, setRejectText] = useState('')
 
   async function act(planId: string, action: 'select' | 'cancel') {
     setBusy(planId)
@@ -60,6 +63,23 @@ export default function PlanReview({ plans, selectedCount }: {
       router.refresh()
     } else {
       alert(data.error === 'company_limit' ? '이미 4개 회사가 선정됐어요.' : `오류: ${data.error}`)
+    }
+  }
+
+  async function reject(planId: string) {
+    setBusy(planId)
+    const res = await fetch('/api/admin/select-plan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId, action: 'reject', feedback: rejectText.trim() }),
+    })
+    const data = await res.json()
+    setBusy(null)
+    if (res.ok) {
+      setRejectOpen(null)
+      setRejectText('')
+      router.refresh()
+    } else {
+      alert(`오류: ${data.error}`)
     }
   }
 
@@ -186,15 +206,42 @@ export default function PlanReview({ plans, selectedCount }: {
                     {busy === p.id ? '...' : '선정 취소'}
                   </button>
                 ) : (
-                  <button onClick={() => act(p.id, 'select')}
-                    disabled={busy === p.id || count >= MAX_COMPANIES_PER_CLASS}
-                    className={`w-full py-3 rounded-xl font-bold disabled:opacity-40 text-white
-                      ${bonus > 0 ? 'bg-amber-500' : 'bg-blue-500'}`}>
-                    {busy === p.id ? '...'
-                      : bonus > 0
-                        ? `선정 + 추가금 ${bonus.toLocaleString()}원 지급`
-                        : '선정'}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => act(p.id, 'select')}
+                      disabled={busy === p.id || count >= MAX_COMPANIES_PER_CLASS}
+                      className={`w-full py-3 rounded-xl font-bold disabled:opacity-40 text-white
+                        ${bonus > 0 ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                      {busy === p.id ? '...'
+                        : bonus > 0
+                          ? `선정 + 추가금 ${bonus.toLocaleString()}원 지급`
+                          : '선정'}
+                    </button>
+
+                    {rejectOpen === p.id ? (
+                      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex flex-col gap-2">
+                        <label className="text-sm font-bold text-red-600">반려 사유 (학생에게 보여요)</label>
+                        <textarea value={rejectText} onChange={e => setRejectText(e.target.value)}
+                          maxLength={500} rows={2} placeholder="예: 판매 대상을 더 구체적으로 적어주세요"
+                          className="w-full border-2 border-red-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 outline-none resize-none" />
+                        <div className="flex gap-2">
+                          <button onClick={() => reject(p.id)} disabled={busy === p.id || !rejectText.trim()}
+                            className="flex-1 bg-red-500 text-white rounded-xl py-2.5 font-bold text-sm disabled:opacity-40">
+                            {busy === p.id ? '...' : '반려하기'}
+                          </button>
+                          <button onClick={() => { setRejectOpen(null); setRejectText('') }}
+                            className="flex-1 border-2 border-gray-200 text-gray-500 rounded-xl py-2.5 font-medium text-sm">
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setRejectOpen(p.id); setRejectText('') }}
+                        disabled={busy === p.id}
+                        className="w-full py-2.5 rounded-xl border-2 border-red-200 text-red-500 font-medium text-sm disabled:opacity-40">
+                        ✕ 반려 (수정 요청)
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )

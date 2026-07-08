@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { allActivitiesForStage } from '@/lib/activities'
+import { allActivitiesUpToStage } from '@/lib/activities'
 import { STAGE_LABELS, STAGE_SHORT, STAGE_SESSIONS, type Stage } from '@/lib/types'
 
 const STAGES: Stage[] = [0, 1, 2, 3, 4]
@@ -18,10 +18,8 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
     if (next === currentStage) return
     setSaving(true)
     const supabase = createClient()
-    const toAdd = allActivitiesForStage(next)
-    const nextOpen = [...openActivities]
-    for (const k of toAdd) if (!nextOpen.includes(k)) nextOpen.push(k)
-    await supabase.from('classes').update({ stage: next, open_activities: nextOpen }).eq('id', classId)
+    // 단계별 큐레이션된 활동 목록으로 교체 (불필요한 이전 단계 활동 제거)
+    await supabase.from('classes').update({ stage: next, open_activities: allActivitiesUpToStage(next) }).eq('id', classId)
     // 실시간 구독(useStage)이 변경을 받아 화면을 갱신함 — router.refresh() 불필요
     setSaving(false)
   }

@@ -1,35 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// 학급비번 → 반 매핑 (하드코딩)
-const CLASS_MAP: Record<string, { classId: string; email: string }> = {
-  '3643441': { classId: 'b3819314-3e2a-47bf-81ca-d40253e357bc', email: 'mayor-suwon@classroom.local' },
-  '3643442': { classId: 'f0519801-62eb-4cf5-97b6-9cb867a45c07', email: 'mayor-icheon@classroom.local' },
-  '3643443': { classId: '610ebd05-0888-401c-8dfa-909383881fbc', email: 'mayor-goyang@classroom.local' },
-  '3643444': { classId: '24b3d171-e461-42c9-b129-e2b82bbc1b3c', email: 'mayor-bucheon@classroom.local' },
-  '3643445': { classId: 'f8613645-7f9a-4b5f-a320-2df460e1e7da', email: 'mayor-paju@classroom.local' },
+// 기존 5개 반은 이미 만들어진 계정 이메일 유지 (하위 호환)
+const LEGACY_EMAILS: Record<string, string> = {
+  '3643441': 'mayor-suwon@classroom.local',
+  '3643442': 'mayor-icheon@classroom.local',
+  '3643443': 'mayor-goyang@classroom.local',
+  '3643444': 'mayor-bucheon@classroom.local',
+  '3643445': 'mayor-paju@classroom.local',
 }
 
 export async function POST(req: NextRequest) {
   const { code } = await req.json()
-  const entry = CLASS_MAP[String(code)]
-  if (!entry) return NextResponse.json({ message: '잘못된 학급비번입니다.' }, { status: 400 })
+  if (!code) return NextResponse.json({ message: '잘못된 학급비번입니다.' }, { status: 400 })
 
   const admin = createAdminClient()
+
+  // DB에서 반 조회 (코드 기반)
+  const { data: cls } = await admin
+    .from('classes').select('id, name, code').eq('code', String(code)).maybeSingle()
+  if (!cls) return NextResponse.json({ message: '잘못된 학급비번입니다.' }, { status: 400 })
+
+  const email = LEGACY_EMAILS[code] ?? `mayor-${code}@classroom.local`
   const password = `gg_${code}`
 
   // 기존 계정 찾거나 새로 생성
   let userId: string
   const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  const existing = users.find(u => u.email === entry.email)
+  const existing = users.find(u => u.email === email)
 
   if (existing) {
     userId = existing.id
+    // 비밀번호를 항상 코드 기반으로 맞춰둠 (이전에 다르게 생성된 경우 대비)
+    await admin.auth.admin.updateUserById(userId, { password })
   } else {
     const { data, error } = await admin.auth.admin.createUser({
-      email: entry.email,
-      password,
-      email_confirm: true,
+      email, password, email_confirm: true,
     })
     if (error || !data.user) {
       return NextResponse.json({ message: '계정 생성에 실패했습니다.' }, { status: 500 })
@@ -39,10 +45,11 @@ export async function POST(req: NextRequest) {
 
   // users 테이블에 시장으로 등록 (멱등)
   const { error: upsErr } = await admin.from('users').upsert(
-    { id: userId, class_id: entry.classId, number: 0, role: 'mayor', must_change_pin: false },
+    { id: userId, class_id: cls.id, number: 0, role: 'mayor', must_change_pin: false },
     { onConflict: 'id' }
   )
   if (upsErr) return NextResponse.json({ message: '시장 등록에 실패했습니다.' }, { status: 500 })
 
-  return NextResponse.json({ ok: true })
+  // 이메일을 클라이언트에 반환 (로그인에 사용)
+  return NextResponse.json({ ok: true, email })
 }

@@ -65,7 +65,11 @@ export default function HireList({ stage, applications: initApps, staff: initial
     } else {
       const d = await res.json()
       if (d.error === 'full') alert('직원이 다 찼어요 (최대 4명)')
-      else if (d.error === 'already_hired') alert('이미 다른 회사에 채용된 학생이에요!')
+      else if (d.error === 'already_hired') {
+        alert('이미 다른 회사에 채용된 학생이에요! 목록에서 빼낼게요.')
+        // 다른 회사에 채용된 지원자 → 이 화면 대기 목록에서 제거
+        setApps(prev => prev.map(a => a.id === appId ? { ...a, status: 'taken' } : a))
+      }
       else alert(`오류: ${d.error}`)
     }
   }
@@ -74,12 +78,30 @@ export default function HireList({ stage, applications: initApps, staff: initial
     <PageShell title="직원 채용" emoji="👥">
       <div className="flex flex-col gap-4">
         {/* 필수 채용 현황 */}
-        <div className={`rounded-2xl px-4 py-3 text-sm font-medium flex items-center gap-2
-          ${needMore ? 'bg-amber-50 border-2 border-amber-200 text-amber-700' : 'bg-green-50 border-2 border-green-200 text-green-700'}`}>
-          {needMore
-            ? `⚠️ 직원 ${staff.length}명 / 필수 ${MIN_STAFF_PER_COMPANY}명 — ${MIN_STAFF_PER_COMPANY - staff.length}명 더 채용해야 급여를 지급할 수 있어요`
-            : `✅ 필수 인원 ${MIN_STAFF_PER_COMPANY}명 채용 완료! (${staff.length}명)`}
-        </div>
+        {needMore ? (
+          <div className="rounded-3xl px-5 py-5 bg-amber-50 border-4 border-amber-300 text-center">
+            <div className="text-3xl mb-1">⚠️</div>
+            <div className="text-lg font-extrabold text-amber-800 mb-1">
+              직원을 {MIN_STAFF_PER_COMPANY - staff.length}명 더 뽑아야 해요!
+            </div>
+            <div className="text-sm font-bold text-amber-700">
+              현재 {staff.length}명 / 필수 {MIN_STAFF_PER_COMPANY}명
+            </div>
+            <div className="mt-2 inline-block bg-amber-200 text-amber-900 text-xs font-bold rounded-full px-3 py-1">
+              필수 인원을 채워야 급여를 지급할 수 있어요
+            </div>
+            {/* 진행 막대 */}
+            <div className="mt-3 flex gap-1.5 justify-center">
+              {Array.from({ length: MIN_STAFF_PER_COMPANY }).map((_, i) => (
+                <span key={i} className={`w-8 h-2.5 rounded-full ${i < staff.length ? 'bg-amber-500' : 'bg-amber-200'}`} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl px-4 py-3 text-sm font-bold flex items-center justify-center gap-2 bg-green-50 border-2 border-green-200 text-green-700">
+            ✅ 필수 인원 {MIN_STAFF_PER_COMPANY}명 채용 완료! ({staff.length}명)
+          </div>
+        )}
 
         {/* 현재 직원 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">

@@ -177,7 +177,7 @@ function OfficerView({ fairMode, myCityName, ownCompanies, ownCards, ownCompanyM
   ownCompanies: OwnCompany[]; ownCards: OwnCard[]; ownCompanyMap: Record<string, OwnCompany>
   crossCards: CrossCard[]; exchangeLogs: ExchangeLog[]
 }) {
-  const [tab, setTab] = useState<OfficerTab>(fairMode ? 'cards' : 'logs')
+  const [tab, setTab] = useState<OfficerTab>('cards')
   const [logs, setLogs] = useState<ExchangeLog[]>(exchangeLogs)
 
   // 교류 성사 일지 폼 상태
@@ -225,10 +225,10 @@ function OfficerView({ fairMode, myCityName, ownCompanies, ownCards, ownCompanyM
     }
   }
 
-  const TABS: Array<{ key: OfficerTab; label: string; emoji: string; disabled?: boolean }> = [
-    { key: 'cards', label: '다른 도시 카드', emoji: '🌏', disabled: !fairMode },
+  const TABS: Array<{ key: OfficerTab; label: string; emoji: string }> = [
+    { key: 'cards', label: '교류요청 카드 목록', emoji: '📋' },
     { key: 'write', label: '교류 성사 일지', emoji: '✍️' },
-    { key: 'logs',  label: '교류 기록', emoji: '📋' },
+    { key: 'logs',  label: '교류 기록', emoji: '📝' },
   ]
 
   return (
@@ -248,19 +248,21 @@ function OfficerView({ fairMode, myCityName, ownCompanies, ownCards, ownCompanyM
       <div className="flex rounded-2xl bg-gray-100 p-1 gap-1">
         {TABS.map(t => (
           <button key={t.key}
-            onClick={() => !t.disabled && setTab(t.key)}
-            disabled={t.disabled}
+            onClick={() => setTab(t.key)}
             className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-all
-              ${tab === t.key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'}
-              ${t.disabled ? 'opacity-30 cursor-not-allowed' : 'hover:text-gray-600'}`}>
+              ${tab === t.key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
             {t.emoji} {t.label}
           </button>
         ))}
       </div>
 
       {/* 탭 콘텐츠 */}
-      {tab === 'cards' && fairMode && (
-        <CrossCardsTab crossCards={crossCards} myCityName={myCityName} onSelect={prefillFromCard} />
+      {tab === 'cards' && (
+        <CardsTab
+          ownCards={ownCards} ownCompanyMap={ownCompanyMap}
+          crossCards={crossCards} myCityName={myCityName}
+          fairMode={fairMode} onSelect={prefillFromCard}
+        />
       )}
 
       {tab === 'write' && (
@@ -284,68 +286,99 @@ function OfficerView({ fairMode, myCityName, ownCompanies, ownCards, ownCompanyM
   )
 }
 
-// ── 다른 도시 카드 탭 ────────────────────────────────────────────────────
-function CrossCardsTab({ crossCards, myCityName, onSelect }: {
-  crossCards: CrossCard[]; myCityName: string; onSelect: (c: CrossCard) => void
+// ── 교류요청 카드 목록 탭 ────────────────────────────────────────────────
+function CardsTab({ ownCards, ownCompanyMap, crossCards, myCityName, fairMode, onSelect }: {
+  ownCards: OwnCard[]; ownCompanyMap: Record<string, OwnCompany>
+  crossCards: CrossCard[]; myCityName: string; fairMode: boolean
+  onSelect: (c: CrossCard) => void
 }) {
   const [filterCity, setFilterCity] = useState('')
   const cities = [...new Set(crossCards.map(c => c.city_name))]
   const filtered = filterCity ? crossCards.filter(c => c.city_name === filterCity) : crossCards
 
-  if (crossCards.length === 0) {
-    return (
-      <div className="bg-white rounded-3xl p-10 text-center text-gray-400">
-        <div className="text-4xl mb-3">📭</div>
-        다른 도시에서 등록된 교류 카드가 없어요.
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      {/* 도시 필터 */}
-      {cities.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setFilterCity('')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${filterCity === '' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-            전체
-          </button>
-          {cities.map(city => (
-            <button key={city} onClick={() => setFilterCity(city)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
-                ${filterCity === city ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-              {city}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="flex flex-col gap-4">
+      {/* 우리 반 교류요청 카드 */}
+      <div className="flex flex-col gap-2">
+        <div className="text-sm font-bold text-gray-500 px-1">🏠 우리 반 교류요청 카드 ({ownCards.length}개)</div>
+        {ownCards.length === 0 ? (
+          <div className="bg-white rounded-2xl p-6 text-center text-gray-400 text-sm">아직 등록된 카드가 없어요</div>
+        ) : ownCards.map(card => {
+          const co = ownCompanyMap[card.company_id]
+          if (!co) return null
+          return (
+            <div key={card.company_id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="font-bold text-gray-800 mb-2">{co.icon} {co.display_name}</div>
+              <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-500 shrink-0">🎁 줄 수 있어요</span>
+                  <span className="text-gray-700">{card.offer}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-500 shrink-0">🙏 원해요</span>
+                  <span className="text-gray-700">{card.want}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
-      {filtered.map(card => (
-        <div key={`${card.class_id}-${card.company_id}`}
-          className="bg-white rounded-3xl p-5 shadow-sm border-2 border-transparent">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="text-xs text-purple-500 font-bold mb-0.5">🏙️ {card.city_name}</div>
-              <div className="font-bold text-gray-800 text-lg">{card.icon} {card.company_name}</div>
-            </div>
-            <button onClick={() => onSelect(card)}
-              className="bg-purple-500 text-white rounded-xl px-4 py-2 text-sm font-bold active:scale-95 transition-transform shrink-0">
-              교류 신청 →
-            </button>
+      {/* 다른 반 교류요청 카드 (박람회 모드) */}
+      <div className="flex flex-col gap-2">
+        <div className="text-sm font-bold text-gray-500 px-1">🌏 다른 반 교류요청 카드</div>
+        {!fairMode ? (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center text-gray-400 text-sm">
+            선생님이 박람회를 열면 다른 반 카드를 볼 수 있어요
           </div>
-          <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-1.5">
-            <div className="flex items-start gap-2">
-              <span className="text-purple-500 shrink-0">🎁 줄 수 있어요</span>
-              <span className="text-gray-700">{card.offer}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-green-500 shrink-0">🙏 원해요</span>
-              <span className="text-gray-700">{card.want}</span>
-            </div>
-          </div>
-        </div>
-      ))}
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl p-6 text-center text-gray-400 text-sm">다른 반에서 등록된 카드가 없어요</div>
+        ) : (
+          <>
+            {cities.length > 1 && (
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setFilterCity('')}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+                    ${filterCity === '' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  전체
+                </button>
+                {cities.map(city => (
+                  <button key={city} onClick={() => setFilterCity(city)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors
+                      ${filterCity === city ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    {city}
+                  </button>
+                ))}
+              </div>
+            )}
+            {filtered.map(card => (
+              <div key={`${card.class_id}-${card.company_id}`}
+                className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="text-xs text-purple-500 font-bold mb-0.5">🏙️ {card.city_name}</div>
+                    <div className="font-bold text-gray-800">{card.icon} {card.company_name}</div>
+                  </div>
+                  <button onClick={() => onSelect(card)}
+                    className="bg-purple-500 text-white rounded-xl px-4 py-2 text-sm font-bold active:scale-95 transition-transform shrink-0">
+                    교류 신청 →
+                  </button>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-1">
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-500 shrink-0">🎁 줄 수 있어요</span>
+                    <span className="text-gray-700">{card.offer}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-500 shrink-0">🙏 원해요</span>
+                    <span className="text-gray-700">{card.want}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   )
 }

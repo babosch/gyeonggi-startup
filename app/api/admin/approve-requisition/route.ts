@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { data: mayor } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
   if (mayor?.role !== 'mayor') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  const { reqId, action } = await req.json() // 'approve' | 'reject'
+  const { reqId, action, feedback } = await req.json() // 'approve' | 'reject'
   const admin = createAdminClient()
 
   const { data: r } = await admin.from('requisitions')
@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
     await syncCompanyBalance(admin, r.company_id)
     await admin.from('requisitions').update({ status: 'approved' }).eq('id', reqId)
   } else {
-    await admin.from('requisitions').update({ status: 'rejected' }).eq('id', reqId)
+    await admin.from('requisitions')
+      .update({ status: 'rejected', feedback: (feedback ?? '').toString().slice(0, 500) || null })
+      .eq('id', reqId)
   }
   return NextResponse.json({ ok: true })
 }

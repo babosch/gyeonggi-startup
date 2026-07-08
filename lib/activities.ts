@@ -40,35 +40,33 @@ export const ACTIVITIES: Activity[] = [
 ]
 
 // ─── 역할별 상시 활동 ─────────────────────────────────────────────────────
-// 교사가 열지 않아도, 해당 역할 + activity.stage <= 현재 단계이면 항상 보임.
+// 교사가 열지 않아도 창업(1단계) 이상이면 해당 역할에게 항상 보임.
 // 교사는 ActivityBoard에서 추가로 제어 가능.
 export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
-  ceo:     ['company'],                                     // CEO: 회사관리 항상
-  officer: ['ledger', 'facilities', 'inspection', 'exchange', 'trade-report'], // 공무원 업무 항상
+  ceo:     ['company', 'worklog', 'payroll', 'card', 'sell'],
+  staff:   ['worklog', 'card', 'sell'],
+  officer: ['worklog', 'ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
 }
 
-// ─── 단계 기본 활동 ──────────────────────────────────────────────────────
-// 단계 진입 시 open_activities에 자동 추가되는 초기 세트.
-// 교사가 ActivityBoard에서 추가하거나 제거할 수 있음.
-export const STAGE_DEFAULTS: Record<Stage, string[]> = {
+// ─── 단계별 열릴 활동 세트 ──────────────────────────────────────────────
+// 단계 전환 시 open_activities를 이 목록으로 교체.
+// 지난 단계 활동 중 불필요한 것은 제거, 계속 필요한 것은 유지.
+export const STAGE_OPEN: Record<Stage, string[]> = {
   0: ['explore'],
-  1: ['plan', 'apply', 'hire', 'requisition'],             // company는 CEO 상시라 제외
+  1: ['plan', 'apply', 'hire', 'requisition'],
   2: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection'],
-  3: ['exchange', 'card'],
-  4: ['sell', 'card', 'trade-report'],
+  3: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'exchange'],
+  4: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'sell', 'trade-report'],
 }
 
-// 단계 변경 시: 기존 열린 활동 + 새 단계 기본 활동 합산 (이전 활동 유지 — 미완 학생 배려)
-export function mergeStageActivities(current: string[], stage: Stage): string[] {
-  const add = STAGE_DEFAULTS[stage] ?? []
-  const next = [...current]
-  for (const k of add) if (!next.includes(k)) next.push(k)
-  return next
-}
-
-// 특정 단계의 모든 활동 (교사가 "이 단계 전체 열기" 할 때 사용)
+// 특정 단계의 모든 활동 (ActivityBoard 버킷용)
 export function allActivitiesForStage(stage: Stage): string[] {
   return ACTIVITIES.filter(a => a.stage === stage).map(a => a.key)
+}
+
+// 단계 전환·초기화용: 해당 단계의 큐레이션된 열림 목록
+export function allActivitiesUpToStage(stage: Stage): string[] {
+  return STAGE_OPEN[stage] ?? []
 }
 
 export const ACTIVITY_BY_KEY: Record<string, Activity> =
@@ -82,11 +80,15 @@ export function visibleActivities(openKeys: string[], role: Role, stage?: Stage)
 
   if (stage === undefined) return teacherOpened
 
-  // 상시 활동: 해당 역할 + 현재 단계 이하인 것
+  // 상시 활동: 교사 설정 없이 자동 노출
+  // 공무원은 생산(2단계)부터 모든 상시 메뉴 표시; 나머지는 활동 자체 단계 기준
   const alwaysOnKeys = ALWAYS_ON_BY_ROLE[role] ?? []
   const alwaysOn = alwaysOnKeys
     .map(k => ACTIVITY_BY_KEY[k])
-    .filter((a): a is Activity => !!a && a.stage <= stage && a.roles.includes(role))
+    .filter((a): a is Activity => {
+      if (!a || !a.roles.includes(role)) return false
+      return role === 'officer' ? stage >= 2 : a.stage <= stage
+    })
 
   // 교사 설정 순서 유지, 상시 활동 중 중복 제외 후 뒤에 추가
   const seen = new Set(teacherOpened.map(a => a.key))

@@ -49,8 +49,12 @@ export default function PlanForm({ role, cityName, stage, existing }: {
   role: string; cityName: string; stage: Stage; existing: ExistingPlan | null
 }) {
   const router = useRouter()
-  const selected = existing?.status === 'selected'
-  const canEdit = !selected && (existing?.version ?? 0) === 0
+  const status = existing?.status
+  const selected = status === 'selected'
+  const submittedPending = status === 'submitted'   // 제출 후 심사 대기 — 회수 전엔 수정 불가
+  const rejected = status === 'rejected'
+  // draft·rejected·신규만 수정 가능. submitted/selected는 잠금.
+  const canEdit = !existing || status === 'draft' || rejected
 
   const c = existing?.content
   const initSales = c ? migrateLegacy(c) : [{ name: '', qty: 0, price: 0 }]
@@ -76,19 +80,41 @@ export default function PlanForm({ role, cityName, stage, existing }: {
     if (salesItems.length > 1) setSalesItems(salesItems.filter((_, idx) => idx !== i))
   }
 
-  async function submit() {
+  async function submit(asDraft = false) {
     setSaving(true)
     const content: Omit<PlanContent, 'whatToSell' | 'products' | 'items'> = {
       companyName, salesItems, target, useSpecialty, specialtyDetail, reason,
     }
     const res = await fetch('/api/plan/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, reserve: 0, planId: existing?.id, version: existing?.version ?? 0 }),
+      body: JSON.stringify({ content, reserve: 0, planId: existing?.id, version: existing?.version ?? 0, asDraft }),
     })
     setSaving(false)
-    if (res.ok) {
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      alert(`저장 실패: ${d.error ?? res.status}`)
+      return
+    }
+    if (asDraft) {
+      alert('임시저장했어요. 나중에 이어서 작성할 수 있어요.')
+      router.refresh()
+    } else if (!existing || rejected) {
+      // 최초 제출 또는 반려 후 재제출 → 개념 팝업 한 번
       if (!existing) setShowConcept(true)
       else router.push('/home')
+    } else {
+      router.push('/home')
+    }
+  }
+
+  async function retract() {
+    setSaving(true)
+    const res = await fetch('/api/plan/retract', { method: 'POST' })
+    setSaving(false)
+    if (res.ok) router.refresh()
+    else {
+      const d = await res.json().catch(() => ({}))
+      alert(`회수 실패: ${d.error ?? res.status}`)
     }
   }
 
@@ -110,7 +136,24 @@ export default function PlanForm({ role, cityName, stage, existing }: {
             🎉 선정된 계획서예요! 이제 CEO로 회사를 운영해요.
           </div>
         )}
-        <FeedbackBanner feedback={existing?.feedback} />
+        {rejected && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4">
+            <div className="text-sm font-bold text-red-600 mb-1">✕ 반려됐어요 — 수정 후 다시 제출해요</div>
+            {existing?.feedback && <p className="text-red-700 text-sm">사유: {existing.feedback}</p>}
+          </div>
+        )}
+        {status === 'draft' && (
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 text-gray-600 text-sm text-center">
+            📝 임시저장된 계획서예요. 다 작성하면 제출해주세요.
+          </div>
+        )}
+        {submittedPending && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 text-blue-700 text-sm text-center">
+            ⏳ 제출 완료 — 시장님의 선정을 기다리는 중이에요.<br />
+            <span className="text-xs text-blue-500">아직 심사 전이면 아래에서 회수해 수정할 수 있어요.</span>
+          </div>
+        )}
+        {!rejected && <FeedbackBanner feedback={existing?.feedback} />}
 
         {/* 기본 정보 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col gap-4">
@@ -195,22 +238,33 @@ export default function PlanForm({ role, cityName, stage, existing }: {
 
         {/* 이 도시에 필요한 이유 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <label className="block text-sm font-medium text-gray-600 mb-1.5">
-            💡 우리 회사가 이 도시에 필요한 이유
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">
+            💡 우리 회사가 이 도시에 필요한 이유를, 우리 회사가 선정되어야 하는 이유를 구체적으로 작성해주세요
+            <span className="text-red-500"> (가장 중요)</span>
           </label>
-          <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={3} maxLength={120}
-            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50" />
+          <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!canEdit} rows={5} maxLength={400}
+            placeholder="이 회사를 만든 이유, 이 회사는 어떤 재료를 이용해서 어떤 제품을 만들고 그게 이 도시에 주는 영향을 구체적으로 작성해주세요"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:border-blue-400 outline-none resize-none disabled:bg-gray-50 placeholder:text-gray-400" />
         </div>
 
         {canEdit ? (
-          <button onClick={submit} disabled={saving || !companyName || !salesItems[0].name || !reason}
-            className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
-            {saving ? '제출 중...' : existing ? '계획서 수정 제출' : '시장님께 제출하기'}
+          <div className="flex flex-col gap-2">
+            <button onClick={() => submit(false)} disabled={saving || !companyName || !salesItems[0].name || !reason}
+              className="bg-blue-500 text-white rounded-2xl py-4 font-bold text-lg disabled:opacity-40 active:scale-95 transition-transform">
+              {saving ? '저장 중...' : rejected ? '다시 제출하기' : '시장님께 제출하기'}
+            </button>
+            <button onClick={() => submit(true)} disabled={saving || !companyName}
+              className="border-2 border-gray-200 text-gray-600 rounded-2xl py-3 font-medium disabled:opacity-40 active:scale-95 transition-transform">
+              💾 임시저장 (제출 안 함)
+            </button>
+          </div>
+        ) : submittedPending ? (
+          <button onClick={retract} disabled={saving}
+            className="border-2 border-blue-200 text-blue-600 rounded-2xl py-3.5 font-bold disabled:opacity-40 active:scale-95 transition-transform">
+            {saving ? '...' : '↩️ 제출 취소 (회수해서 수정하기)'}
           </button>
         ) : (
-          <p className="text-center text-gray-400 text-sm">
-            {selected ? '선정 완료 🎉' : '제출했어요! 시장님의 선정을 기다려요'}
-          </p>
+          <p className="text-center text-gray-400 text-sm">선정 완료 🎉</p>
         )}
       </div>
 

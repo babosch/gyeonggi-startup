@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSubmissions } from '@/lib/submissions'
 import RoleHome from '@/components/RoleHome'
 import RevealWatcher from '@/components/RevealWatcher'
@@ -16,7 +17,7 @@ export default async function HomePage() {
     .eq('id', user.id)
     .single()
 
-  if (!me) redirect('/admin/setup')
+  if (!me) redirect('/api/auth/signout')
   if (me.must_change_pin) redirect('/pin-change')
   // 교사는 인트로 없음. 학생은 최초 1회 인트로.
   if (me.role !== 'mayor' && !me.intro_seen) redirect('/intro')
@@ -53,6 +54,15 @@ export default async function HomePage() {
   // 교사 홈에 쌓일 학생 결과물
   const submissions = role === 'mayor' ? await getSubmissions(supabase, cls.id) : null
 
+  // 학생 공개 공지 (교사가 '학생 공개'로 표시한 공통사항) — admin 클라이언트로 조회(RLS 우회)
+  const admin = createAdminClient()
+  const { data: notices } = await admin
+    .from('shared_notices')
+    .select('id, title, body, created_at')
+    .eq('visible_to_students', true)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
   return (
     <>
       {role !== 'mayor' && (
@@ -73,6 +83,7 @@ export default async function HomePage() {
         openActivities={cls.open_activities ?? []}
         fairMode={cls.fair_mode ?? false}
         submissions={submissions}
+        notices={notices ?? []}
       />
     </>
   )

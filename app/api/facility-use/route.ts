@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { transfer, syncCompanyBalance } from '@/lib/ledger'
 
-// CEO가 공용 시설을 이용한다. 회사 계좌 → 시청 계좌 이체.
+// CEO가 공용 시설 사용을 '신청'한다 (status=pending). 실제 과금은 공무원·시장 승인 시에.
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -16,21 +15,17 @@ export async function POST(req: NextRequest) {
   if (!Number.isInteger(quantity) || quantity <= 0) return NextResponse.json({ error: 'invalid_qty' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { data: facility } = await admin.from('facilities').select('price, class_id, name').eq('id', facilityId).single()
+  const { data: facility } = await admin.from('facilities').select('price, class_id').eq('id', facilityId).single()
   if (!facility || facility.class_id !== ceo.class_id) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 })
 
+  // 예상 금액(표시용). 실제 과금은 승인 시점의 시설 가격으로 다시 계산한다.
   const total = facility.price * quantity
 
-  const result = await transfer({
-    admin, fromType: 'company', fromId: ceo.company_id, toType: 'city', toId: ceo.class_id,
-    amount: total, type: 'facility', memo: `${facility.name} ${quantity}회`, facilityId,
+  const { error } = await admin.from('facility_uses').insert({
+    facility_id: facilityId, company_id: ceo.company_id, created_by: user.id,
+    memo: (memo ?? '').toString().slice(0, 100), quantity, total_amount: total, status: 'pending',
   })
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-
-  await admin.from('facility_uses').insert({
-    facility_id: facilityId, company_id: ceo.company_id, memo, quantity, total_amount: total,
-  })
-  await syncCompanyBalance(admin, ceo.company_id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

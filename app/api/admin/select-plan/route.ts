@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { data: mayor } = await supabase.from('users').select('role, class_id').eq('id', user.id).single()
   if (mayor?.role !== 'mayor') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  const { planId, action, bonusAmount = 0 } = await req.json() // action: 'select' | 'cancel'
+  const { planId, action, bonusAmount = 0, feedback } = await req.json() // action: 'select' | 'cancel' | 'reject'
   const admin = createAdminClient()
 
   const { data: plan } = await admin.from('business_plans')
@@ -66,6 +66,15 @@ export async function POST(req: NextRequest) {
     }).eq('id', planId)
 
     return NextResponse.json({ ok: true, companyId: company.id })
+  }
+
+  if (action === 'reject') {
+    // 반려: 사유(feedback)와 함께 rejected 처리 → 학생이 수정 후 재제출 가능
+    if (plan.status === 'selected') return NextResponse.json({ error: 'already_selected' }, { status: 400 })
+    await admin.from('business_plans')
+      .update({ status: 'rejected', feedback: (feedback ?? '').toString().slice(0, 500) || null })
+      .eq('id', planId)
+    return NextResponse.json({ ok: true })
   }
 
   if (action === 'cancel') {
