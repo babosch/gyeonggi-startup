@@ -43,8 +43,8 @@ export const ACTIVITIES: Activity[] = [
 // 교사가 열지 않아도 창업(1단계) 이상이면 해당 역할에게 항상 보임.
 // 교사는 ActivityBoard에서 추가로 제어 가능.
 export const ALWAYS_ON_BY_ROLE: Partial<Record<Role, string[]>> = {
-  ceo:     ['company', 'worklog', 'payroll', 'card'],
-  staff:   ['worklog', 'card'],
+  ceo:     ['company', 'worklog', 'payroll', 'card', 'sell'],
+  staff:   ['worklog', 'card', 'sell'],
   officer: ['worklog', 'ledger', 'facilities', 'inspection', 'exchange', 'trade-report', 'card'],
 }
 

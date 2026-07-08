@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.3'
+export const APP_VERSION = 'v1.11.4'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.4',
+    date: '2026-06-24',
+    items: [
+      '직원 화면에도 "판매(수금)" QR 메뉴 표시 (판매 단계 상시)',
+    ],
+  },
   {
     version: 'v1.11.3',
     date: '2026-06-24',
