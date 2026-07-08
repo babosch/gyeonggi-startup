@@ -141,6 +141,17 @@ export default function CompanyManager({ stage, company, products: initial, stat
           <span className="text-gray-300 text-2xl">→</span>
         </button>
 
+        {/* 판매 취소·환불 바로가기 */}
+        <button onClick={() => router.push('/company/sales')}
+          className="bg-white rounded-3xl p-5 shadow-sm flex items-center gap-4 active:scale-95 transition-transform">
+          <span className="text-4xl">↩️</span>
+          <div className="text-left flex-1">
+            <div className="font-bold text-gray-800">판매 취소·환불</div>
+            <div className="text-xs text-gray-400">잘못 팔린 경우 손님에게 돈을 돌려줘요</div>
+          </div>
+          <span className="text-gray-300 text-2xl">→</span>
+        </button>
+
         {/* 상품 목록 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="font-bold text-gray-800 mb-1">우리 상품 <span className="text-sm text-gray-400">({products.length}/8)</span></div>

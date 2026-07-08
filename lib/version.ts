@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.4'
+export const APP_VERSION = 'v1.11.5'
 export const BUILD_DATE = '2026-06-24'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.5',
+    date: '2026-06-24',
+    items: [
+      'CEO 회사 관리에 "판매 취소·환불" 추가 — 잘못 팔린 거래를 손님에게 환불(멱등, 이중환불 방지)',
+    ],
+  },
   {
     version: 'v1.11.4',
     date: '2026-06-24',
