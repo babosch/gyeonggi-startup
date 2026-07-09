@@ -21,6 +21,8 @@ export default function CompanyManager({ stage, company, products: initial, stat
   const router = useRouter()
   const supabase = createClient()
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const pendingPatchRef = useRef<Record<string, Partial<Product>>>({})
+  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const [icon, setIcon] = useState(company?.icon ?? '🏭')
   const [name, setName] = useState(company?.display_name ?? '')
@@ -36,6 +38,16 @@ export default function CompanyManager({ stage, company, products: initial, stat
       QRCode.toCanvas(qrCanvasRef.current, `company:${company.id}`, { width: 220, margin: 2 }, () => {})
     }
   }, [company?.id])
+
+  useEffect(() => {
+    return () => {
+      // 페이지를 벗어날 때 저장 안 된 변경사항 즉시 반영
+      for (const id in saveTimersRef.current) clearTimeout(saveTimersRef.current[id])
+      for (const [id, patch] of Object.entries(pendingPatchRef.current)) {
+        supabase.from('products').update(patch).eq('id', id).then(() => {})
+      }
+    }
+  }, [supabase])
 
   if (notCeo) return (
     <PageShell title="회사 관리" emoji="🏭">
@@ -63,9 +75,17 @@ export default function CompanyManager({ stage, company, products: initial, stat
     }
   }
 
-  async function updateProduct(id: string, patch: Partial<Product>) {
-    await supabase.from('products').update(patch).eq('id', id)
-    setProducts(products.map(p => p.id === id ? { ...p, ...patch } : p))
+  function updateProduct(id: string, patch: Partial<Product>) {
+    // 화면은 즉시 갱신 (타이핑 중 한글 조합이 서버 응답 타이밍에 깨지지 않도록)
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))
+
+    pendingPatchRef.current[id] = { ...pendingPatchRef.current[id], ...patch }
+    clearTimeout(saveTimersRef.current[id])
+    saveTimersRef.current[id] = setTimeout(() => {
+      const merged = pendingPatchRef.current[id]
+      delete pendingPatchRef.current[id]
+      if (merged) supabase.from('products').update(merged).eq('id', id)
+    }, 600)
   }
 
   async function removeProduct(id: string) {

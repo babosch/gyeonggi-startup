@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.7'
-export const BUILD_DATE = '2026-06-24'
+export const APP_VERSION = 'v1.11.8'
+export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.8',
+    date: '2026-07-09',
+    items: [
+      '상품 이름 한글 입력 버그 수정 — 회사 관리에서 상품명을 빠르게 타이핑하면 저장 응답 지연으로 자모가 깨지던 문제(디바운스 저장으로 해결)',
+    ],
+  },
   {
     version: 'v1.11.7',
     date: '2026-06-24',
