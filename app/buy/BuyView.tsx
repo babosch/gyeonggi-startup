@@ -72,14 +72,14 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
           if (!cid) { setError('올바른 판매대 QR이 아니에요'); return }
           if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
           handled = true
-          // stop() 만으로는 스캐너가 만든 <video> 등 DOM이 그대로 남는다.
-          // clear()로 직접 정리해 두지 않으면, React가 화면 전환 시 같은 컨테이너를
-          // 다시 건드리면서(effect cleanup의 중복 stop 등) 충돌해 화면이 죽는다.
+          // 스캔 성공 시 React 안에서 화면만 바꾸면, 카메라가 만든 DOM과 React가
+          // 충돌해 화면이 죽는 문제가 있었다. 대신 검증된 경로(/buy?company=...)로
+          // 페이지를 아예 새로 연다 — 새 페이지엔 스캐너가 없어 충돌 여지가 없다.
           try {
             await scanner.stop()
             scanner.clear()
           } catch {}
-          await loadCompany(cid)
+          window.location.href = `/buy?company=${encodeURIComponent(cid)}`
         },
         () => {}
       ).catch(() => setError('카메라를 열 수 없어요. 권한을 확인해 주세요.'))

@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.10'
+export const APP_VERSION = 'v1.11.11'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.11',
+    date: '2026-07-09',
+    items: [
+      '[긴급] 앱 내 QR 스캔 성공 시 오류 화면으로 튕기던 문제 확실히 해결 — 스캔 성공하면 카메라 화면을 끄고 상품 페이지 주소로 새로 열도록 변경해, 카메라와 화면 전환이 충돌할 여지를 완전히 제거(폰 카메라로 직접 여는 검증된 경로와 동일하게 동작)',
+    ],
+  },
   {
     version: 'v1.11.10',
     date: '2026-07-09',
