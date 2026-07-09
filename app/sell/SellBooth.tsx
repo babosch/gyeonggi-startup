@@ -15,8 +15,9 @@ export default function SellBooth({ stage, companyId, companyName, products, not
 
   useEffect(() => {
     if (canvasRef.current && companyId) {
-      // QR에 companyId를 인코딩 (구매자가 스캔)
-      QRCode.toCanvas(canvasRef.current, `company:${companyId}`, { width: 240, margin: 1 }, () => {})
+      // 실제 URL로 인코딩 — 앱 내 스캐너뿐 아니라 폰 카메라 등 다른 스캐너로 찍어도 바로 열리도록
+      const url = `${window.location.origin}/buy?company=${companyId}`
+      QRCode.toCanvas(canvasRef.current, url, { width: 240, margin: 1 }, () => {})
     }
   }, [companyId])
 

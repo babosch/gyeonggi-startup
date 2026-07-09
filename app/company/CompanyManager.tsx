@@ -33,7 +33,9 @@ export default function CompanyManager({ stage, company, products: initial, stat
 
   useEffect(() => {
     if (company?.id && qrCanvasRef.current) {
-      QRCode.toCanvas(qrCanvasRef.current, `company:${company.id}`, { width: 220, margin: 2 }, () => {})
+      // 실제 URL로 인코딩 — 앱 내 스캐너뿐 아니라 폰 카메라 등 다른 스캐너로 찍어도 바로 열리도록
+      const url = `${window.location.origin}/buy?company=${company.id}`
+      QRCode.toCanvas(qrCanvasRef.current, url, { width: 220, margin: 2 }, () => {})
     }
   }, [company?.id])
 

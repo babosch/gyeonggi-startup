@@ -1,8 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import PageShell from '@/components/PageShell'
+
+// QR/외부 링크에서 회사 id 추출. 새 형식(URL의 company= 쿼리) + 구 형식("company:<id>") 모두 지원.
+function extractCompanyId(decoded: string): string | null {
+  try {
+    const url = new URL(decoded)
+    const cid = url.searchParams.get('company')
+    if (cid) return cid
+  } catch {}
+  const m = decoded.match(/^company:(.+)$/)
+  return m ? m[1] : null
+}
 
 interface Product { id: string; name: string; price: number; stock: number }
 interface CartItem { product: Product; qty: number }
@@ -17,6 +28,7 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
   studentNumber: number
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('scan')
   const [companyId, setCompanyId] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -29,9 +41,19 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
 
   const total = cart.reduce((s, it) => s + it.product.price * it.qty, 0)
 
+  // 외부 QR 스캐너(폰 카메라 등)로 /buy?company=xxx 링크를 직접 열고 들어온 경우 바로 상품 조회
+  useEffect(() => {
+    const cid = searchParams.get('company')
+    if (cid && step === 'scan') {
+      if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
+      loadCompany(cid)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // QR 스캐너 초기화
   useEffect(() => {
-    if (step !== 'scan') return
+    if (step !== 'scan' || searchParams.get('company')) return
     let active = true
     // html5-qrcode는 QR이 화면에 보이는 동안 프레임마다 성공 콜백을 반복 호출한다.
     // stop()이 실제로 카메라를 끄기까지는 시간이 걸리므로, 가드 없이는 같은 QR에 대해
@@ -46,10 +68,8 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
         { fps: 10, qrbox: 220 },
         async (decoded: string) => {
           if (handled) return
-          // 포맷: "company:<companyId>"
-          const match = decoded.match(/^company:(.+)$/)
-          if (!match) { setError('올바른 판매대 QR이 아니에요'); return }
-          const cid = match[1]
+          const cid = extractCompanyId(decoded)
+          if (!cid) { setError('올바른 판매대 QR이 아니에요'); return }
           if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
           handled = true
           await scanner.stop().catch(() => {})
