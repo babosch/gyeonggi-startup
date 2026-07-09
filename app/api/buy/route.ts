@@ -24,12 +24,7 @@ export async function POST(req: NextRequest) {
     .from('users').select('id, number, company_id, class_id, classes(code)').eq('id', buyer.id).single()
   if (!buyerRow) return NextResponse.json({ error: 'buyer_not_found' }, { status: 404 })
 
-  // 자가구매 방지
-  if (buyerRow.company_id === companyId) {
-    return NextResponse.json({ error: 'self_purchase' }, { status: 400 })
-  }
-
-  // 장터: 도시(반) 간 자유 구매 허용 — 회사 존재만 확인 (반 일치 검사 없음)
+  // 장터: 도시(반) 간 자유 구매 + 자기 회사 물건 구매도 허용 — 회사 존재만 확인
   const { data: company } = await admin
     .from('companies').select('id, class_id').eq('id', companyId).single()
   if (!company) {

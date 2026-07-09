@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.12'
+export const APP_VERSION = 'v1.11.13'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.13',
+    date: '2026-07-09',
+    items: [
+      '장터: 자기 회사 물건 구매도 허용 — 이제 구매 제한이 완전히 없음(도시 무관, 자기 회사 포함 누구 물건이든 구매 가능)',
+    ],
+  },
   {
     version: 'v1.11.12',
     date: '2026-07-09',
