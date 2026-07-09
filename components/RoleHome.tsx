@@ -199,13 +199,14 @@ const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: 
     { emoji: '📋', label: '공무원 급여',      desc: '교류 업무일지 확인 후 지급',     href: '/admin/officer-payroll',  color: 'bg-violet-500' },
   ],
   4: [
-    { emoji: '📡', label: '종합 모니터링',    desc: '판매 현황 · 거래 내역',         href: '/admin/monitor',       color: 'bg-blue-500' },
+    { emoji: '📊', label: '회사별 판매액',    desc: '실시간 판매액 막대그래프',       href: '/admin/sales-board',   color: 'bg-blue-500' },
     { emoji: '🚨', label: '이상 거래 보고',   desc: '공무원이 신고한 거래',          href: '/admin/trade-reports', color: 'bg-red-500' },
   ],
 }
 
 const ADMIN_CARDS = [
   { emoji: '💳', label: '내 카드',         desc: '잔액 확인·QR로 물건 사기',        href: '/card' },
+  { emoji: '📊', label: '회사별 판매액',   desc: '실시간 판매액 막대그래프',        href: '/admin/sales-board' },
   { emoji: '📡', label: '종합 모니터링',   desc: '학생 관리·채용·거래·잔액',      href: '/admin/monitor' },
   { emoji: '⭐', label: '사업체 선정',     desc: '계획서 심사·창업가 선정',        href: '/admin/plans' },
   { emoji: '🧾', label: '품의서 결재',     desc: '물품 구입 승인',                 href: '/admin/requisitions' },

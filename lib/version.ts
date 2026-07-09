@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.13'
+export const APP_VERSION = 'v1.11.14'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.14',
+    date: '2026-07-09',
+    items: [
+      '교사 화면에 "회사별 판매액" 메뉴 추가 — 회사별 실시간 판매액을 막대그래프로 확인(판매가 일어나면 자동 갱신, 순위 표시). 홈 카드와 판매 단계 핵심 바로가기에 노출',
+    ],
+  },
   {
     version: 'v1.11.13',
     date: '2026-07-09',
