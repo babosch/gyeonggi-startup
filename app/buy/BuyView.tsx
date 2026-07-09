@@ -58,17 +58,31 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
     }
   }, [step])
 
+  const buyErrorMessages: Record<string, string> = {
+    unauthorized: '로그인이 필요해요. 다시 로그인해 주세요',
+    not_found: '내 정보를 찾을 수 없어요',
+    missing_company: '올바른 판매대 QR이 아니에요',
+    company_not_found: '판매대를 찾을 수 없어요',
+    wrong_class: '다른 반의 판매대예요',
+    self_purchase: '내 회사 물건은 살 수 없어요',
+  }
+
   async function loadCompany(cid: string) {
     setBusy(true)
-    const res = await fetch(`/api/buy/products?companyId=${encodeURIComponent(cid)}`)
-    const d = await res.json()
-    setBusy(false)
-    if (!res.ok) { setError(d.error ?? '상점 정보를 불러올 수 없어요'); return }
-    setCompanyId(cid)
-    setCompanyName(d.companyName)
-    setProducts(d.products)
-    setCart([])
-    setStep('cart')
+    try {
+      const res = await fetch(`/api/buy/products?companyId=${encodeURIComponent(cid)}`)
+      const d = await res.json()
+      if (!res.ok) { setError(buyErrorMessages[d.error] ?? '상점 정보를 불러올 수 없어요'); return }
+      setCompanyId(cid)
+      setCompanyName(d.companyName)
+      setProducts(d.products)
+      setCart([])
+      setStep('cart')
+    } catch {
+      setError('인터넷이 잠깐 끊겼어요. 다시 스캔해 주세요')
+    } finally {
+      setBusy(false)
+    }
   }
 
   function setQty(product: Product, qty: number) {
@@ -97,27 +111,33 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
   async function pay(enteredPin: string) {
     setBusy(true); setError('')
     const txUuid = crypto.randomUUID()
-    const res = await fetch('/api/buy', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        companyId,
-        cart: cart.map(c => ({ productId: c.product.id, qty: c.qty })),
-        pin: enteredPin,
-        txUuid,
-      }),
-    })
-    const data = await res.json()
-    setBusy(false)
-    if (res.ok) {
-      setStep('done')
-    } else {
-      const msg: Record<string, string> = {
-        wrong_pin: 'PIN이 틀렸어요', self_purchase: '내 회사 물건은 살 수 없어요',
-        insufficient: `잔액이 부족해요 (필요: ${total.toLocaleString()}원)`,
-        sold_out: '일부 상품이 품절됐어요',
+    try {
+      const res = await fetch('/api/buy', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId,
+          cart: cart.map(c => ({ productId: c.product.id, qty: c.qty })),
+          pin: enteredPin,
+          txUuid,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setStep('done')
+      } else {
+        const msg: Record<string, string> = {
+          wrong_pin: 'PIN이 틀렸어요', self_purchase: '내 회사 물건은 살 수 없어요',
+          insufficient: `잔액이 부족해요 (필요: ${total.toLocaleString()}원)`,
+          sold_out: '일부 상품이 품절됐어요',
+        }
+        setError(msg[data.error] ?? '결제에 실패했어요')
+        setPin('')
       }
-      setError(msg[data.error] ?? '결제에 실패했어요')
+    } catch {
+      setError('인터넷이 잠깐 끊겼어요. 다시 시도해 주세요')
       setPin('')
+    } finally {
+      setBusy(false)
     }
   }
 

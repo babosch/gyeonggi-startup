@@ -1,12 +1,13 @@
-export const APP_VERSION = 'v1.11.7'
-export const BUILD_DATE = '2026-06-24'
+export const APP_VERSION = 'v1.11.8'
+export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
   {
-    version: 'v1.11.7',
-    date: '2026-06-24',
+    version: 'v1.11.8',
+    date: '2026-07-09',
     items: [
-      '네트워크 끊김 대응 — 인터넷 끊기면 안내 배너 표시, 다시 연결되면 자동 새로고침',
+      '오류 화면 한국어 안내 추가 — 인터넷이 끊기는 등 예상치 못한 오류가 나도 영어 화면 대신 "다시 시도" 버튼이 있는 친절한 화면 표시',
+      '물건 사기(QR 스캔) 화면 안정화 — 서버 응답 실패 시 앱이 멈추지 않고 안내 메시지 표시, 에러 코드가 그대로 노출되던 문제 수정',
     ],
   },
   {
