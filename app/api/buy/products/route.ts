@@ -20,9 +20,7 @@ export async function GET(req: NextRequest) {
   const { data: company } = await admin
     .from('companies').select('id, display_name, class_id').eq('id', companyId).single()
   if (!company) return NextResponse.json({ error: 'company_not_found' }, { status: 404 })
-  if (company.class_id !== me.class_id) {
-    return NextResponse.json({ error: 'wrong_class' }, { status: 403 })
-  }
+  // 장터: 도시(반) 간 자유 구매 허용 — 반 검사 없음. 자기 회사 구매만 차단.
   if (company.id === me.company_id) {
     return NextResponse.json({ error: 'self_purchase' }, { status: 400 })
   }

@@ -29,11 +29,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'self_purchase' }, { status: 400 })
   }
 
-  // 회사 같은 반 확인
+  // 장터: 도시(반) 간 자유 구매 허용 — 회사 존재만 확인 (반 일치 검사 없음)
   const { data: company } = await admin
     .from('companies').select('id, class_id').eq('id', companyId).single()
-  if (!company || company.class_id !== buyerRow.class_id) {
-    return NextResponse.json({ error: 'wrong_class' }, { status: 403 })
+  if (!company) {
+    return NextResponse.json({ error: 'company_not_found' }, { status: 404 })
   }
 
   // PIN 검증 (구매자 본인 PIN)
