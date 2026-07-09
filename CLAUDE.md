@@ -26,27 +26,31 @@
 
 ---
 
-## 브랜치 규칙 (단독 작업)
+## 브랜치 규칙 (예외 없음)
 
-> `main` 브랜치에 직접 작업하고 push한다. Vercel이 즉시 배포함.
+> **항상 브랜치를 만들고 PR → merge 한다. main에 직접 push 금지.**
+> Vercel은 main 머지 시 자동 배포. 브랜치 push 시엔 미리보기 URL만 생성.
 
 **작업 흐름:**
 
 ```bash
 git checkout main
-git pull origin main              # 최신 상태 동기화
+git pull origin main                    # 최신 상태 동기화
+git checkout -b feat/작업이름           # 새 브랜치 생성
 # 작업 후
-git add 파일명                    # 관련 파일만 선택 (git add -A 금지)
+git add 파일명                          # 관련 파일만 선택 (git add -A 금지)
 git commit -m "feat: 무엇을 했는지"
-git push origin main
+git push -u origin feat/작업이름
+# GitHub에서 PR 생성 → CI 통과 확인 → Merge → 브랜치 삭제
 ```
 
 **AI(Claude 등)에게 적용되는 규칙:**
-- 세션 시작 시 `git branch --show-current`로 현재 브랜치 확인할 것
-- 항상 `main` 브랜치에서 작업하고 `git push origin main`으로 push
+- 세션 시작 시 `git branch --show-current` 확인 → main이면 브랜치 먼저 만들 것
+- `git push origin main` 절대 금지 (main은 PR 머지로만 변경)
 - `git push -f`(강제 push)는 사용자가 명시적으로 요청할 때만 실행
+- PR 머지 후엔 브랜치 삭제(`gh pr merge --delete-branch`)
 
-상세 흐름 → `docs/협업가이드.md`
+상세 흐름 → `docs/협업가이드.md` (필독)
 
 ---
 
