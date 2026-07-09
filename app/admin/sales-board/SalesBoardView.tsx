@@ -31,17 +31,25 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
   const acctIds = useRef(initialCompanies.map(c => c.acctId).filter(Boolean) as string[])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 최신 판매액 다시 계산 (transactions는 RLS USING(true) → 클라이언트에서 조회 가능)
+  // 최신 순 판매액 다시 계산 (transactions는 RLS USING(true) → 클라이언트에서 조회 가능)
+  // 순 판매액 = 구매(purchase) 합계 - 판매 취소 환불(refund, 회사가 되돌려준 것)
   const refetch = useCallback(async () => {
     const supabase = createClient()
     if (acctIds.current.length === 0) return
-    const { data } = await supabase
+    const rev: Record<string, number> = {}
+    const { data: sales } = await supabase
       .from('transactions').select('to_account_id, amount')
       .in('to_account_id', acctIds.current)
       .eq('type', 'purchase').eq('voided', false)
-    const rev: Record<string, number> = {}
-    for (const t of data ?? []) {
+    for (const t of sales ?? []) {
       rev[t.to_account_id as string] = (rev[t.to_account_id as string] ?? 0) + ((t.amount as number) ?? 0)
+    }
+    const { data: refunds } = await supabase
+      .from('transactions').select('from_account_id, amount')
+      .in('from_account_id', acctIds.current)
+      .eq('type', 'refund').eq('voided', false)
+    for (const t of refunds ?? []) {
+      rev[t.from_account_id as string] = (rev[t.from_account_id as string] ?? 0) - ((t.amount as number) ?? 0)
     }
     setCompanies(prev => prev.map(c => ({
       ...c,

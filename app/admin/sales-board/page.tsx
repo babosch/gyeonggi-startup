@@ -31,17 +31,25 @@ export default async function SalesBoardPage() {
     (accounts ?? []).map(a => [a.owner_id, a.id])
   )
 
-  // 초기 판매액 (purchase 거래 합계, 회사 계좌로 들어온 것)
+  // 초기 순 판매액 = 회사로 들어온 구매(purchase) 합계 - 회사가 돌려준 환불(refund) 합계
   const acctIds = (accounts ?? []).map(a => a.id)
-  const { data: sales } = acctIds.length
-    ? await admin
-        .from('transactions').select('to_account_id, amount')
-        .in('to_account_id', acctIds).eq('type', 'purchase').eq('voided', false)
-    : { data: [] as { to_account_id: string; amount: number }[] }
-
   const revByAcct: Record<string, number> = {}
-  for (const t of sales ?? []) {
-    revByAcct[t.to_account_id] = (revByAcct[t.to_account_id] ?? 0) + (t.amount ?? 0)
+  if (acctIds.length) {
+    // 매출: 회사 계좌로 들어온 purchase
+    const { data: sales } = await admin
+      .from('transactions').select('to_account_id, amount')
+      .in('to_account_id', acctIds).eq('type', 'purchase').eq('voided', false)
+    for (const t of sales ?? []) {
+      revByAcct[t.to_account_id] = (revByAcct[t.to_account_id] ?? 0) + (t.amount ?? 0)
+    }
+    // 환불: 회사 계좌에서 손님에게 되돌려준 refund (판매 취소) → 판매액에서 차감
+    // (시설 사용료 환불 등은 from=회사가 아니므로 자동 제외됨)
+    const { data: refunds } = await admin
+      .from('transactions').select('from_account_id, amount')
+      .in('from_account_id', acctIds).eq('type', 'refund').eq('voided', false)
+    for (const t of refunds ?? []) {
+      revByAcct[t.from_account_id] = (revByAcct[t.from_account_id] ?? 0) - (t.amount ?? 0)
+    }
   }
 
   const initialCompanies = companyList.map(c => ({

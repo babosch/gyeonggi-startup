@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.14'
+export const APP_VERSION = 'v1.11.15'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.15',
+    date: '2026-07-09',
+    items: [
+      '회사별 판매액에서 환불액 차감 — 판매 후 취소·환불된 금액은 판매액에 잡히지 않도록 수정(순 판매액 = 구매 - 판매환불). 시설료 환불 등은 판매액과 무관하게 제외',
+    ],
+  },
   {
     version: 'v1.11.14',
     date: '2026-07-09',
