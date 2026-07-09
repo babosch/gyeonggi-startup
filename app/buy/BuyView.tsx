@@ -33,6 +33,10 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
   useEffect(() => {
     if (step !== 'scan') return
     let active = true
+    // html5-qrcode는 QR이 화면에 보이는 동안 프레임마다 성공 콜백을 반복 호출한다.
+    // stop()이 실제로 카메라를 끄기까지는 시간이 걸리므로, 가드 없이는 같은 QR에 대해
+    // scanner.stop()/loadCompany()가 동시에 여러 번 겹쳐 호출되어 화면이 멈춘 것처럼 보인다.
+    let handled = false
     import('html5-qrcode').then(({ Html5Qrcode }) => {
       if (!active) return
       const scanner = new Html5Qrcode('buy-qr-reader')
@@ -41,11 +45,13 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
         { facingMode: 'environment' },
         { fps: 10, qrbox: 220 },
         async (decoded: string) => {
+          if (handled) return
           // 포맷: "company:<companyId>"
           const match = decoded.match(/^company:(.+)$/)
           if (!match) { setError('올바른 판매대 QR이 아니에요'); return }
           const cid = match[1]
           if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
+          handled = true
           await scanner.stop().catch(() => {})
           await loadCompany(cid)
         },
