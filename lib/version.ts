@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.15'
+export const APP_VERSION = 'v1.11.16'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.16',
+    date: '2026-07-09',
+    items: [
+      '회사별 판매액 그래프를 세로 막대그래프로 변경 — 각 막대 위에 금액 표시(환불 제외한 순 판매액), 아래에 회사명·순위',
+    ],
+  },
   {
     version: 'v1.11.15',
     date: '2026-07-09',

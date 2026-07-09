@@ -117,33 +117,45 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
           </button>
         </div>
 
-        {/* 막대 그래프 */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
+        {/* 세로 막대 그래프 (각 막대 위에 금액 표시) */}
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm">
           {sorted.length === 0 ? (
             <p className="text-gray-400 text-center py-8">아직 회사가 없어요.</p>
           ) : (
-            <div className="flex flex-col gap-4">
-              {sorted.map((c, i) => {
-                const pct = Math.round((c.revenue / maxRev) * 100)
-                return (
-                  <div key={c.id}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg shrink-0">{MEDAL[i] ?? `${i + 1}.`}</span>
-                        <span className="text-xl shrink-0">{c.icon}</span>
-                        <span className="font-bold text-gray-800 truncate">{c.name}</span>
+            <div className="overflow-x-auto">
+              <div
+                className="flex items-end justify-around gap-2 sm:gap-4 min-w-fit"
+                style={{ height: 260 }}
+              >
+                {sorted.map((c, i) => {
+                  // 막대 높이: 최대값 기준. 라벨 공간을 위해 최대 85%까지만 채움.
+                  const barPct = c.revenue > 0 ? Math.max(6, (c.revenue / maxRev) * 85) : 0
+                  return (
+                    <div key={c.id} className="flex-1 min-w-[56px] max-w-[110px] h-full flex flex-col items-center justify-end">
+                      {/* 금액 (막대 위) */}
+                      <div className="text-sm sm:text-base font-bold text-gray-800 mb-1 whitespace-nowrap">
+                        {c.revenue.toLocaleString()}원
                       </div>
-                      <span className="font-bold text-gray-700 shrink-0 ml-2">{c.revenue.toLocaleString()}원</span>
-                    </div>
-                    <div className="h-7 bg-gray-100 rounded-full overflow-hidden">
+                      {/* 막대 */}
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${BAR_COLORS[i % BAR_COLORS.length]}`}
-                        style={{ width: `${c.revenue > 0 ? Math.max(pct, 4) : 0}%` }}
+                        className={`w-full rounded-t-xl transition-all duration-500 ${BAR_COLORS[i % BAR_COLORS.length]} ${c.revenue === 0 ? 'opacity-30' : ''}`}
+                        style={{ height: `${barPct}%`, minHeight: c.revenue > 0 ? 8 : 3 }}
                       />
                     </div>
+                  )
+                })}
+              </div>
+
+              {/* 회사 이름 (막대 아래) */}
+              <div className="flex items-start justify-around gap-2 sm:gap-4 min-w-fit mt-2 border-t border-gray-100 pt-2">
+                {sorted.map((c, i) => (
+                  <div key={c.id} className="flex-1 min-w-[56px] max-w-[110px] flex flex-col items-center text-center gap-0.5">
+                    <span className="text-xl">{c.icon}</span>
+                    <span className="text-xs font-bold text-gray-700 leading-tight break-keep">{c.name}</span>
+                    <span className="text-xs">{MEDAL[i] ?? ''}</span>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
           )}
         </div>
