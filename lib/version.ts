@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.8'
+export const APP_VERSION = 'v1.11.9'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.9',
+    date: '2026-07-09',
+    items: [
+      '[긴급] 물건 사기 QR 스캔 후 화면이 죽는 문제 재수정 — scanner.stop()만으로는 카메라가 만든 화면(DOM)이 안 지워져서, 상품 화면으로 넘어갈 때 남아있던 카메라 화면과 충돌해 오류가 나던 문제. scanner.clear()로 확실히 정리하고 중복 정지도 막음',
+    ],
+  },
   {
     version: 'v1.11.8',
     date: '2026-07-09',

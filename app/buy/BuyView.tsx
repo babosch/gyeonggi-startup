@@ -37,7 +37,7 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null)
+  const scannerRef = useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null)
 
   const total = cart.reduce((s, it) => s + it.product.price * it.qty, 0)
 
@@ -62,7 +62,7 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
     import('html5-qrcode').then(({ Html5Qrcode }) => {
       if (!active) return
       const scanner = new Html5Qrcode('buy-qr-reader')
-      scannerRef.current = scanner as unknown as { stop: () => Promise<void> }
+      scannerRef.current = scanner as unknown as { stop: () => Promise<void>; clear: () => void }
       scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: 220 },
@@ -72,7 +72,13 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
           if (!cid) { setError('올바른 판매대 QR이 아니에요'); return }
           if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
           handled = true
-          await scanner.stop().catch(() => {})
+          // stop() 만으로는 스캐너가 만든 <video> 등 DOM이 그대로 남는다.
+          // clear()로 직접 정리해 두지 않으면, React가 화면 전환 시 같은 컨테이너를
+          // 다시 건드리면서(effect cleanup의 중복 stop 등) 충돌해 화면이 죽는다.
+          try {
+            await scanner.stop()
+            scanner.clear()
+          } catch {}
           await loadCompany(cid)
         },
         () => {}
@@ -80,7 +86,10 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
     })
     return () => {
       active = false
-      scannerRef.current?.stop?.().catch(() => {})
+      if (handled) return // 성공 콜백에서 이미 stop+clear를 마쳤으면 중복 정지하지 않음
+      scannerRef.current?.stop?.()
+        .then(() => scannerRef.current?.clear?.())
+        .catch(() => {})
     }
   }, [step])
 
