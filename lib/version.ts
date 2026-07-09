@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.9'
+export const APP_VERSION = 'v1.11.10'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.10',
+    date: '2026-07-09',
+    items: [
+      '[긴급] QR 스캔 성공 후 상품 화면이 뜨려다 오류 화면으로 튕기는 문제 근본 해결 — 스캔 화면을 화면 전환 시 제거하지 않고 숨기기만 하도록 변경해, 카메라가 만든 화면 요소를 React가 지우다 충돌하던 문제(removeChild 오류)를 원천 차단',
+    ],
+  },
   {
     version: 'v1.11.9',
     date: '2026-07-09',

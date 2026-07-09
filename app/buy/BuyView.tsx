@@ -183,23 +183,27 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
 
   return (
     <PageShell title="물건 사기" emoji="🛒">
-      {step === 'scan' && (
-        <div className="flex flex-col gap-4">
-          <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
-            <div className="text-4xl mb-3">📷</div>
-            <p className="font-medium text-gray-700 mb-4">판매대의 QR을 스캔하세요</p>
-            <div id="buy-qr-reader" className="mx-auto rounded-2xl overflow-hidden max-w-xs" />
-            {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
-            {busy && <p className="text-gray-400 text-sm mt-3">불러오는 중...</p>}
-          </div>
-          <div className="bg-blue-50 rounded-2xl p-4 text-sm text-blue-700 text-center">
-            판매대 화면에 표시된 QR 코드를 카메라로 비춰요
-          </div>
-          <button onClick={() => router.push('/card')} className="text-center text-gray-400 text-sm">
-            ← 내 카드로 돌아가기
-          </button>
+      {/*
+        스캔 화면은 조건부로 언마운트하지 않고 CSS로만 숨긴다.
+        html5-qrcode가 #buy-qr-reader 안에 직접 넣은 <video> 등을
+        React가 화면 전환 시 제거하려다 충돌해(removeChild 오류) 앱이
+        죽던 문제를 원천 차단 — React는 이 div를 절대 지우지 않게 된다.
+      */}
+      <div className="flex flex-col gap-4" style={{ display: step === 'scan' ? undefined : 'none' }}>
+        <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
+          <div className="text-4xl mb-3">📷</div>
+          <p className="font-medium text-gray-700 mb-4">판매대의 QR을 스캔하세요</p>
+          <div id="buy-qr-reader" className="mx-auto rounded-2xl overflow-hidden max-w-xs" />
+          {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+          {busy && <p className="text-gray-400 text-sm mt-3">불러오는 중...</p>}
         </div>
-      )}
+        <div className="bg-blue-50 rounded-2xl p-4 text-sm text-blue-700 text-center">
+          판매대 화면에 표시된 QR 코드를 카메라로 비춰요
+        </div>
+        <button onClick={() => router.push('/card')} className="text-center text-gray-400 text-sm">
+          ← 내 카드로 돌아가기
+        </button>
+      </div>
 
       {step === 'cart' && (
         <div className="flex flex-col gap-4">
