@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.16'
+export const APP_VERSION = 'v1.11.17'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.11.17',
+    date: '2026-07-09',
+    items: [
+      '자기 회사 물건 구매 차단 완전 해제 — 서버는 이미 열렸으나 구매 화면(BuyView)에 남아있던 "내 회사 물건은 살 수 없어요" 클라이언트 차단을 제거',
+    ],
+  },
   {
     version: 'v1.11.16',
     date: '2026-07-09',

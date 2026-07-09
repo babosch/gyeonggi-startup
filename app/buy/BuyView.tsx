@@ -45,7 +45,6 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
   useEffect(() => {
     const cid = searchParams.get('company')
     if (cid && step === 'scan') {
-      if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
       loadCompany(cid)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,7 +69,6 @@ export default function BuyView({ buyerId, myCompanyId, balance, classCode, stud
           if (handled) return
           const cid = extractCompanyId(decoded)
           if (!cid) { setError('올바른 판매대 QR이 아니에요'); return }
-          if (cid === myCompanyId) { setError('내 회사 물건은 살 수 없어요!'); return }
           handled = true
           // 스캔 성공 시 React 안에서 화면만 바꾸면, 카메라가 만든 DOM과 React가
           // 충돌해 화면이 죽는 문제가 있었다. 대신 검증된 경로(/buy?company=...)로
