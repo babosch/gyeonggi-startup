@@ -306,9 +306,9 @@ function ConsumerReview({ purchases, totals, getVal, change, readOnly }: Props &
             className="mt-2 text-sm text-blue-500 font-bold">+ 직접 추가</button>
         )}
         <div className="flex flex-wrap gap-3 mt-3 text-sm">
-          <span className="bg-gray-50 rounded-xl px-3 py-1.5">처음 가진 금액: <b>{totals.totalHad.toLocaleString()}원</b></span>
-          <span className="bg-gray-50 rounded-xl px-3 py-1.5">총 사용: <b>{totals.totalSpent.toLocaleString()}원</b></span>
-          <span className="bg-gray-50 rounded-xl px-3 py-1.5">남은 금액: <b>{totals.balance.toLocaleString()}원</b></span>
+          <span className="bg-gray-50 rounded-xl px-3 py-1.5">번 돈: <b>{totals.totalHad.toLocaleString()}원</b></span>
+          <span className="bg-gray-50 rounded-xl px-3 py-1.5">쓴 돈: <b>{totals.totalSpent.toLocaleString()}원</b></span>
+          <span className="bg-gray-50 rounded-xl px-3 py-1.5">남은 돈: <b>{totals.balance.toLocaleString()}원</b></span>
         </div>
       </div>
 
