@@ -25,6 +25,8 @@ interface Props {
   purchases: PurchaseRow[]
   totals: { totalHad: number; totalSpent: number; balance: number }
   sales: SalesRow[]
+  inspectedCompanies: { id: string; name: string }[]
+  salesByCompany: Record<string, SalesRow[]>
   savedValues: Record<string, unknown>
   submitted: Record<string, boolean>
   initialActiveTab: ReflectionTabId | null
@@ -400,9 +402,20 @@ function DeepTab({ tab, questions, getVal, change, readOnly }: TabProps & {
 }
 
 // ── 탭3: 생산 단계 돌아보기 ──
-function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props & TabProps) {
+function ProducerReview({ sales, companyName, inspectedCompanies, salesByCompany, getVal, change, readOnly }: Props & TabProps) {
+  const hasOwnSales = sales.length > 0
+  const savedCompanyName = getVal<string>('producer_review', 'selected_company', '')
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    if (hasOwnSales) return ''
+    return inspectedCompanies.find(c => c.name === savedCompanyName)?.id ?? ''
+  })
+
+  const effectiveSales = hasOwnSales ? sales : (salesByCompany[selectedId] ?? [])
+  const effectiveName = hasOwnSales ? companyName : (inspectedCompanies.find(c => c.id === selectedId)?.name ?? null)
+  const showTable = hasOwnSales || selectedId !== ''
+
   const rows = getVal<SalesEntry[]>('producer_review', 'sales_data',
-    sales.map(s => ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
+    effectiveSales.map(s => ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
   function setRows(next: SalesEntry[]) { change('producer_review', 'sales_data', next) }
   // 남은 이익은 항상 "총 수입 - 재료비"로 자동 계산한다 (직접 입력 아님 — 3번 질문 답변).
   function updateRow(i: number, patch: Partial<SalesEntry>) {
@@ -413,14 +426,39 @@ function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props 
       return { ...next, income, profit: income - next.cost }
     }))
   }
+  function selectCompany(id: string) {
+    setSelectedId(id)
+    const name = inspectedCompanies.find(c => c.id === id)?.name ?? ''
+    change('producer_review', 'selected_company', name)
+    change('producer_review', 'sales_data', (salesByCompany[id] ?? []).map(s =>
+      ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
+  }
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <div className="font-bold text-gray-800 mb-2">🏭 우리 모둠 판매 내역{companyName ? ` (${companyName})` : ''}</div>
-        {rows.length === 0 && (
-          <p className="text-sm text-gray-400 mb-2">판매 데이터가 없어요. 우리 반 생산 활동을 지켜본 입장에서 아래 질문에 답해 보세요. (직접 추가도 가능)</p>
+        <div className="font-bold text-gray-800 mb-2">
+          🏭 {hasOwnSales ? '우리 모둠' : '시찰한 회사'} 판매 내역{effectiveName ? ` (${effectiveName})` : ''}
+        </div>
+
+        {!hasOwnSales && inspectedCompanies.length > 0 && (
+          <div className="mb-3">
+            <label className="text-sm font-bold text-gray-700 mr-2">시찰한 회사 중 하나를 골라 보세요:</label>
+            <select value={selectedId} disabled={readOnly} onChange={e => selectCompany(e.target.value)}
+              className="border-2 border-gray-200 rounded-xl px-3 py-1.5 font-bold">
+              <option value="">회사 선택</option>
+              {inspectedCompanies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
         )}
-        {rows.length > 0 && (
+
+        {!hasOwnSales && inspectedCompanies.length === 0 && (
+          <p className="text-sm text-gray-400 mb-2">아직 시찰한 회사가 없어요. 우리 반 생산 활동을 지켜본 입장에서 아래 질문에 답해 보세요. (직접 추가도 가능)</p>
+        )}
+        {!hasOwnSales && inspectedCompanies.length > 0 && !selectedId && (
+          <p className="text-sm text-gray-400 mb-2">회사를 고르면 그 회사의 판매 내역이 보여요.</p>
+        )}
+
+        {showTable && rows.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead><tr className="text-gray-400 text-xs">
@@ -450,11 +488,11 @@ function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props 
             </table>
           </div>
         )}
-        {!readOnly && (
+        {showTable && !readOnly && (
           <button onClick={() => setRows([...rows, { product: '', price: 0, count: 0, income: 0, cost: 0, profit: 0 }])}
             className="mt-2 text-sm text-blue-500 font-bold">+ 직접 추가</button>
         )}
-        <p className="text-xs text-gray-400 mt-1">남은 이익 = 총 수입 − 재료비 (자동 계산)</p>
+        {showTable && <p className="text-xs text-gray-400 mt-1">남은 이익 = 총 수입 − 재료비 (자동 계산)</p>}
       </div>
 
       <div className="flex flex-col gap-4">
