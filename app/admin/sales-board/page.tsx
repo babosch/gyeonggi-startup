@@ -74,11 +74,22 @@ export default async function SalesBoardPage() {
     }
   }
 
+  // 시설이용비: 승인된 시설 사용 합계 (회사별) — 재료비와 합산해 "지출"로 취급
+  const facilityByCompany: Record<string, number> = {}
+  if (companyList.length) {
+    const { data: facUses } = await admin
+      .from('facility_uses').select('company_id, total_amount')
+      .in('company_id', companyList.map(c => c.id)).eq('status', 'approved')
+    for (const f of facUses ?? []) {
+      facilityByCompany[f.company_id] = (facilityByCompany[f.company_id] ?? 0) + (f.total_amount ?? 0)
+    }
+  }
+
   const initialCompanies = companyList.map(c => {
     const acct = acctByCompany[c.id] ?? null
     const revenue = acct ? (revByAcct[acct] ?? 0) : 0
     const grant = acct ? (grantByAcct[acct] ?? 0) : 0
-    const material = materialByCompany[c.id] ?? 0
+    const material = (materialByCompany[c.id] ?? 0) + (facilityByCompany[c.id] ?? 0)   // 재료비 + 시설이용비
     return {
       id: c.id,
       name: c.display_name,
@@ -87,7 +98,7 @@ export default async function SalesBoardPage() {
       revenue,
       grant,
       material,
-      profit: revenue - material,   // 실제 이익 = 매출 − 재료비
+      profit: revenue - material,   // 실제 이익 = 매출 − (재료비+시설이용비)
     }
   })
 

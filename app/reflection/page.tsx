@@ -5,6 +5,7 @@ import { activityLocked } from '@/lib/guard'
 import ActivityLocked from '@/components/ActivityLocked'
 import ReflectionView from './ReflectionView'
 import type { Stage } from '@/lib/types'
+import type { ReflectionTabId } from '@/lib/reflection'
 
 export interface PurchaseRow {
   transaction_id: string
@@ -27,9 +28,9 @@ export default async function ReflectionPage() {
   if (await activityLocked('reflection')) return <ActivityLocked activityKey="reflection" />
 
   const { data: me } = await supabase
-    .from('users').select('number, nickname, role, company_id, class_id, classes(name, color, stage)').eq('id', user.id).single()
+    .from('users').select('number, nickname, role, company_id, class_id, classes(name, color, stage, reflection_active_tab)').eq('id', user.id).single()
   if (!me) redirect('/home')
-  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; color: string; stage: Stage }
+  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; color: string; stage: Stage; reflection_active_tab: ReflectionTabId | null }
 
   const admin = createAdminClient()
 
@@ -113,6 +114,7 @@ export default async function ReflectionPage() {
       sales={sales}
       savedValues={savedValues}
       submitted={submitted}
+      initialActiveTab={cls.reflection_active_tab ?? null}
     />
   )
 }

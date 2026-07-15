@@ -11,8 +11,8 @@ interface CompanyRev {
   acctId: string | null
   revenue: number   // 순 판매액(매출) = 구매 − 판매환불
   grant: number     // 받은 지원금
-  material: number  // 재료비(승인 품의서 합계)
-  profit: number    // 실제 이익 = 매출 − 재료비
+  material: number  // 지출 = 재료비(승인 품의서) + 시설이용비(승인 시설사용) 합계
+  profit: number    // 실제 이익 = 매출 − 지출
 }
 
 const MEDAL = ['🥇', '🥈', '🥉']
@@ -83,7 +83,7 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
             {live ? '● 실시간' : '연결 중…'}
           </span>
         </div>
-        <p className="text-sm text-gray-400 mb-4">{cityName} · 매출·재료비·실제 이익을 한눈에 비교해요</p>
+        <p className="text-sm text-gray-400 mb-4">{cityName} · 매출·지출(재료비+시설이용비)·실제 이익을 한눈에 비교해요</p>
 
         {/* 요약 */}
         <div className={`bg-white rounded-3xl p-5 shadow-sm mb-4 flex items-center justify-between flex-wrap gap-3 transition-colors ${flash ? 'bg-green-50' : ''}`}>
@@ -103,8 +103,8 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
         {/* 범례 */}
         <div className="flex gap-4 mb-2 px-1 text-xs font-bold">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500 inline-block" /> 매출</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500 inline-block" /> 재료비</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500 inline-block" /> 실제 이익 (매출−재료비)</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500 inline-block" /> 지출 (재료비+시설이용비)</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500 inline-block" /> 실제 이익 (매출−지출)</span>
           <span className="text-gray-400 font-medium">· 지원금은 뱃지로 표시</span>
         </div>
 
@@ -123,7 +123,7 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
                     </div>
                     <div className="w-full flex items-end justify-center gap-1" style={{ height: '100%' }}>
                       <Bar color="bg-blue-500" pct={h(c.revenue)} title={`매출 ${c.revenue.toLocaleString()}원`} />
-                      <Bar color="bg-amber-500" pct={h(c.material)} title={`재료비 ${c.material.toLocaleString()}원`} />
+                      <Bar color="bg-amber-500" pct={h(c.material)} title={`지출(재료비+시설이용비) ${c.material.toLocaleString()}원`} />
                       <Bar color={c.profit >= 0 ? 'bg-purple-500' : 'bg-red-400'} pct={h(c.profit)} title={`이익 ${c.profit.toLocaleString()}원`} />
                     </div>
                   </div>
@@ -138,7 +138,7 @@ export default function SalesBoardView({ cityName, classId, initialCompanies }: 
                     <span className="text-xs font-bold text-gray-700 leading-tight break-keep">{c.name} {MEDAL[i] ?? ''}</span>
                     <span className="text-[11px] text-green-700 bg-green-50 rounded-full px-2 py-0.5 mt-0.5">지원금 {c.grant.toLocaleString()}원</span>
                     <div className="text-[11px] text-gray-500 leading-snug mt-0.5">
-                      매출 {c.revenue.toLocaleString()}<br />재료비 {c.material.toLocaleString()}
+                      매출 {c.revenue.toLocaleString()}<br />지출 {c.material.toLocaleString()}
                     </div>
                   </div>
                 ))}

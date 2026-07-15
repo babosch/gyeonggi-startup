@@ -27,6 +27,7 @@ interface Props {
   sales: SalesRow[]
   savedValues: Record<string, unknown>
   submitted: Record<string, boolean>
+  initialActiveTab: ReflectionTabId | null
 }
 
 type PurchaseEntry = { transaction_id: string | null; product: string; price: number; place: string; reason: string; auto: boolean; multi?: boolean }
@@ -37,7 +38,8 @@ export default function ReflectionView(props: Props) {
   const supabase = useRef(createClient()).current
   const theme = cityTheme(props.color)
 
-  const [active, setActive] = useState<ReflectionTabId>('consumer_review')
+  const [active, setActive] = useState<ReflectionTabId>(props.initialActiveTab ?? 'consumer_review')
+  const [lockedTab, setLockedTab] = useState<ReflectionTabId | null>(props.initialActiveTab)
   const [values, setValues] = useState<Record<string, unknown>>(props.savedValues)
   const [submitted, setSubmitted] = useState<Record<string, boolean>>(props.submitted)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -99,6 +101,7 @@ export default function ReflectionView(props: Props) {
 
   // ── 탭 이동 시 저장 ──
   async function switchTab(tab: ReflectionTabId) {
+    if (lockedTab && tab !== lockedTab) return // 교사가 특정 탭으로 고정해 두면 다른 탭으로 못 감
     await flush()
     setActive(tab)
   }
@@ -138,6 +141,23 @@ export default function ReflectionView(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.classId])
 
+  // 교사가 성찰 진행(활성 탭)을 바꾸면 모든 학생 화면이 즉시 그 탭으로 이동한다.
+  useEffect(() => {
+    const ch = supabase.channel(`refl-pacing-view:${props.classId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'classes' }, (payload) => {
+        const row = payload.new as { id: string; reflection_active_tab: ReflectionTabId | null }
+        if (row.id !== props.classId) return
+        setLockedTab(row.reflection_active_tab)
+        if (row.reflection_active_tab) {
+          flush()
+          setActive(row.reflection_active_tab)
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.classId])
+
   // 탭 상태 아이콘 계산: ✓ 제출 / ● 작성중(내용 있음) / ○ 미작성
   function tabState(tab: ReflectionTabId): '○' | '●' | '✓' {
     if (submitted[tab]) return '✓'
@@ -165,15 +185,24 @@ export default function ReflectionView(props: Props) {
           </div>
         )}
 
-        {/* 탭 바 (가로 스크롤) */}
+        {/* 잠금 안내 (교사가 특정 활동으로 고정한 경우) */}
+        {lockedTab && (
+          <div className="bg-teal-50 text-teal-700 text-sm font-bold rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2">
+            <span>🔒</span>
+            <span>지금은 &quot;{REFLECTION_TABS.find(t => t.id === lockedTab)?.name}&quot; 활동만 할 수 있어요</span>
+          </div>
+        )}
+
+        {/* 탭 바 (가로 스크롤) — 잠금 시 현재 탭 외엔 눌러도 이동 안 됨 */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-1 px-1 sticky top-0 bg-gray-50 z-10">
           {REFLECTION_TABS.map((t, i) => {
             const st = tabState(t.id)
             const on = active === t.id
+            const disabled = lockedTab !== null && t.id !== lockedTab
             return (
-              <button key={t.id} onClick={() => switchTab(t.id)}
+              <button key={t.id} onClick={() => switchTab(t.id)} disabled={disabled}
                 className={`shrink-0 rounded-2xl px-3 py-2 text-sm font-bold border-2 flex items-center gap-1.5 transition-all
-                  ${on ? `${theme.soft} ${theme.border} ${theme.accent}` : 'bg-white border-gray-200 text-gray-500'}`}>
+                  ${on ? `${theme.soft} ${theme.border} ${theme.accent}` : disabled ? 'bg-gray-100 border-gray-100 text-gray-300' : 'bg-white border-gray-200 text-gray-500'}`}>
                 <span>{i + 1}. {t.name}</span>
                 <span className={st === '✓' ? 'text-green-500' : st === '●' ? 'text-amber-500' : 'text-gray-300'}>{st}</span>
               </button>
@@ -375,8 +404,14 @@ function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props 
   const rows = getVal<SalesEntry[]>('producer_review', 'sales_data',
     sales.map(s => ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
   function setRows(next: SalesEntry[]) { change('producer_review', 'sales_data', next) }
+  // 남은 이익은 항상 "총 수입 - 재료비"로 자동 계산한다 (직접 입력 아님 — 3번 질문 답변).
   function updateRow(i: number, patch: Partial<SalesEntry>) {
-    setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r))
+    setRows(rows.map((r, idx) => {
+      if (idx !== i) return r
+      const next = { ...r, ...patch }
+      const income = next.price * next.count
+      return { ...next, income, profit: income - next.cost }
+    }))
   }
   return (
     <div className="flex flex-col gap-6">
@@ -397,16 +432,20 @@ function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props 
                 <th className="text-right font-medium pb-1 w-20">남은 이익</th>
               </tr></thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="border-t border-gray-100">
-                    <td className="py-1.5 pr-1"><input value={r.product} readOnly={readOnly} onChange={e => updateRow(i, { product: e.target.value })} className="w-full bg-transparent border border-gray-200 rounded px-1.5 py-1" /></td>
-                    <td className="py-1.5 pr-1"><input type="number" value={r.price} readOnly={readOnly} onChange={e => updateRow(i, { price: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
-                    <td className="py-1.5 pr-1"><input type="number" value={r.cost} readOnly={readOnly} onChange={e => updateRow(i, { cost: +e.target.value })} className="w-full text-right bg-white border border-gray-200 rounded px-1 py-1" /></td>
-                    <td className="py-1.5 pr-1"><input type="number" value={r.count} readOnly={readOnly} onChange={e => updateRow(i, { count: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
-                    <td className="py-1.5 pr-1 text-right font-medium">{(r.income || r.price * r.count).toLocaleString()}</td>
-                    <td className="py-1.5 pr-1"><input type="number" value={r.profit} readOnly={readOnly} onChange={e => updateRow(i, { profit: +e.target.value })} className="w-full text-right bg-white border border-gray-200 rounded px-1 py-1" /></td>
-                  </tr>
-                ))}
+                {rows.map((r, i) => {
+                  const income = r.price * r.count
+                  const profit = income - r.cost
+                  return (
+                    <tr key={i} className="border-t border-gray-100">
+                      <td className="py-1.5 pr-1"><input value={r.product} readOnly={readOnly} onChange={e => updateRow(i, { product: e.target.value })} className="w-full bg-transparent border border-gray-200 rounded px-1.5 py-1" /></td>
+                      <td className="py-1.5 pr-1"><input type="number" value={r.price} readOnly={readOnly} onChange={e => updateRow(i, { price: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
+                      <td className="py-1.5 pr-1"><input type="number" value={r.cost} readOnly={readOnly} onChange={e => updateRow(i, { cost: +e.target.value })} className="w-full text-right bg-white border border-gray-200 rounded px-1 py-1" /></td>
+                      <td className="py-1.5 pr-1"><input type="number" value={r.count} readOnly={readOnly} onChange={e => updateRow(i, { count: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
+                      <td className="py-1.5 pr-1 text-right font-medium">{income.toLocaleString()}</td>
+                      <td className={`py-1.5 pr-1 text-right font-bold ${profit >= 0 ? 'text-purple-600' : 'text-red-500'}`}>{profit.toLocaleString()}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -415,6 +454,7 @@ function ProducerReview({ sales, companyName, getVal, change, readOnly }: Props 
           <button onClick={() => setRows([...rows, { product: '', price: 0, count: 0, income: 0, cost: 0, profit: 0 }])}
             className="mt-2 text-sm text-blue-500 font-bold">+ 직접 추가</button>
         )}
+        <p className="text-xs text-gray-400 mt-1">남은 이익 = 총 수입 − 재료비 (자동 계산)</p>
       </div>
 
       <div className="flex flex-col gap-4">

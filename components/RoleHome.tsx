@@ -10,10 +10,12 @@ import StageBanner from './StageBanner'
 import MayorControl from './MayorControl'
 import ActivityBoard from './ActivityBoard'
 import SubmissionsView from './SubmissionsView'
+import ReflectionStageControl from './ReflectionStageControl'
 import Link from 'next/link'
 import { ACTIVITY_BY_KEY, ALWAYS_ON_BY_ROLE, ACTIVITIES, type Activity } from '@/lib/activities'
 import PausedOverlay from './PausedOverlay'
 import { cityTheme, STAGE_SHORT, STAGE_SESSIONS, STAGE_THEME, type Role, type Stage, type CityTheme } from '@/lib/types'
+import type { ReflectionTabId } from '@/lib/reflection'
 
 interface Props {
   classId: string
@@ -29,6 +31,7 @@ interface Props {
   balanceLabel: string
   openActivities: string[]
   fairMode: boolean
+  reflectionActiveTab: ReflectionTabId | null
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
   notices: { id: string; title: string; body: string; created_at: string }[]
 }
@@ -70,6 +73,7 @@ export default function RoleHome(props: Props) {
             openActivities={openActivities}
             paused={paused}
             fairMode={fairMode}
+            reflectionActiveTab={props.reflectionActiveTab}
             submissions={props.submissions}
           />
         ) : (
@@ -230,8 +234,9 @@ const ADMIN_CARDS = [
   { emoji: '🛡️', label: '관리자 설정',    desc: '학생 계정 생성·핀번호 초기화',    href: '/admin' },
 ]
 
-function MayorHome({ classId, stage, openActivities, paused, fairMode, submissions }: {
+function MayorHome({ classId, stage, openActivities, paused, fairMode, reflectionActiveTab, submissions }: {
   classId: string; stage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
+  reflectionActiveTab: ReflectionTabId | null
   submissions: { plans: any[]; research: any[]; reflections: any[] } | null
 }) {
   const [boardOpen, setBoardOpen] = useState(true)
@@ -241,6 +246,9 @@ function MayorHome({ classId, stage, openActivities, paused, fairMode, submissio
     <div className="flex flex-col gap-4">
       {/* 단계 컨트롤 */}
       <MayorControl classId={classId} currentStage={stage} openActivities={openActivities} paused={paused} fairMode={fairMode} />
+
+      {/* 성찰 진행 통제 (5단계 전용) */}
+      {stage === 5 && <ReflectionStageControl classId={classId} initialActiveTab={reflectionActiveTab} />}
 
       {/* 이번 단계 핵심 바로가기 */}
       <div>
