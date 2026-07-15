@@ -1,7 +1,16 @@
-export const APP_VERSION = 'v1.12.1'
-export const BUILD_DATE = '2026-07-09'
+export const APP_VERSION = 'v1.12.2'
+export const BUILD_DATE = '2026-07-16'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.12.2',
+    date: '2026-07-16',
+    items: [
+      '생산 단계 돌아보기 판매 내역 재구성 — 항목별 "남은 이익" 칸 제거, "총 판매액"만 표시',
+      '표 하단에 총 판매액 − (재료비 + 시설이용비) = 순이익 요약 카드 추가 (회사 실제 지출 데이터 자동 합산)',
+      '교사 성찰 모니터링 화면의 판매 내역 표시도 동일하게 정리',
+    ],
+  },
   {
     version: 'v1.12.1',
     date: '2026-07-09',

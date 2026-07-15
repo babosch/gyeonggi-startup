@@ -18,7 +18,11 @@ export interface SalesRow {
   product: string
   price: number
   count: number     // 판매 개수(products.sold)
-  income: number    // 총 수입 = price * count
+  income: number    // 총 판매액 = price * count
+}
+export interface CompanyExpenses {
+  material: number  // 재료비 (승인된 품의서 합계)
+  facility: number  // 시설이용비 (승인된 시설 사용 합계)
 }
 
 export default async function ReflectionPage() {
@@ -33,6 +37,25 @@ export default async function ReflectionPage() {
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; color: string; stage: Stage; reflection_active_tab: ReflectionTabId | null }
 
   const admin = createAdminClient()
+
+  // 재료비(승인 품의서) + 시설이용비(승인 시설사용) 실제 합계 — 회사별
+  async function fetchExpenses(companyIds: string[]): Promise<Record<string, CompanyExpenses>> {
+    const result: Record<string, CompanyExpenses> = {}
+    if (!companyIds.length) return result
+    const { data: reqs } = await admin
+      .from('requisitions').select('company_id, total').in('company_id', companyIds).eq('status', 'approved')
+    for (const r of reqs ?? []) {
+      if (!result[r.company_id]) result[r.company_id] = { material: 0, facility: 0 }
+      result[r.company_id].material += r.total ?? 0
+    }
+    const { data: facs } = await admin
+      .from('facility_uses').select('company_id, total_amount').in('company_id', companyIds).eq('status', 'approved')
+    for (const f of facs ?? []) {
+      if (!result[f.company_id]) result[f.company_id] = { material: 0, facility: 0 }
+      result[f.company_id].facility += f.total_amount ?? 0
+    }
+    return result
+  }
 
   // 내 계좌
   const { data: myAcct } = await admin
@@ -79,6 +102,7 @@ export default async function ReflectionPage() {
   // ── 생산: 내 회사 판매 내역 자동 불러오기 ──
   const sales: SalesRow[] = []
   let companyName: string | null = null
+  let expenses: CompanyExpenses | null = null
   if (me.company_id) {
     const { data: co } = await admin.from('companies').select('display_name').eq('id', me.company_id).maybeSingle()
     companyName = co?.display_name ?? null
@@ -87,11 +111,14 @@ export default async function ReflectionPage() {
     for (const p of prods ?? []) {
       sales.push({ product: p.name, price: p.price, count: p.sold, income: (p.price ?? 0) * (p.sold ?? 0) })
     }
+    const expMap = await fetchExpenses([me.company_id])
+    expenses = expMap[me.company_id] ?? { material: 0, facility: 0 }
   }
 
   // ── 회사가 없는 학생(공무원 등): 본인이 시찰 보고서를 쓴 회사들 중 자유 선택 ──
   const inspectedCompanies: { id: string; name: string }[] = []
   const salesByCompany: Record<string, SalesRow[]> = {}
+  const expensesByCompany: Record<string, CompanyExpenses> = {}
   if (!me.company_id) {
     const { data: inspections } = await admin
       .from('inspection_reports').select('company_id').eq('officer_id', user.id).eq('class_id', me.class_id!)
@@ -105,6 +132,8 @@ export default async function ReflectionPage() {
         if (!salesByCompany[p.company_id]) salesByCompany[p.company_id] = []
         salesByCompany[p.company_id].push({ product: p.name, price: p.price, count: p.sold, income: (p.price ?? 0) * (p.sold ?? 0) })
       }
+      const expMap = await fetchExpenses(companyIds)
+      for (const id of companyIds) expensesByCompany[id] = expMap[id] ?? { material: 0, facility: 0 }
     }
   }
 
@@ -131,8 +160,10 @@ export default async function ReflectionPage() {
       purchases={purchases}
       totals={{ totalHad, totalSpent, balance }}
       sales={sales}
+      expenses={expenses}
       inspectedCompanies={inspectedCompanies}
       salesByCompany={salesByCompany}
+      expensesByCompany={expensesByCompany}
       savedValues={savedValues}
       submitted={submitted}
       initialActiveTab={cls.reflection_active_tab ?? null}

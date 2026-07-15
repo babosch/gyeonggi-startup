@@ -12,7 +12,7 @@ import {
   CONCEPT_ROWS, CONCEPT_CELL_LABEL, CORE_SENTENCE_LABEL, CORE_SENTENCE_EXAMPLE,
   SELF_EVAL_ITEMS, SELF_EVAL_CHOICES,
 } from '@/lib/reflection'
-import type { PurchaseRow, SalesRow } from './page'
+import type { PurchaseRow, SalesRow, CompanyExpenses } from './page'
 
 interface Props {
   userId: string
@@ -25,15 +25,17 @@ interface Props {
   purchases: PurchaseRow[]
   totals: { totalHad: number; totalSpent: number; balance: number }
   sales: SalesRow[]
+  expenses: CompanyExpenses | null
   inspectedCompanies: { id: string; name: string }[]
   salesByCompany: Record<string, SalesRow[]>
+  expensesByCompany: Record<string, CompanyExpenses>
   savedValues: Record<string, unknown>
   submitted: Record<string, boolean>
   initialActiveTab: ReflectionTabId | null
 }
 
 type PurchaseEntry = { transaction_id: string | null; product: string; price: number; place: string; reason: string; auto: boolean; multi?: boolean }
-type SalesEntry = { product: string; price: number; count: number; income: number; cost: number; profit: number }
+type SalesEntry = { product: string; price: number; count: number; income: number }
 
 export default function ReflectionView(props: Props) {
   const router = useRouter()
@@ -402,7 +404,7 @@ function DeepTab({ tab, questions, getVal, change, readOnly }: TabProps & {
 }
 
 // ── 탭3: 생산 단계 돌아보기 ──
-function ProducerReview({ sales, companyName, inspectedCompanies, salesByCompany, getVal, change, readOnly }: Props & TabProps) {
+function ProducerReview({ sales, companyName, expenses, inspectedCompanies, salesByCompany, expensesByCompany, getVal, change, readOnly }: Props & TabProps) {
   const hasOwnSales = sales.length > 0
   const savedCompanyName = getVal<string>('producer_review', 'selected_company', '')
   const [selectedId, setSelectedId] = useState<string>(() => {
@@ -412,18 +414,19 @@ function ProducerReview({ sales, companyName, inspectedCompanies, salesByCompany
 
   const effectiveSales = hasOwnSales ? sales : (salesByCompany[selectedId] ?? [])
   const effectiveName = hasOwnSales ? companyName : (inspectedCompanies.find(c => c.id === selectedId)?.name ?? null)
+  const effectiveExpenses: CompanyExpenses = hasOwnSales
+    ? (expenses ?? { material: 0, facility: 0 })
+    : (expensesByCompany[selectedId] ?? { material: 0, facility: 0 })
   const showTable = hasOwnSales || selectedId !== ''
 
   const rows = getVal<SalesEntry[]>('producer_review', 'sales_data',
-    effectiveSales.map(s => ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
+    effectiveSales.map(s => ({ product: s.product, price: s.price, count: s.count, income: s.income })))
   function setRows(next: SalesEntry[]) { change('producer_review', 'sales_data', next) }
-  // 남은 이익은 항상 "총 수입 - 재료비"로 자동 계산한다 (직접 입력 아님 — 3번 질문 답변).
   function updateRow(i: number, patch: Partial<SalesEntry>) {
     setRows(rows.map((r, idx) => {
       if (idx !== i) return r
       const next = { ...r, ...patch }
-      const income = next.price * next.count
-      return { ...next, income, profit: income - next.cost }
+      return { ...next, income: next.price * next.count }
     }))
   }
   function selectCompany(id: string) {
@@ -431,8 +434,13 @@ function ProducerReview({ sales, companyName, inspectedCompanies, salesByCompany
     const name = inspectedCompanies.find(c => c.id === id)?.name ?? ''
     change('producer_review', 'selected_company', name)
     change('producer_review', 'sales_data', (salesByCompany[id] ?? []).map(s =>
-      ({ product: s.product, price: s.price, count: s.count, income: s.income, cost: 0, profit: 0 })))
+      ({ product: s.product, price: s.price, count: s.count, income: s.income })))
   }
+
+  const totalSales = rows.reduce((sum, r) => sum + r.price * r.count, 0)
+  const totalExpense = effectiveExpenses.material + effectiveExpenses.facility
+  const netProfit = totalSales - totalExpense
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -460,39 +468,41 @@ function ProducerReview({ sales, companyName, inspectedCompanies, salesByCompany
 
         {showTable && rows.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
+            <table className="w-full text-sm min-w-[440px]">
               <thead><tr className="text-gray-400 text-xs">
                 <th className="text-left font-medium pb-1">상품 이름</th>
                 <th className="text-right font-medium pb-1 w-16">판매가</th>
-                <th className="text-right font-medium pb-1 w-16">재료비</th>
                 <th className="text-right font-medium pb-1 w-14">개수</th>
-                <th className="text-right font-medium pb-1 w-20">총 수입</th>
-                <th className="text-right font-medium pb-1 w-20">남은 이익</th>
+                <th className="text-right font-medium pb-1 w-20">총 판매액</th>
               </tr></thead>
               <tbody>
-                {rows.map((r, i) => {
-                  const income = r.price * r.count
-                  const profit = income - r.cost
-                  return (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="py-1.5 pr-1"><input value={r.product} readOnly={readOnly} onChange={e => updateRow(i, { product: e.target.value })} className="w-full bg-transparent border border-gray-200 rounded px-1.5 py-1" /></td>
-                      <td className="py-1.5 pr-1"><input type="number" value={r.price} readOnly={readOnly} onChange={e => updateRow(i, { price: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
-                      <td className="py-1.5 pr-1"><input type="number" value={r.cost} readOnly={readOnly} onChange={e => updateRow(i, { cost: +e.target.value })} className="w-full text-right bg-white border border-gray-200 rounded px-1 py-1" /></td>
-                      <td className="py-1.5 pr-1"><input type="number" value={r.count} readOnly={readOnly} onChange={e => updateRow(i, { count: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
-                      <td className="py-1.5 pr-1 text-right font-medium">{income.toLocaleString()}</td>
-                      <td className={`py-1.5 pr-1 text-right font-bold ${profit >= 0 ? 'text-purple-600' : 'text-red-500'}`}>{profit.toLocaleString()}</td>
-                    </tr>
-                  )
-                })}
+                {rows.map((r, i) => (
+                  <tr key={i} className="border-t border-gray-100">
+                    <td className="py-1.5 pr-1"><input value={r.product} readOnly={readOnly} onChange={e => updateRow(i, { product: e.target.value })} className="w-full bg-transparent border border-gray-200 rounded px-1.5 py-1" /></td>
+                    <td className="py-1.5 pr-1"><input type="number" value={r.price} readOnly={readOnly} onChange={e => updateRow(i, { price: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
+                    <td className="py-1.5 pr-1"><input type="number" value={r.count} readOnly={readOnly} onChange={e => updateRow(i, { count: +e.target.value })} className="w-full text-right bg-transparent border border-gray-200 rounded px-1 py-1" /></td>
+                    <td className="py-1.5 pr-1 text-right font-medium">{(r.price * r.count).toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
         {showTable && !readOnly && (
-          <button onClick={() => setRows([...rows, { product: '', price: 0, count: 0, income: 0, cost: 0, profit: 0 }])}
+          <button onClick={() => setRows([...rows, { product: '', price: 0, count: 0, income: 0 }])}
             className="mt-2 text-sm text-blue-500 font-bold">+ 직접 추가</button>
         )}
-        {showTable && <p className="text-xs text-gray-400 mt-1">남은 이익 = 총 수입 − 재료비 (자동 계산)</p>}
+
+        {showTable && (
+          <div className="mt-3 bg-gray-50 rounded-xl p-3 text-sm flex flex-col gap-1">
+            <div className="flex justify-between"><span className="text-gray-600">총 판매액</span><span className="font-bold text-gray-800">{totalSales.toLocaleString()}원</span></div>
+            <div className="flex justify-between text-gray-500"><span>− 재료비 + 시설이용비</span><span>{effectiveExpenses.material.toLocaleString()}원 + {effectiveExpenses.facility.toLocaleString()}원</span></div>
+            <div className="flex justify-between font-bold border-t border-gray-200 mt-1 pt-1">
+              <span className="text-gray-800">= 순이익</span>
+              <span className={netProfit >= 0 ? 'text-purple-600' : 'text-red-500'}>{netProfit.toLocaleString()}원</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
