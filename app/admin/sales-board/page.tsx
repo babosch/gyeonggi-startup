@@ -52,13 +52,44 @@ export default async function SalesBoardPage() {
     }
   }
 
-  const initialCompanies = companyList.map(c => ({
-    id: c.id,
-    name: c.display_name,
-    icon: c.icon,
-    acctId: acctByCompany[c.id] ?? null,
-    revenue: acctByCompany[c.id] ? (revByAcct[acctByCompany[c.id]] ?? 0) : 0,
-  }))
+  // 지원금: 회사 계좌로 들어온 grant 합계
+  const grantByAcct: Record<string, number> = {}
+  if (acctIds.length) {
+    const { data: grants } = await admin
+      .from('transactions').select('to_account_id, amount')
+      .in('to_account_id', acctIds).eq('type', 'grant').eq('voided', false)
+    for (const t of grants ?? []) {
+      grantByAcct[t.to_account_id] = (grantByAcct[t.to_account_id] ?? 0) + (t.amount ?? 0)
+    }
+  }
+
+  // 재료비: 승인된 품의서 합계 (회사별)
+  const materialByCompany: Record<string, number> = {}
+  if (companyList.length) {
+    const { data: reqs } = await admin
+      .from('requisitions').select('company_id, total')
+      .in('company_id', companyList.map(c => c.id)).eq('status', 'approved')
+    for (const r of reqs ?? []) {
+      materialByCompany[r.company_id] = (materialByCompany[r.company_id] ?? 0) + (r.total ?? 0)
+    }
+  }
+
+  const initialCompanies = companyList.map(c => {
+    const acct = acctByCompany[c.id] ?? null
+    const revenue = acct ? (revByAcct[acct] ?? 0) : 0
+    const grant = acct ? (grantByAcct[acct] ?? 0) : 0
+    const material = materialByCompany[c.id] ?? 0
+    return {
+      id: c.id,
+      name: c.display_name,
+      icon: c.icon,
+      acctId: acct,
+      revenue,
+      grant,
+      material,
+      profit: revenue - material,   // 실제 이익 = 매출 − 재료비
+    }
+  })
 
   return (
     <SalesBoardView

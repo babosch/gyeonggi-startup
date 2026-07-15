@@ -2,7 +2,7 @@
 
 import { STAGE_SHORT, STAGE_SESSIONS, STAGE_THEME, type Stage } from '@/lib/types'
 
-const STAGES: Stage[] = [0, 1, 2, 3, 4]
+const STAGES: Stage[] = [0, 1, 2, 3, 4, 5]
 
 export default function StageBanner({ stage, paused }: { stage: Stage; paused: boolean }) {
   return (

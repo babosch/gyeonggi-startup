@@ -37,6 +37,9 @@ export const ACTIVITIES: Activity[] = [
   // ─── 4단계 판매 ────────────────────────────────────────────────────────
   { key: 'sell',         label: '판매(수금)',     emoji: '📱', hint: 'QR 보여주기',          href: '/sell',         roles: ['ceo', 'staff'], stage: 4 },
   { key: 'trade-report', label: '이상 거래 보고', emoji: '🚨', hint: '이상한 거래 신고',     href: '/trade-report', roles: ['officer'], stage: 4 },
+
+  // ─── 5단계 성찰 ────────────────────────────────────────────────────────
+  { key: 'reflection',   label: '성찰',           emoji: '🪞', hint: '장터 경험 되돌아보기', href: '/reflection',   roles: ['applicant', 'ceo', 'staff', 'officer'], stage: 5 },
 ]
 
 // ─── 역할별 상시 활동 ─────────────────────────────────────────────────────
@@ -57,6 +60,7 @@ export const STAGE_OPEN: Record<Stage, string[]> = {
   2: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection'],
   3: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'exchange'],
   4: ['worklog', 'payroll', 'ledger', 'facilities', 'card', 'inspection', 'sell', 'trade-report'],
+  5: ['reflection', 'card'],
 }
 
 // 특정 단계의 모든 활동 (ActivityBoard 버킷용)
