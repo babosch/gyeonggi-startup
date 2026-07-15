@@ -5,6 +5,7 @@ import { activityLocked } from '@/lib/guard'
 import ActivityLocked from '@/components/ActivityLocked'
 import ReflectionView from './ReflectionView'
 import type { Stage } from '@/lib/types'
+import type { ReflectionTabId } from '@/lib/reflection'
 
 export interface PurchaseRow {
   transaction_id: string
@@ -27,9 +28,9 @@ export default async function ReflectionPage() {
   if (await activityLocked('reflection')) return <ActivityLocked activityKey="reflection" />
 
   const { data: me } = await supabase
-    .from('users').select('number, nickname, role, company_id, class_id, classes(name, color, stage)').eq('id', user.id).single()
+    .from('users').select('number, nickname, role, company_id, class_id, classes(name, color, stage, reflection_active_tab)').eq('id', user.id).single()
   if (!me) redirect('/home')
-  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; color: string; stage: Stage }
+  const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as { name: string; color: string; stage: Stage; reflection_active_tab: ReflectionTabId | null }
 
   const admin = createAdminClient()
 
@@ -88,6 +89,25 @@ export default async function ReflectionPage() {
     }
   }
 
+  // ── 회사가 없는 학생(공무원 등): 본인이 시찰 보고서를 쓴 회사들 중 자유 선택 ──
+  const inspectedCompanies: { id: string; name: string }[] = []
+  const salesByCompany: Record<string, SalesRow[]> = {}
+  if (!me.company_id) {
+    const { data: inspections } = await admin
+      .from('inspection_reports').select('company_id').eq('officer_id', user.id).eq('class_id', me.class_id!)
+    const companyIds = [...new Set((inspections ?? []).map(r => r.company_id).filter(Boolean))] as string[]
+    if (companyIds.length) {
+      const { data: cos } = await admin.from('companies').select('id, display_name').in('id', companyIds)
+      for (const c of cos ?? []) inspectedCompanies.push({ id: c.id, name: c.display_name })
+      const { data: prods } = await admin
+        .from('products').select('company_id, name, price, sold').in('company_id', companyIds).order('created_at')
+      for (const p of prods ?? []) {
+        if (!salesByCompany[p.company_id]) salesByCompany[p.company_id] = []
+        salesByCompany[p.company_id].push({ product: p.name, price: p.price, count: p.sold, income: (p.price ?? 0) * (p.sold ?? 0) })
+      }
+    }
+  }
+
   // ── 저장된 응답 + 탭 제출 상태 ──
   const { data: responses } = await supabase
     .from('reflection_responses').select('tab_id, field_id, value').eq('user_id', user.id)
@@ -111,8 +131,11 @@ export default async function ReflectionPage() {
       purchases={purchases}
       totals={{ totalHad, totalSpent, balance }}
       sales={sales}
+      inspectedCompanies={inspectedCompanies}
+      salesByCompany={salesByCompany}
       savedValues={savedValues}
       submitted={submitted}
+      initialActiveTab={cls.reflection_active_tab ?? null}
     />
   )
 }

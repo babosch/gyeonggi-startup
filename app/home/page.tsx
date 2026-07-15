@@ -5,6 +5,7 @@ import { getSubmissions } from '@/lib/submissions'
 import RoleHome from '@/components/RoleHome'
 import RevealWatcher from '@/components/RevealWatcher'
 import type { Role, Stage } from '@/lib/types'
+import type { ReflectionTabId } from '@/lib/reflection'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -13,7 +14,7 @@ export default async function HomePage() {
 
   const { data: me } = await supabase
     .from('users')
-    .select('number, nickname, role, company_id, must_change_pin, intro_seen, reveal_pending, class_id, classes(id, name, color, stage, paused, fair_mode, open_activities)')
+    .select('number, nickname, role, company_id, must_change_pin, intro_seen, reveal_pending, class_id, classes(id, name, color, stage, paused, fair_mode, open_activities, reflection_active_tab)')
     .eq('id', user.id)
     .single()
 
@@ -24,6 +25,7 @@ export default async function HomePage() {
 
   const cls = (Array.isArray(me.classes) ? me.classes[0] : me.classes) as {
     id: string; name: string; color: string; stage: Stage; paused: boolean; fair_mode: boolean; open_activities: string[]
+    reflection_active_tab: ReflectionTabId | null
   }
 
   const role = me.role as Role
@@ -82,6 +84,7 @@ export default async function HomePage() {
         balanceLabel={balanceLabel}
         openActivities={cls.open_activities ?? []}
         fairMode={cls.fair_mode ?? false}
+        reflectionActiveTab={cls.reflection_active_tab ?? null}
         submissions={submissions}
         notices={notices ?? []}
       />

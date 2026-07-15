@@ -21,7 +21,7 @@ interface Props {
 const FIELD_LABEL: Record<string, string> = {
   purchase_reasons: '구매 내역·산 까닭', checklist: '합리적 선택 체크리스트', checklist_summary: '나의 소비 한 문장 평가',
   selected_question: '선택한 질문', my_opinion: '토의 후 나의 생각',
-  sales_data: '판매 내역', scarcity: '한정된 것(희소성)', choice_made: '우리 모둠의 선택', customer_criteria: '손님의 선택 기준',
+  selected_company: '선택한 회사(시찰)', sales_data: '판매 내역', scarcity: '한정된 것(희소성)', choice_made: '우리 모둠의 선택', customer_criteria: '손님의 선택 기준',
   concept_scarcity: '희소성 경험', concept_rational: '합리적 선택 경험', concept_prod_cons: '생산·소비 경험', concept_exchange: '교류·상호 의존 경험',
   core_sentence: '나만의 핵심 문장', self_eval: '자기 평가',
 }

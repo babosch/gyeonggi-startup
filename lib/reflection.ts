@@ -47,11 +47,11 @@ export const PRODUCER_SCARCITY_FIELDS: { key: string; label: string; emphasis?: 
 
 // ── 탭4: 생산 단계 심화질문 (텍스트 수정 금지) ──
 export const PRODUCER_DEEP_QUESTIONS: { no: number; text: string; tag: string }[] = [
-  { no: 1, text: '우리 모둠의 상품이 안 팔렸다면, 상품이 나빴기 때문일까 아니면 다른 이유가 있을까?', tag: '판매 부진의 원인' },
+  { no: 1, text: '어떤 기업의 상품이 잘 팔리지 않았다면, 상품이 나빴기 때문일까 아니면 다른 이유가 있을까?', tag: '판매 부진의 원인' },
   { no: 2, text: '재료가 부족해서 원래 계획을 바꿔야 했다면, 그때의 선택은 합리적이었을까?', tag: '희소성과 선택' },
   { no: 3, text: '가격을 싸게 하면 많이 팔리지만 남는 게 없다. 어떻게 정하는 것이 합리적일까?', tag: '가격 결정의 기준' },
   { no: 4, text: '비슷한 상품을 파는 다른 모둠이 있었다면, 경쟁에서 쓴 방법은 모두 바람직한가?', tag: '경쟁과 윤리' },
-  { no: 5, text: '예쁘게 만드는 데 시간을 쓸까, 많이 만드는 데 쓸까? 이때 포기한 것은 무엇일까?', tag: '기회비용' },
+  { no: 5, text: '이익을 많이 냈다면 그 기업의 생산활동은 우수하다고 할 수 있을까? 자신의 의견을 정해서 말해보자.', tag: '이익 = 좋은 생산?' },
   { no: 6, text: '다른 모둠과 재료나 기술을 나눠 쓸 수 있었다면, 상품이 더 좋아졌을까? 왜 교류가 필요할까?', tag: '교류와 상호 의존' },
 ]
 
@@ -78,7 +78,7 @@ export const SELF_EVAL_ITEMS: { key: string; area: string; text: string }[] = [
 export const TAB_FIELD_IDS: Record<ReflectionTabId, string[]> = {
   consumer_review: ['purchase_reasons', 'checklist', 'checklist_summary'],
   consumer_deep:   ['selected_question', 'my_opinion'],
-  producer_review: ['sales_data', 'scarcity', 'choice_made', 'customer_criteria'],
+  producer_review: ['selected_company', 'sales_data', 'scarcity', 'choice_made', 'customer_criteria'],
   producer_deep:   ['selected_question', 'my_opinion'],
   concept_eval:    ['concept_scarcity', 'concept_rational', 'concept_prod_cons', 'concept_exchange', 'core_sentence', 'self_eval'],
 }
