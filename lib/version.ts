@@ -1,7 +1,18 @@
-export const APP_VERSION = 'v1.12.0'
+export const APP_VERSION = 'v1.12.1'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.12.1',
+    date: '2026-07-09',
+    items: [
+      '교사가 성찰 5개 탭 중 학생이 볼 수 있는 활동을 하나로 고정·해제할 수 있는 진행 통제 추가 (실시간 반영)',
+      '회사별 이익 현황에 시설이용비를 재료비와 합산해 "지출"로 표시',
+      '생산 단계 돌아보기 "남은 이익" 자동 계산(총 수입 − 재료비)으로 수정',
+      '생산 단계 심화질문 1·5번 텍스트 수정',
+      '회사 소속 없는 학생(공무원 등)은 본인이 시찰한 회사 중 골라 판매 내역을 볼 수 있음',
+    ],
+  },
   {
     version: 'v1.12.0',
     date: '2026-07-09',
