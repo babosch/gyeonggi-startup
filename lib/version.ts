@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.11.17'
+export const APP_VERSION = 'v1.12.0'
 export const BUILD_DATE = '2026-07-09'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.12.0',
+    date: '2026-07-09',
+    items: [
+      '⑤ 성찰 단계 추가 — 학생 5탭 성찰 활동(소비자/생산 단계 돌아보기·심화질문·개념 연결) + 교사 실시간 성찰 모니터링 대시보드(개별 답변·탭별 모아보기·CSV). 구매/판매 내역 자동 불러오기, 이벤트 기반 저장, Broadcast 실시간 미러링',
+    ],
+  },
   {
     version: 'v1.11.17',
     date: '2026-07-09',

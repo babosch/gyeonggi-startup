@@ -202,10 +202,15 @@ const STAGE_FEATURED: Record<Stage, Array<{ emoji: string; label: string; desc: 
     { emoji: '📊', label: '회사별 판매액',    desc: '실시간 판매액 막대그래프',       href: '/admin/sales-board',   color: 'bg-blue-500' },
     { emoji: '🚨', label: '이상 거래 보고',   desc: '공무원이 신고한 거래',          href: '/admin/trade-reports', color: 'bg-red-500' },
   ],
+  5: [
+    { emoji: '🪞', label: '성찰 모니터링',    desc: '학생 성찰 답변 실시간 확인',     href: '/admin/reflection',    color: 'bg-teal-500' },
+    { emoji: '📊', label: '회사별 판매액',    desc: '실시간 판매액 막대그래프',       href: '/admin/sales-board',   color: 'bg-blue-500' },
+  ],
 }
 
 const ADMIN_CARDS = [
   { emoji: '💳', label: '내 카드',         desc: '잔액 확인·QR로 물건 사기',        href: '/card' },
+  { emoji: '🪞', label: '성찰 모니터링',   desc: '학생 성찰 답변 실시간 확인',      href: '/admin/reflection' },
   { emoji: '📊', label: '회사별 판매액',   desc: '실시간 판매액 막대그래프',        href: '/admin/sales-board' },
   { emoji: '📡', label: '종합 모니터링',   desc: '학생 관리·채용·거래·잔액',      href: '/admin/monitor' },
   { emoji: '⭐', label: '사업체 선정',     desc: '계획서 심사·창업가 선정',        href: '/admin/plans' },

@@ -1,5 +1,5 @@
 export type Role = 'mayor' | 'applicant' | 'ceo' | 'staff' | 'officer'
-export type Stage = 0 | 1 | 2 | 3 | 4
+export type Stage = 0 | 1 | 2 | 3 | 4 | 5
 
 export const STAGE_LABELS: Record<Stage, string> = {
   0: '⓪ 도시 탐구',
@@ -7,14 +7,15 @@ export const STAGE_LABELS: Record<Stage, string> = {
   2: '② 생산',
   3: '③ 교류',
   4: '④ 판매',
+  5: '⑤ 성찰',
 }
 
 export const STAGE_SHORT: Record<Stage, string> = {
-  0: '탐구', 1: '창업', 2: '생산', 3: '교류', 4: '판매',
+  0: '탐구', 1: '창업', 2: '생산', 3: '교류', 4: '판매', 5: '성찰',
 }
 
 export const STAGE_SESSIONS: Record<Stage, string> = {
-  0: '1차시', 1: '2~4차시', 2: '4차시', 3: '2차시', 4: '2차시',
+  0: '1차시', 1: '2~4차시', 2: '4차시', 3: '2차시', 4: '2차시', 5: '2차시',
 }
 
 export const STAGE_THEME: Record<Stage, string> = {
@@ -23,6 +24,7 @@ export const STAGE_THEME: Record<Stage, string> = {
   2: '물건을 만들고 업무일지를 기록해요',
   3: '다른 도시 기업과 협력하고 교류해요',
   4: '제품을 판매하고 거래를 정산해요',
+  5: '장터 경험을 개념과 연결해 되돌아봐요',
 }
 
 // 역할별 라벨·이모지 (4학년 친근형)

@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { allActivitiesUpToStage } from '@/lib/activities'
 import { STAGE_LABELS, STAGE_SHORT, STAGE_SESSIONS, type Stage } from '@/lib/types'
 
-const STAGES: Stage[] = [0, 1, 2, 3, 4]
-const STAGE_ICONS = ['🗺️', '🏭', '⚙️', '🤝', '🛒']
+const STAGES: Stage[] = [0, 1, 2, 3, 4, 5]
+const STAGE_ICONS = ['🗺️', '🏭', '⚙️', '🤝', '🛒', '🪞']
 
 export default function MayorControl({ classId, currentStage, openActivities, paused, fairMode }: {
   classId: string; currentStage: Stage; openActivities: string[]; paused: boolean; fairMode: boolean
@@ -38,7 +38,7 @@ export default function MayorControl({ classId, currentStage, openActivities, pa
     setBusy(null)
   }
 
-  const pct = ((currentStage + 1) / 5) * 100
+  const pct = ((currentStage + 1) / 6) * 100
 
   return (
     <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
