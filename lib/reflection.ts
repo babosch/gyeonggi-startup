@@ -62,7 +62,7 @@ export const CONCEPT_ROWS: { key: string; concept: string; meaning: string }[] =
   { key: 'concept_prod_cons', concept: '생산·소비',     meaning: '물건을 만들고(생산) 사서 쓰는 것(소비)' },
   { key: 'concept_exchange',  concept: '교류·상호 의존', meaning: '서로 물건·도움을 주고받으며 발전하는 것' },
 ]
-export const CONCEPT_CELL_LABEL = '장터에서 이 개념을 경험한 장면'
+export const CONCEPT_CELL_LABEL = '경제프로젝트에서 이 개념을 경험한 장면'
 export const CORE_SENTENCE_LABEL = '이 프로젝트를 통해 알게 된 것을 한 문장으로 정리해 봅시다.'
 export const CORE_SENTENCE_EXAMPLE = '예시) 자원은 한정되어 있기 때문에 기준을 세워 선택해야 하고, 다른 모둠과 교류하면 서로에게 도움이 된다.'
 

@@ -1,7 +1,14 @@
-export const APP_VERSION = 'v1.12.2'
+export const APP_VERSION = 'v1.12.3'
 export const BUILD_DATE = '2026-07-16'
 
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: 'v1.12.3',
+    date: '2026-07-16',
+    items: [
+      '개념-경험 연결 탭 안내 문구 수정 — "장터에서" → "경제프로젝트에서" 이 개념을 경험한 장면',
+    ],
+  },
   {
     version: 'v1.12.2',
     date: '2026-07-16',
