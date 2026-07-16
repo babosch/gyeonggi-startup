@@ -47,8 +47,8 @@ function fmt(tab: string, field: string, value: unknown): string {
   }
   if (field === 'sales_data' && Array.isArray(value)) {
     return value.map((r) => {
-      const x = r as { product?: string; price?: number; count?: number; cost?: number; profit?: number }
-      return `${x.product ?? ''} 판매가 ${(x.price ?? 0).toLocaleString()} · 재료비 ${(x.cost ?? 0).toLocaleString()} · ${x.count ?? 0}개 · 이익 ${(x.profit ?? 0).toLocaleString()}`
+      const x = r as { product?: string; price?: number; count?: number }
+      return `${x.product ?? ''} 판매가 ${(x.price ?? 0).toLocaleString()} · ${x.count ?? 0}개 · 총 판매액 ${((x.price ?? 0) * (x.count ?? 0)).toLocaleString()}`
     }).join('\n')
   }
   if (typeof value === 'string') return value
