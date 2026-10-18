@@ -1,5 +1,9 @@
 name: Keep Supabase Alive
 
+# 3일마다 실제 테이블(classes)을 1행 조회해 Supabase 무료 티어 자동 정지를 막는다.
+# /rest/v1/ 루트는 401을 돌려줘 활동으로 잡히지 않으므로 반드시 테이블을 조회한다.
+# 200이 아니면 실패 처리 → GitHub가 실패 알림 메일을 보낸다.
+
 on:
   schedule:
     - cron: '0 9 */3 * *'
@@ -10,8 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
+          code=$(curl -s -o response.json -w "%{http_code}" \
+            "${SUPABASE_URL%/}/rest/v1/classes?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}") || code="000"
           echo "Supabase responded with HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase 핑 실패 (HTTP $code). 프로젝트 정지 여부와 SUPABASE_URL·SUPABASE_ANON_KEY 시크릿을 확인하세요."
+            head -c 300 response.json 2>/dev/null || true
+            exit 1
+          fi
